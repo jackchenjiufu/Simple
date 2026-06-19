@@ -1,0 +1,7 @@
+# 禁止 PHP 执行
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|phar|inc)$">
+    Require all denied
+</FilesMatch>
+
+# 禁止目录浏览
+Options -Indexes
