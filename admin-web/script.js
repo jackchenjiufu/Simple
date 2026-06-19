@@ -34,20 +34,15 @@ function checkAuth() {
 }
 
 async function init() {
-	console.log('页面初始化开始');
 	try {
 		const adminInfo = checkAuth();
 		if (!adminInfo) {
-			console.log('未授权，跳转到登录页');
 			return;
 		}
 
 		adminName.textContent = adminInfo.nickname || adminInfo.username || '管理员';
-		console.log('绑定事件前');
 		bindEvents();
-		console.log('绑定事件后');
 		await switchMenu('user');
-		console.log('页面初始化完成');
 	} catch (error) {
 		console.error('初始化错误:', error);
 	}
@@ -83,7 +78,6 @@ async function handleModalConfirm() {
 }
 
 async function handleAddItem() {
-	console.log('handleAddItem被调用，菜单:', currentMenu);
 	
 	try {
 		let formData;
@@ -227,6 +221,7 @@ async function handleAddItem() {
 			}
 			
 			formData = {
+				action: 'create_announcement',
 				title: title,
 				content: content
 			};
@@ -304,7 +299,6 @@ async function handleAddItem() {
 }
 
 async function switchMenu(menu) {
-	console.log('切换菜单:', menu);
 	currentMenu = menu;
 	
 	// 重置分页参数
@@ -342,7 +336,6 @@ async function switchMenu(menu) {
 	const titles = {
 									user: '用户管理',
 									content: '内容管理',
-									follow: '关注关系管理',
 									stats: '数据统计',
 									logs: '系统日志',
 									carousel: '轮播图管理',
@@ -351,16 +344,13 @@ async function switchMenu(menu) {
 									recommendation: '智能推荐管理',
 									user_profile: '用户画像分析',
 									content_similarity: '内容相似度分析',
-									article: '文章管理'
+									article: '文章管理',
+									feedback: '问题反馈管理'
 								};
 	
-	console.log('标题映射:', titles);
-	console.log('当前菜单标题:', titles[menu]);
-	console.log('menuTitle元素:', menuTitle);
 	
 	if (titles[menu]) {
 		menuTitle.textContent = titles[menu];
-		console.log('标题更新成功:', titles[menu]);
 	} else {
 		console.error('未找到对应标题:', menu);
 		menuTitle.textContent = '智能推荐管理';
@@ -368,7 +358,7 @@ async function switchMenu(menu) {
 
 	
 	// 根据菜单类型显示或隐藏添加按钮
-										if (menu === 'content' || menu === 'follow' || menu === 'stats' || menu === 'logs' || menu === 'recommendation' || menu === 'user_profile' || menu === 'content_similarity') {
+										if (menu === 'content' || menu === 'stats' || menu === 'logs' || menu === 'recommendation' || menu === 'user_profile' || menu === 'content_similarity' || menu === 'feedback') {
 											addBtn.style.display = 'none';
 										} else {
 											addBtn.style.display = 'inline-block';
@@ -588,13 +578,6 @@ async function switchMenu(menu) {
 						<div class="table-cell cell-actions">操作</div>
 					`,
 			
-			follow: `
-				<div class="table-cell cell-id">ID</div>
-				<div class="table-cell cell-follower">关注者</div>
-				<div class="table-cell cell-following">被关注者</div>
-				<div class="table-cell cell-time">关注时间</div>
-				<div class="table-cell cell-actions">操作</div>
-			`,
 			stats: `
 				<!-- 数据统计页面不需要表头 -->
 			`,
@@ -663,6 +646,16 @@ async function switchMenu(menu) {
 										<div class="table-cell cell-date">发布时间</div>
 										<div class="table-cell cell-status">状态</div>
 										<div class="table-cell cell-actions">操作</div>
+									`,
+									feedback: `
+										<div class="table-cell cell-id">ID</div>
+										<div class="table-cell cell-username">提交用户</div>
+										<div class="table-cell cell-type">反馈类型</div>
+										<div class="table-cell cell-content">反馈内容</div>
+										<div class="table-cell cell-contact">联系方式</div>
+										<div class="table-cell cell-status">状态</div>
+										<div class="table-cell cell-time">提交时间</div>
+										<div class="table-cell cell-actions">操作</div>
 									`
 		};
 
@@ -677,83 +670,53 @@ async function switchMenu(menu) {
 }
 
 async function loadData() {
-	console.log('loadData被调用，currentMenu:', currentMenu);
 	showLoading();
 	try {
-		let endpoint = '';
 		let method = 'GET';
 		let data = null;
-		
-		switch (currentMenu) {
-				case 'user':
-					endpoint = '/admin_users.php';
-					break;
-				case 'content':
-								endpoint = `/admin_content.php?page=${currentPage}&limit=${currentLimit}`;
-								break;
-				
-				case 'follow':
-					endpoint = '/admin_follows.php';
-					break;
-				case 'stats':
-					endpoint = '/admin_stats.php';
-					break;
-				case 'logs':
-					// 获取筛选参数
-					const logTypeFilter = document.getElementById('logTypeFilter');
-					const logUserIdFilter = document.getElementById('logUserIdFilter');
-					const type = logTypeFilter ? logTypeFilter.value : '';
-					const user_id = logUserIdFilter ? logUserIdFilter.value : '';
-					
-					// 构建查询参数
-					let queryParams = `page=${currentPage}&limit=${currentLimit}`;
-					if (type) {
-						queryParams += `&type=${type}`;
-					}
-					if (user_id) {
-						queryParams += `&user_id=${user_id}`;
-					}
-					endpoint = `/admin_logs.php?${queryParams}`;
-					break;
-				case 'carousel':
-					endpoint = '/admin_carousels.php';
-					break;
-				case 'version':
-					endpoint = '/get_versions.php';
-					break;
-				case 'announcement':
-					endpoint = '/announcements.php';
-					method = 'POST';
-					data = { action: 'get_announcements' };
-					break;
-				case 'recommendation':
-						endpoint = '/admin_recommendations.php';
-						break;
-					case 'user_profile':
-						endpoint = '/user_profile.php?action=profile';
-						break;
-					case 'content_similarity':
-																		endpoint = '/user_profile.php?action=content_similarity';
-																		break;
-																case 'article':
-																		endpoint = '/simple_articles.php';
-																		break;
-			}
 
-		console.log('请求URL:', `${API_BASE_URL}${endpoint}`);
-		const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+		// 端点到 API 映射（大部分菜单只需 endpoint）
+			const endpointMap = {
+				user: '/admin_users.php',
+				content: `/admin_content.php?page=${currentPage}&limit=${currentLimit}`,
+				stats: '/admin_stats.php',
+				carousel: '/admin_carousels.php',
+				version: '/get_versions.php',
+				recommendation: '/admin_recommendations.php',
+				user_profile: '/user_profile.php?action=profile',
+				content_similarity: '/user_profile.php?action=content_similarity',
+				article: '/simple_articles.php',
+				feedback: `/admin_feedback.php?page=${currentPage}&limit=${currentLimit}`,
+			};
+
+			let endpoint = endpointMap[currentMenu] || '';
+
+			// 需要额外处理参数的菜单
+			if (currentMenu === 'logs') {
+				const logTypeFilter = document.getElementById('logTypeFilter');
+				const logUserIdFilter = document.getElementById('logUserIdFilter');
+				const fType = logTypeFilter ? logTypeFilter.value : '';
+				const fUserId = logUserIdFilter ? logUserIdFilter.value : '';
+				let qs = `page=${currentPage}&limit=${currentLimit}`;
+				if (fType) qs += `&type=${fType}`;
+				if (fUserId) qs += `&user_id=${fUserId}`;
+				endpoint = `/admin_logs.php?${qs}`;
+					} else if (currentMenu === 'announcement') {
+						endpoint = '/announcements.php';
+						method = 'POST';
+						data = { action: 'get_announcements' };
+					}
+
+					const response = await fetch(`${API_BASE_URL}${endpoint}`, {
 			method: method,
 			credentials: 'include',
 			headers: data ? { 'Content-Type': 'application/json' } : {},
 			body: data ? JSON.stringify(data) : null
 		});
 
-		console.log('响应状态:', response.status);
-		console.log('响应头:', Object.fromEntries(response.headers.entries()));
 
 		// 尝试读取响应文本
 		const responseText = await response.text();
-		console.log('响应文本:', responseText);
 
 		// 检查响应是否为空
 		if (!responseText || responseText.trim() === '') {
@@ -774,7 +737,6 @@ async function loadData() {
 		let result;
 		try {
 			result = JSON.parse(responseText);
-			console.log('解析后的API响应:', result);
 		} catch (parseError) {
 			console.error('JSON解析错误:', parseError);
 			console.error('响应文本:', responseText);
@@ -798,10 +760,8 @@ async function loadData() {
 				currentData = result.data || [];
 			}
 			totalItems = result.total || 0;
-			console.log('currentData已更新:', currentData);
-			console.log('总数据量:', totalItems);
 			renderTable();
-			if (currentMenu === 'logs' || currentMenu === 'content') {
+			if (currentMenu === 'logs' || currentMenu === 'content' || currentMenu === 'feedback') {
 				renderPagination();
 			}
 		} else {
@@ -900,436 +860,452 @@ function renderPagination() {
 
 function renderTable() {
 	let html = '';
-
-	if (currentMenu === 'user') {
-		html = currentData.map(item => `
-			<div class="table-row">
-				<div class="table-cell cell-id">${item.id}</div>
-				<div class="table-cell cell-avatar">
-					${item.avatar ? `<img src="${item.avatar}" alt="${item.username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
-				</div>
-				<div class="table-cell cell-username">${item.username}</div>
-				<div class="table-cell cell-nickname">${item.nickname || '-'}</div>
-				<div class="table-cell cell-role">
-					<span class="role-badge ${item.role === 'admin' ? 'role-admin' : 'role-user'}">
-						${item.role === 'admin' ? '管理员' : '普通用户'}
-					</span>
-				</div>
-				<div class="table-cell cell-time">${item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
-				<div class="table-cell cell-actions">
-					<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
-					<button class="btn btn-sm btn-edit-avatar" data-id="${item.id}">修改头像</button>
-					<button class="btn btn-sm btn-edit-bg" data-id="${item.id}">修改背景</button>
-					<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-				</div>
-			</div>
-		`).join('');
-	} else if (currentMenu === 'follow') {
-		html = currentData.map(item => `
-			<div class="table-row">
-				<div class="table-cell cell-id">${item.id}</div>
-				<div class="table-cell cell-follower">
-					<div class="user-info">
-						${item.follower_avatar ? `<img src="${item.follower_avatar}" alt="${item.follower_username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
-						<div class="user-details">
-							<div class="username">${item.follower_username}</div>
-							<div class="nickname">${item.follower_nickname || '-'}</div>
-						</div>
-					</div>
-				</div>
-				<div class="table-cell cell-following">
-					<div class="user-info">
-						${item.following_avatar ? `<img src="${item.following_avatar}" alt="${item.following_username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
-						<div class="user-details">
-							<div class="username">${item.following_username}</div>
-							<div class="nickname">${item.following_nickname || '-'}</div>
-						</div>
-					</div>
-				</div>
-				<div class="table-cell cell-time">${item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
-				<div class="table-cell cell-actions">
-					<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-				</div>
-			</div>
-		`).join('');
-	} else if (currentMenu === 'content') {
+	switch (currentMenu) {
+		case 'user':
 			html = currentData.map(item => `
-				<div class="table-row">
-					<div class="table-cell cell-id">${item.id}</div>
-					<div class="table-cell cell-publisher">
-						<div class="user-info">
-							${item.avatar ? `<img src="${item.avatar}" alt="${item.username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
-							<div class="user-details">
-								<div class="username">${item.username}</div>
-								<div class="nickname">${item.nickname || '-'}</div>
-							</div>
-						</div>
-					</div>
-					<div class="table-cell cell-title">${item.title || '-'}</div>
-					<div class="table-cell cell-image">
-						${item.image_url ? `<img src="${item.image_url}" alt="${item.title}" class="content-thumb">` : '<div class="no-image">无图片</div>'}
-					</div>
-					<div class="table-cell cell-content">${item.content ? item.content.substring(0, 100) + (item.content.length > 100 ? '...' : '') : '-'}</div>
-					<div class="table-cell cell-likes">${item.likes || 0}</div>
-					<div class="table-cell cell-comments">${item.comments || 0}</div>
-					<div class="table-cell cell-time">${item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
-					<div class="table-cell cell-actions">
-						<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
-						<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-					</div>
-				</div>
+			<div class="table-row">
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-avatar">
+			${item.avatar ? `<img src="${item.avatar}" alt="${item.username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
+			</div>
+			<div class="table-cell cell-username">${item.username}</div>
+			<div class="table-cell cell-nickname">${item.nickname || '-'}</div>
+			<div class="table-cell cell-role">
+			<span class="role-badge ${item.role === 'admin' ? 'role-admin' : 'role-user'}">
+			${item.role === 'admin' ? '管理员' : '普通用户'}
+			</span>
+			</div>
+			<div class="table-cell cell-time">${item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
+			<button class="btn btn-sm btn-edit-avatar" data-id="${item.id}">修改头像</button>
+			<button class="btn btn-sm btn-edit-bg" data-id="${item.id}">修改背景</button>
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
+			</div>
+			</div>
 			`).join('');
-		} else if (currentMenu === 'message') {
-		html = currentData.map(item => `
+			break;
+		case 'content':
+			html = currentData.map(item => `
 			<div class="table-row">
-				<div class="table-cell cell-id">${item.id}</div>
-				<div class="table-cell cell-sender">
-					<div class="user-info">
-						${item.sender_avatar ? `<img src="${item.sender_avatar}" alt="${item.sender_username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
-						<div class="user-details">
-							<div class="username">${item.sender_username}</div>
-							<div class="nickname">${item.sender_nickname || '-'}</div>
-						</div>
-					</div>
-				</div>
-				<div class="table-cell cell-receiver">
-					<div class="user-info">
-						${item.receiver_avatar ? `<img src="${item.receiver_avatar}" alt="${item.receiver_username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
-						<div class="user-details">
-							<div class="username">${item.receiver_username}</div>
-							<div class="nickname">${item.receiver_nickname || '-'}</div>
-						</div>
-					</div>
-				</div>
-				<div class="table-cell cell-message-content">${item.content ? item.content.substring(0, 100) + (item.content.length > 100 ? '...' : '') : '-'}</div>
-				<div class="table-cell cell-time">${item.created_at ? item.created_at : '-'}</div>
-				<div class="table-cell cell-actions">
-					<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-				</div>
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-publisher">
+			<div class="user-info">
+			${item.avatar ? `<img src="${item.avatar}" alt="${item.username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
+			<div class="user-details">
+			<div class="username">${item.username}</div>
+			<div class="nickname">${item.nickname || '-'}</div>
 			</div>
-		`).join('');
-	} else if (currentMenu === 'stats') {
-		// 渲染数据统计页面
-		if (currentData && typeof currentData === 'object') {
+			</div>
+			</div>
+			<div class="table-cell cell-title">${item.title || '-'}</div>
+			<div class="table-cell cell-image">
+			${item.image_url ? `<img src="${item.image_url}" alt="${item.title}" class="content-thumb">` : '<div class="no-image">无图片</div>'}
+			</div>
+			<div class="table-cell cell-content">${item.content ? item.content.substring(0, 100) + (item.content.length > 100 ? '...' : '') : '-'}</div>
+			<div class="table-cell cell-likes">${item.likes || 0}</div>
+			<div class="table-cell cell-comments">${item.comments || 0}</div>
+			<div class="table-cell cell-time">${item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
+			</div>
+			</div>
+			`).join('');
+			break;
+		case 'message':
+			html = currentData.map(item => `
+			<div class="table-row">
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-sender">
+			<div class="user-info">
+			${item.sender_avatar ? `<img src="${item.sender_avatar}" alt="${item.sender_username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
+			<div class="user-details">
+			<div class="username">${item.sender_username}</div>
+			<div class="nickname">${item.sender_nickname || '-'}</div>
+			</div>
+			</div>
+			</div>
+			<div class="table-cell cell-receiver">
+			<div class="user-info">
+			${item.receiver_avatar ? `<img src="${item.receiver_avatar}" alt="${item.receiver_username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
+			<div class="user-details">
+			<div class="username">${item.receiver_username}</div>
+			<div class="nickname">${item.receiver_nickname || '-'}</div>
+			</div>
+			</div>
+			</div>
+			<div class="table-cell cell-message-content">${item.content ? item.content.substring(0, 100) + (item.content.length > 100 ? '...' : '') : '-'}</div>
+			<div class="table-cell cell-time">${item.created_at ? item.created_at : '-'}</div>
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
+			</div>
+			</div>
+			`).join('');
+			break;
+		case 'stats':
+			// 渲染数据统计页面
+			if (currentData && typeof currentData === 'object') {
 			html = `
-				<div class="stats-container">
-					<div class="stats-cards">
-						<div class="stats-card">
-							<div class="stats-card-title">用户总数</div>
-							<div class="stats-card-value">${currentData.total_users || 0}</div>
-						</div>
-						<div class="stats-card">
-							<div class="stats-card-title">今日新增用户</div>
-							<div class="stats-card-value">${currentData.today_users || 0}</div>
-						</div>
-						<div class="stats-card">
-							<div class="stats-card-title">关注关系总数</div>
-							<div class="stats-card-value">${currentData.total_follows || 0}</div>
-						</div>
-						<div class="stats-card">
-							<div class="stats-card-title">内容总数</div>
-							<div class="stats-card-value">${currentData.total_content || 0}</div>
-						</div>
-						<div class="stats-card">
-							<div class="stats-card-title">消息总数</div>
-							<div class="stats-card-value">${currentData.total_messages || 0}</div>
-						</div>
-					</div>
-					<div class="stats-charts">
-						<div class="chart-section">
-							<h3>近7天用户增长</h3>
-							<div class="chart-container">
-								<div class="user-growth-chart">
-									${currentData.user_growth ? currentData.user_growth.map(item => `
-										<div class="chart-bar" style="height: ${Math.max(item.count * 10, 20)}px;">
-											<div class="chart-bar-label">${item.date.split('-')[2]}</div>
-											<div class="chart-bar-value">${item.count}</div>
-										</div>
-									`).join('') : '<div class="no-data">暂无数据</div>'}
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+			<div class="stats-container">
+			<div class="stats-cards">
+			<div class="stats-card">
+			<div class="stats-card-title">用户总数</div>
+			<div class="stats-card-value">${currentData.total_users || 0}</div>
+			</div>
+			<div class="stats-card">
+			<div class="stats-card-title">今日新增用户</div>
+			<div class="stats-card-value">${currentData.today_users || 0}</div>
+			</div>
+			<div class="stats-card">
+			<div class="stats-card-title">关注关系总数</div>
+			<div class="stats-card-value">${currentData.total_follows || 0}</div>
+			</div>
+			<div class="stats-card">
+			<div class="stats-card-title">内容总数</div>
+			<div class="stats-card-value">${currentData.total_content || 0}</div>
+			</div>
+			<div class="stats-card">
+			<div class="stats-card-title">消息总数</div>
+			<div class="stats-card-value">${currentData.total_messages || 0}</div>
+			</div>
+			</div>
+			<div class="stats-charts">
+			<div class="chart-section">
+			<h3>近7天用户增长</h3>
+			<div class="chart-container">
+			<div class="user-growth-chart">
+			${currentData.user_growth ? currentData.user_growth.map(item => `
+			<div class="chart-bar" style="height: ${Math.max(item.count * 10, 20)}px;">
+			<div class="chart-bar-label">${item.date.split('-')[2]}</div>
+			<div class="chart-bar-value">${item.count}</div>
+			</div>
+			`).join('') : '<div class="no-data">暂无数据</div>'}
+			</div>
+			</div>
+			</div>
+			</div>
+			</div>
 			`;
-		} else {
+			} else {
 			html = `
-				<div class="stats-container">
-					<div class="stats-cards">
-						<div class="stats-card">
-							<div class="stats-card-title">用户总数</div>
-							<div class="stats-card-value">0</div>
-						</div>
-						<div class="stats-card">
-							<div class="stats-card-title">今日新增用户</div>
-							<div class="stats-card-value">0</div>
-						</div>
-						<div class="stats-card">
-							<div class="stats-card-title">关注关系总数</div>
-							<div class="stats-card-value">0</div>
-						</div>
-						<div class="stats-card">
-							<div class="stats-card-title">内容总数</div>
-							<div class="stats-card-value">0</div>
-						</div>
-						<div class="stats-card">
-							<div class="stats-card-title">消息总数</div>
-							<div class="stats-card-value">0</div>
-						</div>
-					</div>
-					<div class="stats-charts">
-						<div class="chart-section">
-							<h3>近7天用户增长</h3>
-							<div class="chart-container">
-								<div class="user-growth-chart">
-									<div class="no-data">暂无数据</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+			<div class="stats-container">
+			<div class="stats-cards">
+			<div class="stats-card">
+			<div class="stats-card-title">用户总数</div>
+			<div class="stats-card-value">0</div>
+			</div>
+			<div class="stats-card">
+			<div class="stats-card-title">今日新增用户</div>
+			<div class="stats-card-value">0</div>
+			</div>
+			<div class="stats-card">
+			<div class="stats-card-title">关注关系总数</div>
+			<div class="stats-card-value">0</div>
+			</div>
+			<div class="stats-card">
+			<div class="stats-card-title">内容总数</div>
+			<div class="stats-card-value">0</div>
+			</div>
+			<div class="stats-card">
+			<div class="stats-card-title">消息总数</div>
+			<div class="stats-card-value">0</div>
+			</div>
+			</div>
+			<div class="stats-charts">
+			<div class="chart-section">
+			<h3>近7天用户增长</h3>
+			<div class="chart-container">
+			<div class="user-growth-chart">
+			<div class="no-data">暂无数据</div>
+			</div>
+			</div>
+			</div>
+			</div>
+			</div>
 			`;
-		}
-	} else if (currentMenu === 'logs') {
-		// 渲染系统日志页面
-		html = currentData.map(item => `
+			}
+			break;
+		case 'logs':
+			// 渲染系统日志页面
+			html = currentData.map(item => `
 			<div class="table-row">
-				<div class="table-cell cell-id">${item.id}</div>
-				<div class="table-cell cell-username">${item.username || '-'}</div>
-				<div class="table-cell cell-type">${item.type || '-'}</div>
-				<div class="table-cell cell-action">${item.action || '-'}</div>
-				<div class="table-cell cell-message">${item.message || '-'}</div>
-				<div class="table-cell cell-ip">${item.ip_address || '-'}</div>
-				<div class="table-cell cell-time">${item.created_at || '-'}</div>
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-username">${item.username || '-'}</div>
+			<div class="table-cell cell-type">${item.type || '-'}</div>
+			<div class="table-cell cell-action">${item.action || '-'}</div>
+			<div class="table-cell cell-message">${item.message || '-'}</div>
+			<div class="table-cell cell-ip">${item.ip_address || '-'}</div>
+			<div class="table-cell cell-time">${item.created_at || '-'}</div>
 			</div>
-		`).join('');
-	} else if (currentMenu === 'carousel') {
-		html = currentData.map(item => `
+			`).join('');
+			break;
+		case 'carousel':
+			html = currentData.map(item => `
 			<div class="table-row">
-				<div class="table-cell cell-id">${item.id}</div>
-				<div class="table-cell cell-title">${item.title}</div>
-				<div class="table-cell cell-author">${item.author || '-'}</div>
-				<div class="table-cell cell-image">
-					<img class="carousel-thumb" src="${item.image_url}" alt="${item.title}">
-				</div>
-				<div class="table-cell cell-sort">${item.sort_order}</div>
-				<div class="table-cell cell-actions">
-					<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
-					<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-				</div>
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-title">${item.title}</div>
+			<div class="table-cell cell-author">${item.author || '-'}</div>
+			<div class="table-cell cell-image">
+			<img class="carousel-thumb" src="${item.image_url}" alt="${item.title}">
 			</div>
-		`).join('');
-	} else if (currentMenu === 'version') {
-		html = currentData.map(item => `
+			<div class="table-cell cell-sort">${item.sort_order}</div>
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
+			</div>
+			</div>
+			`).join('');
+			break;
+		case 'version':
+			html = currentData.map(item => `
 			<div class="table-row">
-				<div class="table-cell cell-id">${item.id}</div>
-				<div class="table-cell cell-version">v${item.version}</div>
-				<div class="table-cell cell-desc">${item.description || '-'}</div>
-				<div class="table-cell cell-date">${item.createTime}</div>
-				<div class="table-cell cell-actions">
-					<a href="${item.downloadUrl}" class="btn btn-sm btn-download" download>下载</a>
-					<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-				</div>
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-version">v${item.version}</div>
+			<div class="table-cell cell-desc">${item.description || '-'}</div>
+			<div class="table-cell cell-date">${item.createTime}</div>
+			<div class="table-cell cell-actions">
+			<a href="${item.downloadUrl}" class="btn btn-sm btn-download" download>下载</a>
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
 			</div>
-		`).join('');
-	} else if (currentMenu === 'announcement') {
-		html = currentData.map(item => `
+			</div>
+			`).join('');
+			break;
+		case 'announcement':
+			html = currentData.map(item => `
 			<div class="table-row">
-				<div class="table-cell cell-id">${item.id}</div>
-				<div class="table-cell cell-title">${item.title}</div>
-				<div class="table-cell cell-content">${item.content.substring(0, 50)}${item.content.length > 50 ? '...' : ''}</div>
-				<div class="table-cell cell-date">${item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
-				<div class="table-cell cell-actions">
-					<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-				</div>
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-title">${item.title}</div>
+			<div class="table-cell cell-content">${item.content.substring(0, 50)}${item.content.length > 50 ? '...' : ''}</div>
+			<div class="table-cell cell-date">${item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
 			</div>
-		`).join('');
-	} else if (currentMenu === 'recommendation') {
-		html = currentData.map(item => `
+			</div>
+			`).join('');
+			break;
+		case 'recommendation':
+			html = currentData.map(item => `
 			<div class="table-row">
-				<div class="table-cell cell-id">${item.id || '-'}</div>
-				<div class="table-cell cell-type">${item.algorithm_name || item.algorithm || '-'}</div>
-				<div class="table-cell cell-shows">${item.shows || 0}</div>
-				<div class="table-cell cell-clicks">${item.clicks || 0}</div>
-				<div class="table-cell cell-ctr">${(item.ctr * 100).toFixed(2)}%</div>
-				<div class="table-cell cell-status">
-					<span class="status-badge ${item.enabled ? 'status-active' : 'status-inactive'}">
-						${item.enabled ? '启用' : '禁用'}
-					</span>
-				</div>
-				<div class="table-cell cell-actions">
-					<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
-					<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-				</div>
+			<div class="table-cell cell-id">${item.id || '-'}</div>
+			<div class="table-cell cell-type">${item.algorithm_name || item.algorithm || '-'}</div>
+			<div class="table-cell cell-shows">${item.shows || 0}</div>
+			<div class="table-cell cell-clicks">${item.clicks || 0}</div>
+			<div class="table-cell cell-ctr">${(item.ctr * 100).toFixed(2)}%</div>
+			<div class="table-cell cell-status">
+			<span class="status-badge ${item.enabled ? 'status-active' : 'status-inactive'}">
+			${item.enabled ? '启用' : '禁用'}
+			</span>
 			</div>
-		`).join('');
-	} else if (currentMenu === 'user_profile') {
-		// 渲染用户画像分析页面
-		if (Array.isArray(currentData)) {
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
+			</div>
+			</div>
+			`).join('');
+			break;
+		case 'user_profile':
+			// 渲染用户画像分析页面
+			if (Array.isArray(currentData)) {
 			// 当返回的是用户列表时，显示表格
 			html = `
-				<div class="user-profile-list-container">
-					<div class="table-body">
-						${currentData.map(user => `
-							<div class="table-row">
-								<div class="table-cell cell-id">${user.user_id}</div>
-								<div class="table-cell cell-username">${user.basic_info.username || '未知用户'}</div>
-								<div class="table-cell cell-nickname">${user.basic_info.nickname || '无'}</div>
-								<div class="table-cell cell-behaviors">${user.behavior_stats ? user.behavior_stats.total_behaviors || 0 : 0}</div>
-								<div class="table-cell cell-tags">
-											${user.preferred_tags && user.preferred_tags.length > 0 ? 
-												user.preferred_tags.slice(0, 3).map(tag => `<span class="tag-item">${tag.tag || tag}</span>`).join(' ') : 
-												'无'
-											}
-										</div>
-								<div class="table-cell cell-time">${user.basic_info.created_at ? user.basic_info.created_at : '未知'}</div>
-								<div class="table-cell cell-actions">
-									<button class="btn btn-sm btn-edit" data-id="${user.user_id}">查看详情</button>
-								</div>
-							</div>
-						`).join('')}
-					</div>
-				</div>
+			<div class="user-profile-list-container">
+			<div class="table-body">
+			${currentData.map(user => `
+			<div class="table-row">
+			<div class="table-cell cell-id">${user.user_id}</div>
+			<div class="table-cell cell-username">${user.basic_info?.username || '未知用户'}</div>
+			<div class="table-cell cell-nickname">${user.basic_info?.nickname || '无'}</div>
+			<div class="table-cell cell-behaviors">${user.behavior_stats ? user.behavior_stats.total_behaviors || 0 : 0}</div>
+			<div class="table-cell cell-tags">
+			${user.preferred_tags && user.preferred_tags.length > 0 ?
+			user.preferred_tags.slice(0, 3).map(tag => `<span class="tag-item">${tag.tag || tag.score || tag}</span>`).join(' ') :
+			'无'
+			}
+			</div>
+			<div class="table-cell cell-time">${user.basic_info?.created_at || '未知'}</div>
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-edit" data-id="${user.user_id}">查看详情</button>
+			</div>
+			</div>
+			`).join('')}
+			</div>
+			</div>
 			`;
-		} else if (currentData.basic_info) {
+			} else if (currentData.basic_info) {
 			// 当返回的是单个用户画像时，显示详细信息
 			html = `
-				<div class="user-profile-container">
-					<div class="profile-section">
-						<h3>用户基本信息</h3>
-						<div class="profile-info">
-							<div class="info-item">
-								<span class="info-label">用户ID:</span>
-								<span class="info-value">${currentData.user_id}</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">用户名:</span>
-								<span class="info-value">${currentData.basic_info.username || '未知用户'}</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">昵称:</span>
-								<span class="info-value">${currentData.basic_info.nickname || '无'}</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">注册时间:</span>
-								<span class="info-value">${currentData.basic_info.created_at ? currentData.basic_info.created_at : '未知'}</span>
-							</div>
-						</div>
-					</div>
-					
-					<div class="profile-section">
-						<h3>行为统计</h3>
-						<div class="behavior-stats">
-							<div class="stats-item">
-								<span class="stats-label">总行为次数:</span>
-								<span class="stats-value">${currentData.behavior_stats ? currentData.behavior_stats.total_behaviors || 0 : 0}</span>
-							</div>
-							<div class="stats-item">
-								<span class="stats-label">行为类型:</span>
-								<span class="stats-value">${currentData.behavior_stats ? currentData.behavior_stats.behavior_types.length || 0 : 0}种</span>
-							</div>
-						</div>
-					</div>
-					
-					<div class="profile-section">
-						<h3>偏好标签</h3>
-						<div class="preferred-tags">
-							${currentData.preferred_tags && currentData.preferred_tags.length > 0 ? 
-								currentData.preferred_tags.map(tag => `
-									<div class="tag-item">
-										<span class="tag-name">${tag.tag}</span>
-										<span class="tag-count">${tag.count}次</span>
-									</div>
-								`).join('') : 
-								'<div class="no-data">暂无偏好标签</div>'
-							}
-						</div>
-					</div>
-					
-					<div class="profile-section">
-						<h3>偏好内容</h3>
-						<div class="preferred-content">
-							${currentData.preferred_content && currentData.preferred_content.length > 0 ? 
-								currentData.preferred_content.map(item => `
-									<div class="content-item">
-										<div class="content-info">
-											<h4>${item.content_info && item.content_info.title ? item.content_info.title : item.title || '未知内容'}</h4>
-											<p>交互次数: ${item.interaction_count}次</p>
-										</div>
-									</div>
-								`).join('') : 
-								'<div class="no-data">暂无偏好内容</div>'
-							}
-						</div>
-					</div>
-				</div>
-			`;
-		} else {
-			html = '<div class="no-data">暂无用户画像数据</div>';
-		}
-	} else if (currentMenu === 'content_similarity') {
-		// 渲染内容相似度分析页面
-		if (currentData.recommendations && currentData.recommendations.length > 0) {
-			html = `
-				<div class="content-similarity-container">
-					<div class="similarity-section">
-						
-						<div class="table-body">
-							${currentData.recommendations.map((content, index) => `
-								<div class="table-row">
-									<div class="table-cell cell-id">${content.id}</div>
-										<div class="table-cell cell-content1">
-											<div class="content-info">
-												<h4>${content.title || '无标题'}</h4>
-												<p>作者: ${content.username || '未知用户'}</p>
-											</div>
-										</div>
-										<div class="table-cell cell-image">
-											${content.image_url ? `<img src="${content.image_url}" alt="内容图片" class="content-thumb">` : '<div class="no-image">无图片</div>'}
-										</div>
-										<div class="table-cell cell-similarity">${(content.similarity || 0).toFixed(4)}</div>
-										<div class="table-cell cell-tag-similarity">${(content.tag_similarity || 0).toFixed(4)}</div>
-										<div class="table-cell cell-category-similarity">${(content.category_similarity || 0).toFixed(4)}</div>
-										<div class="table-cell cell-actions">
-											<button class="btn btn-sm btn-edit" data-id="${content.id}">查看详情</button>
-										</div>
-								</div>
-							`).join('')}
-						</div>
-					</div>
-				</div>
-			`;
-		} else {
-			html = '<div class="no-data">暂无内容相似度数据</div>';
-		}
-	} else if (currentMenu === 'article') {
-		// 渲染文章管理页面
-		html = currentData.map(item => `
-			<div class="table-row">
-				<div class="table-cell cell-id">${item.id}</div>
-				<div class="table-cell cell-title">${item.title || '-'}</div>
-				<div class="table-cell cell-author">${item.author || item.username || '未知'}</div>
-				<div class="table-cell cell-date">${item.date ? item.date.split(' ')[0] : item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
-				<div class="table-cell cell-status">
-					<span class="status-badge ${item.status === 'published' ? 'status-active' : 'status-inactive'}">
-						${item.status === 'published' ? '已发布' : '草稿'}
-					</span>
-				</div>
-				<div class="table-cell cell-actions">
-					<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
-					<button class="btn btn-sm btn-top" data-id="${item.id}">置顶</button>
-					<button class="btn btn-sm btn-recommend" data-id="${item.id}">推荐</button>
-					<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
-				</div>
+			<div class="user-profile-container">
+			<div class="profile-section">
+			<h3>用户基本信息</h3>
+			<div class="profile-info">
+			<div class="info-item">
+			<span class="info-label">用户ID:</span>
+			<span class="info-value">${currentData.user_id}</span>
 			</div>
-		`).join('');
-		if (html === '') {
+			<div class="info-item">
+			<span class="info-label">用户名:</span>
+			<span class="info-value">${currentData.basic_info?.username || '未知用户'}</span>
+			</div>
+			<div class="info-item">
+			<span class="info-label">昵称:</span>
+			<span class="info-value">${currentData.basic_info?.nickname || '无'}</span>
+			</div>
+			<div class="info-item">
+			<span class="info-label">注册时间:</span>
+			<span class="info-value">${currentData.basic_info?.created_at || '未知'}</span>
+			</div>
+			</div>
+			</div>
+			<div class="profile-section">
+			<h3>行为统计</h3>
+			<div class="behavior-stats">
+			<div class="stats-item">
+			<span class="stats-label">总行为次数:</span>
+			<span class="stats-value">${currentData.behavior_stats ? currentData.behavior_stats.total_behaviors || 0 : 0}</span>
+			</div>
+			<div class="stats-item">
+			<span class="stats-label">行为类型:</span>
+			<span class="stats-value">${currentData.behavior_stats ? currentData.behavior_stats.behavior_types.length || 0 : 0}种</span>
+			</div>
+			</div>
+			</div>
+			<div class="profile-section">
+			<h3>偏好标签</h3>
+			<div class="preferred-tags">
+			${currentData.preferred_tags && currentData.preferred_tags.length > 0 ?
+			currentData.preferred_tags.map(tag => `
+			<div class="tag-item">
+			<span class="tag-name">${tag.tag}</span>
+			<span class="tag-count">${tag.count}次</span>
+			</div>
+			`).join('') :
+			'<div class="no-data">暂无偏好标签</div>'
+			}
+			</div>
+			</div>
+			<div class="profile-section">
+			<h3>偏好内容</h3>
+			<div class="preferred-content">
+			${currentData.preferred_content && currentData.preferred_content.length > 0 ?
+			currentData.preferred_content.map(item => `
+			<div class="content-item">
+			<div class="content-info">
+			<h4>${item.content_info && item.content_info.title ? item.content_info.title : item.title || '未知内容'}</h4>
+			<p>交互次数: ${item.interaction_count}次</p>
+			</div>
+			</div>
+			`).join('') :
+			'<div class="no-data">暂无偏好内容</div>'
+			}
+			</div>
+			</div>
+			</div>
+			`;
+			} else {
+			html = '<div class="no-data">暂无用户画像数据</div>';
+			}
+			break;
+		case 'content_similarity':
+			// 渲染内容相似度分析页面
+			if (currentData.recommendations && currentData.recommendations.length > 0) {
+			html = `
+			<div class="content-similarity-container">
+			<div class="similarity-section">
+			<div class="table-body">
+			${currentData.recommendations.map((content, index) => `
+			<div class="table-row">
+			<div class="table-cell cell-id">${content.id}</div>
+			<div class="table-cell cell-content1">
+			<div class="content-info">
+			<h4>${content.title || '无标题'}</h4>
+			<p>作者: ${content.username || '未知用户'}</p>
+			</div>
+			</div>
+			<div class="table-cell cell-image">
+			${content.image_url ? `<img src="${content.image_url}" alt="内容图片" class="content-thumb">` : '<div class="no-image">无图片</div>'}
+			</div>
+			<div class="table-cell cell-similarity">${(content.similarity || 0).toFixed(4)}</div>
+			<div class="table-cell cell-tag-similarity">${(content.tag_similarity || 0).toFixed(4)}</div>
+			<div class="table-cell cell-category-similarity">${(content.category_similarity || 0).toFixed(4)}</div>
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-edit" data-id="${content.id}">查看详情</button>
+			</div>
+			</div>
+			`).join('')}
+			</div>
+			</div>
+			</div>
+			`;
+			} else {
+			html = '<div class="no-data">暂无内容相似度数据</div>';
+			}
+			break;
+		case 'article':
+			// 渲染文章管理页面
+			html = currentData.map(item => `
+			<div class="table-row">
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-title">${item.title || '-'}</div>
+			<div class="table-cell cell-author">${item.author || item.username || '未知'}</div>
+			<div class="table-cell cell-date">${item.date ? item.date.split(' ')[0] : item.created_at ? item.created_at.split(' ')[0] : '-'}</div>
+			<div class="table-cell cell-status">
+			<span class="status-badge ${item.status === 'published' ? 'status-active' : 'status-inactive'}">
+			${item.status === 'published' ? '已发布' : '草稿'}
+			</span>
+			</div>
+			<div class="table-cell cell-actions">
+			<button class="btn btn-sm btn-edit" data-id="${item.id}">编辑</button>
+			<button class="btn btn-sm btn-top" data-id="${item.id}">置顶</button>
+			<button class="btn btn-sm btn-recommend" data-id="${item.id}">推荐</button>
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
+			</div>
+			</div>
+			`).join('');
+			if (html === '') {
 			html = '<div class="no-data">暂无文章数据</div>';
+			}
+			break;
+		case 'feedback':
+			const statusMap = { 0: '未读', 1: '已读', 2: '已处理' };
+			const statusClass = { 0: 'status-inactive', 1: '', 2: 'status-active' };
+			html = currentData.map(item => `
+			<div class="table-row">
+			<div class="table-cell cell-id">${item.id}</div>
+			<div class="table-cell cell-username">
+			<div class="user-info">
+			${item.avatar ? `<img src="${item.avatar}" alt="${item.username}" class="avatar-small">` : '<div class="avatar-placeholder">暂无</div>'}
+			<div class="user-details">
+			<div class="username">${item.nickname || item.username || '未知'}</div>
+			<div class="nickname">ID: ${item.user_id}</div>
+			</div>
+			</div>
+			</div>
+			<div class="table-cell cell-type">${item.type}</div>
+			<div class="table-cell cell-content">${item.content ? item.content.substring(0, 80) + (item.content.length > 80 ? '...' : '') : '-'}</div>
+			<div class="table-cell cell-contact">${item.contact || '-'}</div>
+			<div class="table-cell cell-status">
+			<span class="status-badge ${statusClass[item.status] || 'status-inactive'}">
+			${statusMap[item.status] || '未知'}
+			</span>
+			</div>
+			<div class="table-cell cell-time">${item.created_at ? item.created_at.substring(0, 16) : '-'}</div>
+			<div class="table-cell cell-actions">
+			${item.status == 0 ? '<button class="btn btn-sm btn-read" data-id="' + item.id + '">标记已读</button>' : ''}
+			${item.status != 2 ? '<button class="btn btn-sm btn-process" data-id="' + item.id + '">标记已处理</button>' : ''}
+			<button class="btn btn-sm btn-delete" data-id="${item.id}">删除</button>
+			</div>
+			</div>
+			`).join('');
+			if (html === '') {
+			html = '<div class="no-data">暂无反馈数据</div>';
 		}
+		break;
 	}
 
 	tableBody.innerHTML = html;
 	bindTableEvents();
+
 }
 
 function bindTableEvents() {
@@ -1339,18 +1315,12 @@ function bindTableEvents() {
 	const deleteButtons = document.querySelectorAll('.btn-delete');
 	const topButtons = document.querySelectorAll('.btn-top');
 	const recommendButtons = document.querySelectorAll('.btn-recommend');
+	const readButtons = document.querySelectorAll('.btn-read');
+	const processButtons = document.querySelectorAll('.btn-process');
 
-	console.log('找到编辑按钮数量:', editButtons.length);
-	console.log('找到修改头像按钮数量:', editAvatarButtons.length);
-	console.log('找到修改背景按钮数量:', editBgButtons.length);
-	console.log('找到删除按钮数量:', deleteButtons.length);
-	console.log('找到置顶按钮数量:', topButtons.length);
-	console.log('找到推荐按钮数量:', recommendButtons.length);
 
 	editButtons.forEach((btn, index) => {
-		console.log('绑定编辑按钮:', index, btn.dataset.id);
 		btn.addEventListener('click', (e) => {
-			console.log('点击编辑按钮:', e.target.dataset.id);
 			const id = parseInt(e.target.dataset.id);
 			if (currentMenu === 'user_profile') {
 				// 用户画像页面的编辑按钮（查看详情）
@@ -1366,86 +1336,80 @@ function bindTableEvents() {
 	});
 
 	editAvatarButtons.forEach((btn, index) => {
-		console.log('绑定修改头像按钮:', index, btn.dataset.id);
 		btn.addEventListener('click', (e) => {
-			console.log('点击修改头像按钮:', e.target.dataset.id);
 			const id = parseInt(e.target.dataset.id);
 			handleEditAvatar(id);
 		});
 	});
 
 	editBgButtons.forEach((btn, index) => {
-		console.log('绑定修改背景按钮:', index, btn.dataset.id);
 		btn.addEventListener('click', (e) => {
-			console.log('点击修改背景按钮:', e.target.dataset.id);
 			const id = parseInt(e.target.dataset.id);
 			handleEditBg(id);
 		});
 	});
 
 	deleteButtons.forEach((btn, index) => {
-		console.log('绑定删除按钮:', index, btn.dataset.id);
 		btn.addEventListener('click', (e) => {
-			console.log('点击删除按钮:', e.target.dataset.id);
 			const id = parseInt(e.target.dataset.id);
 			handleDelete(id);
 		});
 	});
 
 	topButtons.forEach((btn, index) => {
-		console.log('绑定置顶按钮:', index, btn.dataset.id);
 		btn.addEventListener('click', (e) => {
-			console.log('点击置顶按钮:', e.target.dataset.id);
 			const id = parseInt(e.target.dataset.id);
 			handleTop(id);
 		});
 	});
 
 	recommendButtons.forEach((btn, index) => {
-		console.log('绑定推荐按钮:', index, btn.dataset.id);
 		btn.addEventListener('click', (e) => {
-			console.log('点击推荐按钮:', e.target.dataset.id);
 			const id = parseInt(e.target.dataset.id);
 			handleRecommend(id);
+		});
+	});
+
+	readButtons.forEach((btn, index) => {
+		btn.addEventListener('click', (e) => {
+			const id = parseInt(e.target.dataset.id);
+			handleFeedbackStatus(id, 1);
+		});
+	});
+
+	processButtons.forEach((btn, index) => {
+		btn.addEventListener('click', (e) => {
+			const id = parseInt(e.target.dataset.id);
+			handleFeedbackStatus(id, 2);
 		});
 	});
 }
 
 function handleAdd() {
-	console.log('handleAdd被调用');
 	editingItem = null;
 	modalTitle.textContent = '添加项目';
 	showModal();
 }
 
 function handleEdit(id) {
-	console.log('handleEdit被调用，ID:', id, '类型:', typeof id);
-	console.log('currentData:', currentData);
-	console.log('currentData类型:', typeof currentData);
 
 	// 检查currentData是否为数组
 	if (!Array.isArray(currentData)) {
-		console.log('currentData不是数组，无法执行find操作！');
 		return;
 	}
 
 	if (currentData.length === 0) {
-		console.log('currentData为空数组！');
 		return;
 	}
 
 	const item = currentData.find(d => {
-		console.log('比较:', d.id, '===', id, '结果:', d.id == id);
 		return d.id == id;
 	});
 
 	if (!item) {
-		console.log('未找到项目，ID:', id);
-		console.log('尝试查找所有ID:', currentData.map(d => d.id));
 		return;
 	}
 
-	console.log('找到项目:', item);
 	editingItem = item;
 	
 	if (currentMenu === 'content') {
@@ -1461,7 +1425,6 @@ function handleEdit(id) {
  * @param {Object} content 内容对象
  */
 function showContentDetail(content) {
-	console.log('showContentDetail被调用，内容:', content);
 	modalTitle.textContent = '内容详情';
 	modalBody.innerHTML = `
 		<div class="content-detail">
@@ -1525,61 +1488,50 @@ function showContentDetail(content) {
 }
 
 function handleEditAvatar(id) {
-	console.log('handleEditAvatar被调用，ID:', id);
 
 	// 检查currentData是否为数组
 	if (!Array.isArray(currentData)) {
-		console.log('currentData不是数组，无法执行find操作！');
 		return;
 	}
 
 	if (currentData.length === 0) {
-		console.log('currentData为空数组！');
 		return;
 	}
 
 	const item = currentData.find(d => d.id == id);
 
 	if (!item) {
-		console.log('未找到项目，ID:', id);
 		return;
 	}
 
-	console.log('找到项目:', item);
 	editingItem = item;
 	modalTitle.textContent = '修改头像';
 	showAvatarModal();
 }
 
 function handleEditBg(id) {
-	console.log('handleEditBg被调用，ID:', id);
 
 	// 检查currentData是否为数组
 	if (!Array.isArray(currentData)) {
-		console.log('currentData不是数组，无法执行find操作！');
 		return;
 	}
 
 	if (currentData.length === 0) {
-		console.log('currentData为空数组！');
 		return;
 	}
 
 	const item = currentData.find(d => d.id == id);
 
 	if (!item) {
-		console.log('未找到项目，ID:', id);
 		return;
 	}
 
-	console.log('找到项目:', item);
 	editingItem = item;
 	modalTitle.textContent = '修改背景图片';
 	showBgModal();
 }
 
 function handleTop(id) {
-	console.log('置顶文章:', id);
 	showLoading();
 	fetch(`${API_BASE_URL}/admin_articles.php`, {
 		method: 'PUT',
@@ -1611,7 +1563,6 @@ function handleTop(id) {
 }
 
 function handleRecommend(id) {
-	console.log('推荐文章:', id);
 	showLoading();
 	fetch(`${API_BASE_URL}/admin_articles.php`, {
 		method: 'PUT',
@@ -1647,7 +1598,6 @@ function handleRecommend(id) {
  * @param {number} contentId 内容ID
  */
 function editContent(contentId) {
-	console.log('editContent被调用，内容ID:', contentId);
 	const item = currentData.find(d => d.id == contentId);
 	if (!item) {
 		showToast('未找到对应内容');
@@ -1678,7 +1628,6 @@ function editContent(contentId) {
  * 处理内容修改提交
  */
 async function handleContentUpdate() {
-	console.log('handleContentUpdate被调用');
 	const title = document.getElementById('formTitle').value;
 	const content = document.getElementById('formContent').value;
 	const imageFile = document.getElementById('formImage').files[0];
@@ -1706,7 +1655,6 @@ async function handleContentUpdate() {
 
 			// 尝试读取响应文本
 			const uploadResponseText = await uploadResponse.text();
-			console.log('图片上传响应文本:', uploadResponseText);
 
 			// 检查响应是否为空
 			if (!uploadResponseText || uploadResponseText.trim() === '') {
@@ -1750,7 +1698,6 @@ async function handleContentUpdate() {
 
 		// 尝试读取响应文本
 		const updateResponseText = await updateResponse.text();
-		console.log('内容更新响应文本:', updateResponseText);
 
 		// 检查响应是否为空
 		if (!updateResponseText || updateResponseText.trim() === '') {
@@ -1789,11 +1736,9 @@ async function handleContentUpdate() {
  * @param {number} userId 用户ID
  */
 async function handleUserProfileDetail(userId) {
-	console.log('handleUserProfileDetail被调用，用户ID:', userId);
 	showLoading();
 	try {
 		const endpoint = `/user_profile.php?action=profile&user_id=${userId}`;
-		console.log('请求URL:', `${API_BASE_URL}${endpoint}`);
 		const response = await fetch(`${API_BASE_URL}${endpoint}`, {
 			method: 'GET',
 			credentials: 'include'
@@ -1801,7 +1746,6 @@ async function handleUserProfileDetail(userId) {
 
 		// 尝试读取响应文本
 		const responseText = await response.text();
-		console.log('用户画像响应文本:', responseText);
 
 		// 检查响应是否为空
 		if (!responseText || responseText.trim() === '') {
@@ -1824,11 +1768,9 @@ async function handleUserProfileDetail(userId) {
 			return;
 		}
 
-		console.log('API响应:', result);
 
 		if (result.code === 200) {
 			currentData = result.data;
-			console.log('currentData已更新:', currentData);
 			renderTable();
 		} else {
 			showToast(result.message || '获取用户画像失败');
@@ -1850,7 +1792,6 @@ async function handleUserProfileDetail(userId) {
  * @param {number} contentId 内容ID
  */
 async function handleContentSimilarityDetail(contentId) {
-	console.log('handleContentSimilarityDetail被调用，内容ID:', contentId);
 	showLoading();
 	try {
 		// 从当前数据中查找对应ID的内容
@@ -1954,7 +1895,6 @@ async function handleDelete(id) {
 		let method = 'DELETE';
 		let data = null;
 		
-		console.log('删除项目，ID:', id, '当前菜单:', currentMenu);
 		
 		switch (currentMenu) {
 			case 'user':
@@ -1964,9 +1904,6 @@ async function handleDelete(id) {
 				endpoint = `/admin_content.php?id=${id}`;
 				break;
 			
-			case 'follow':
-				endpoint = `/admin_follows.php?id=${id}`;
-				break;
 			case 'carousel':
 				endpoint = `/admin_carousels.php?id=${id}`;
 				break;
@@ -1988,9 +1925,12 @@ async function handleDelete(id) {
 							endpoint = `/admin_articles.php?id=${id}`;
 							method = 'DELETE';
 							break;
+					case 'feedback':
+							endpoint = `/admin_feedback.php?id=${id}`;
+							method = 'DELETE';
+							break;
 		}
 		
-		console.log('删除请求配置:', { endpoint, method, data });
 
 		const response = await fetch(`${API_BASE_URL}${endpoint}`, {
 			method: method,
@@ -2013,6 +1953,31 @@ async function handleDelete(id) {
 	}
 }
 
+/**
+ * Update feedback status
+ */
+async function handleFeedbackStatus(id, status) {
+	showLoading();
+	try {
+		const response = await fetch(`${API_BASE_URL}/admin_feedback.php`, {
+			method: 'PUT',
+			credentials: 'include',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({id, status})
+		});
+		const result = await response.json();
+		if (result.code === 200) {
+			showToast(result.message, 'success');
+			loadData();
+		} else {
+			showToast(result.message || '操作失败');
+		}
+	} catch (error) {
+		showToast('网络错误');
+	} finally {
+		hideLoading();
+	}
+}
 function showModal() {
 	let formHtml = '';
 
@@ -2148,10 +2113,8 @@ function showModal() {
 		`;
 	}
 
-	console.log('formHtml:', formHtml);
 	modalBody.innerHTML = formHtml;
 	modal.classList.add('show');
-	console.log('modal已显示');
 }
 
 function showAvatarModal() {
@@ -2232,7 +2195,6 @@ async function loadRecommendationMetrics() {
 
 		// 尝试读取响应文本
 		const responseText = await response.text();
-		console.log('推荐系统指标响应文本:', responseText);
 
 		// 检查响应是否为空
 		if (!responseText || responseText.trim() === '') {
@@ -3078,7 +3040,6 @@ async function updateRealTimeData() {
 		
 		// 尝试读取响应文本
 		const responseText = await response.text();
-		console.log('实时数据响应文本:', responseText);
 
 		// 检查响应是否为空
 		if (!responseText || responseText.trim() === '') {
@@ -3579,7 +3540,6 @@ function showAbTestManager() {
 					
 					// 尝试读取响应文本
 					const responseText = await response.text();
-					console.log('A/B测试数据响应文本:', responseText);
 
 					// 检查响应是否为空
 					if (!responseText || responseText.trim() === '') {
@@ -3963,7 +3923,6 @@ function showAbTestManager() {
 							confirmBtn.textContent = '创建中...';
 							
 							// 调试信息
-							console.log('创建A/B测试请求参数:', {
 								test_name: testName,
 								algorithm_a: algorithmA,
 								algorithm_b: algorithmB,
@@ -3980,8 +3939,6 @@ function showAbTestManager() {
 								description: description
 							};
 							
-							console.log('发送请求数据:', requestData);
-							console.log('请求数据JSON格式:', JSON.stringify(requestData));
 							
 							const response = await fetch(API_BASE_URL + '/admin_recommendations.php', {
 						method: 'POST',
@@ -3992,18 +3949,14 @@ function showAbTestManager() {
 					});
 							
 							// 调试信息
-							console.log('创建A/B测试响应状态:', response.status);
-							console.log('响应头:', Object.fromEntries(response.headers.entries()));
 							
 							// 读取响应文本
 							const responseText = await response.text();
-							console.log('响应文本:', responseText);
 							
 							// 尝试解析JSON
 							let result;
 							try {
 								result = JSON.parse(responseText);
-								console.log('创建A/B测试响应数据:', result);
 							} catch (parseError) {
 								console.error('解析响应JSON失败:', parseError);
 								alert('创建A/B测试失败：响应格式错误');
@@ -4291,9 +4244,6 @@ function showAbTestManager() {
 				document.body.appendChild(modal);
 				
 				// 关闭模态框
-				function closeAbTestModal() {
-					modal.remove();
-				}
 				
 				modalClose.addEventListener('click', closeAbTestModal);
 				cancelBtn.addEventListener('click', closeAbTestModal);
@@ -4372,46 +4322,11 @@ function showAbTestManager() {
 }
 
 // 加载A/B测试数据
-async function loadAbTestData() {
-	try {
-		const response = await fetch(`${API_BASE_URL}/admin_recommendations.php?action=ab_tests`, {
-			method: 'GET',
-			credentials: 'include'
-		});
-	
-		const result = await response.json();
-		if (result.code === 200) {
-			const tests = result.data;
-			// 更新测试统计
-			updateTestStats(tests);
-			// 更新测试列表
-			updateTestTable(tests);
-		}
-	} catch (error) {
-		console.error('加载A/B测试数据失败:', error);
-	}
-}
 
 // 更新测试统计
-function updateTestStats(tests) {
-	const runningTests = tests.filter(test => test.status === 'running').length;
-	const completedTests = tests.filter(test => test.status === 'completed').length;
-	const totalTests = tests.length;
-	
-	const runningTestsEl = document.getElementById('runningTests');
-	const completedTestsEl = document.getElementById('completedTests');
-	const totalTestsEl = document.getElementById('totalTests');
-	const avgImprovementEl = document.getElementById('avgImprovement');
-	
-	if (runningTestsEl) runningTestsEl.textContent = runningTests;
-	if (completedTestsEl) completedTestsEl.textContent = completedTests;
-	if (totalTestsEl) totalTestsEl.textContent = totalTests;
-	if (avgImprovementEl) avgImprovementEl.textContent = '15%'; // 模拟数据
-}
 
 // 显示A/B测试详情
 function showAbTestDetail(testId) {
-	console.log('显示A/B测试详情，测试ID:', testId);
 	
 	// 创建详情模态框
 	const modal = document.createElement('div');
@@ -4501,12 +4416,6 @@ function showAbTestDetail(testId) {
 	document.body.appendChild(modal);
 	
 	// 关闭模态框
-	function closeModal() {
-		modal.remove();
-		if (style.parentNode) {
-			style.parentNode.removeChild(style);
-		}
-	}
 	
 	modalClose.addEventListener('click', closeModal);
 	closeBtn.addEventListener('click', closeModal);
@@ -4525,7 +4434,6 @@ function showAbTestDetail(testId) {
 	})
 	.then(response => response.text())
 	.then(responseText => {
-		console.log('A/B测试详情响应文本:', responseText);
 
 		// 检查响应是否为空
 		if (!responseText || responseText.trim() === '') {
@@ -4548,9 +4456,6 @@ function showAbTestDetail(testId) {
 		try {
 			// 清理响应文本，移除前后空白字符
 			const cleanedResponseText = responseText.trim();
-			console.log('清理后的响应文本长度:', cleanedResponseText.length);
-			console.log('响应文本前100字符:', cleanedResponseText.substring(0, 100));
-			console.log('响应文本最后100字符:', cleanedResponseText.substring(Math.max(0, cleanedResponseText.length - 100)));
 			
 			// 尝试找到JSON的开始和结束位置
 			const jsonStart = cleanedResponseText.indexOf('{');
@@ -4559,7 +4464,6 @@ function showAbTestDetail(testId) {
 			if (jsonStart !== -1 && jsonEnd !== -1) {
 				// 提取有效的JSON部分
 				const jsonPart = cleanedResponseText.substring(jsonStart, jsonEnd + 1);
-				console.log('提取的JSON部分长度:', jsonPart.length);
 				result = JSON.parse(jsonPart);
 			} else {
 				// 尝试直接解析
@@ -4773,7 +4677,6 @@ function stopAbTest(testId) {
 	})
 	.then(response => response.text())
 	.then(responseText => {
-		console.log('停止A/B测试响应文本:', responseText);
 
 		// 检查响应是否为空
 		if (!responseText || responseText.trim() === '') {
@@ -4807,81 +4710,6 @@ function stopAbTest(testId) {
 }
 
 // 更新测试表格
-function updateTestTable(tests) {
-	const tableBody = document.getElementById('abTestTableBody');
-	if (!tableBody) return;
-	
-	// 清空表格
-	tableBody.innerHTML = '';
-	
-	// 添加测试数据
-	tests.forEach(test => {
-		const row = document.createElement('tr');
-		const algorithmNames = {
-			'collaborative_filtering': '协同过滤',
-			'content_based': '基于内容',
-			'popularity': '基于流行度',
-			'hybrid': '混合推荐'
-		};
-		
-		var statusClass = test.status === 'running' ? 'status-active' : 'status-completed';
-		var statusText = test.status === 'running' ? '运行中' : '已完成';
-
-		// 创建单元格
-		const nameCell = document.createElement('td');
-		nameCell.textContent = test.test_name;
-		
-		const algoACell = document.createElement('td');
-		algoACell.textContent = algorithmNames[test.algorithm_a] || test.algorithm_a;
-		
-		const algoBCell = document.createElement('td');
-		algoBCell.textContent = algorithmNames[test.algorithm_b] || test.algorithm_b;
-		
-		const statusCell = document.createElement('td');
-		const statusBadge = document.createElement('span');
-		statusBadge.className = `status-badge ${statusClass}`;
-		statusBadge.textContent = statusText;
-		statusCell.appendChild(statusBadge);
-		
-		const timeCell = document.createElement('td');
-		timeCell.textContent = test.start_time;
-		
-		const actionCell = document.createElement('td');
-		
-		// 创建查看详情按钮
-		const detailBtn = document.createElement('button');
-		detailBtn.className = 'btn btn-sm btn-secondary';
-		detailBtn.textContent = '查看详情';
-		detailBtn.style.marginRight = '5px';
-		detailBtn.addEventListener('click', () => showAbTestDetail(test.id));
-		
-		// 创建停止按钮
-		let stopBtn = null;
-		if (test.status === 'running') {
-			stopBtn = document.createElement('button');
-			stopBtn.className = 'btn btn-sm btn-danger';
-			stopBtn.textContent = '停止';
-			stopBtn.addEventListener('click', () => stopAbTest(test.id));
-		}
-		
-		// 添加按钮到操作单元格
-		actionCell.appendChild(detailBtn);
-		if (stopBtn) {
-			actionCell.appendChild(stopBtn);
-		}
-		
-		// 添加单元格到行
-		row.appendChild(nameCell);
-		row.appendChild(algoACell);
-		row.appendChild(algoBCell);
-		row.appendChild(statusCell);
-		row.appendChild(timeCell);
-		row.appendChild(actionCell);
-		
-		// 添加行到表格
-		tableBody.appendChild(row);
-	});
-}
 
 function showToast(message, type = 'error') {
 	const toast = document.createElement('div');
@@ -5007,27 +4835,6 @@ function toggleSidebar() {
 }
 
 // 修改init函数，添加侧边栏初始化
-async function init() {
-	console.log('页面初始化开始');
-	try {
-		const adminInfo = checkAuth();
-		if (!adminInfo) {
-			console.log('未授权，跳转到登录页');
-			return;
-		}
-
-		adminName.textContent = adminInfo.nickname || adminInfo.username || '管理员';
-		console.log('绑定事件前');
-		bindEvents();
-		console.log('绑定事件后');
-		// 初始化侧边栏
-		initSidebar();
-		await switchMenu('user');
-		console.log('页面初始化完成');
-	} catch (error) {
-		console.error('初始化错误:', error);
-	}
-}
 
 // 显示手动推荐模态框
 function showManualRecommendation() {
@@ -5432,7 +5239,6 @@ function showManualRecommendation() {
 			
 			// 尝试读取响应文本
 			const responseText = await response.text();
-			console.log('手动推荐响应文本:', responseText);
 
 			// 检查响应是否为空
 			if (!responseText || responseText.trim() === '') {
@@ -5476,7 +5282,6 @@ async function loadContentList(selectElement) {
 		
 		// 尝试读取响应文本
 		const responseText = await response.text();
-		console.log('加载内容列表响应文本:', responseText);
 
 		// 检查响应是否为空
 		if (!responseText || responseText.trim() === '') {
@@ -5524,8 +5329,6 @@ function testCreateAbTest() {
         description: '测试混合推荐和协同过滤的性能'
     };
     
-    console.log('开始测试A/B测试创建功能...');
-    console.log('测试数据:', testData);
     
     fetch(`${API_BASE_URL}/admin_recommendations.php`, {
         method: 'POST',
@@ -5535,14 +5338,11 @@ function testCreateAbTest() {
         body: JSON.stringify(testData)
     })
     .then(response => {
-        console.log('响应状态:', response.status);
         return response.text();
     })
     .then(responseText => {
-        console.log('响应文本:', responseText);
         try {
             const result = JSON.parse(responseText);
-            console.log('解析后的响应:', result);
         } catch (error) {
             console.error('解析JSON失败:', error);
         }

@@ -1,233 +1,88 @@
 # Simple Server
 
-轻量级 PHP RESTful API 服务框架 — 内置中间件链、服务-仓库分层架构、频率限制、文件上传、管理后台。
+轻量级 PHP RESTful API 服务框架 — 中间件链 + 服务-仓库分层架构，内置 60+ API、频率限制、RBAC 权限、推荐系统、考勤薪资、自动化爬虫。
 
 ## 架构
 
 ```
 请求 → CORS 中间件 → 日志中间件 → 错误中间件 → 路由 → 响应
-                                                  ↓
-                                            Service 层（业务逻辑）
-                                                  ↓
-                                          Repository 层（数据访问）
-                                                  ↓
+                                                    ↓
+                                              Service 层
+                                                    ↓
+                                            Repository 层
+                                                    ↓
                                               PDO / MySQL
 ```
 
-## 目录结构
+## 目录
 
 ```
 server/
-├── api/                # API 端点（40+ 接口）
-│   ├── index.php       # 集中式路由入口
-│   ├── login.php       # 用户登录（含频率限制）
-│   ├── register.php    # 用户注册（含频率限制）
-│   ├── content.php     # 内容 CRUD
-│   ├── upload.php      # 文件上传
-│   └── admin_*.php     # 管理后台接口
-├── config/             # 配置
-│   ├── Config.php      # .env 配置管理
-│   ├── Database.php    # PDO 连接封装
-│   └── RateLimiter.php # IP 频率限制
-├── middleware/          # 中间件链
-│   ├── Middleware.php      # 抽象基类
-│   ├── CorsMiddleware.php  # 跨域处理
-│   ├── LogMiddleware.php   # 请求/响应日志
-│   ├── ErrorMiddleware.php # 异常捕获
-│   └── AuthMiddleware.php  # 认证校验
-├── services/           # 业务逻辑层
-│   ├── UserService.php
-│   └── ContentService.php
-├── repositories/       # 数据访问层
-│   ├── UserRepository.php
-│   └── ContentRepository.php
-├── uploads/            # 上传文件存储
-├── downloads/          # 下载文件
-├── sql/                # 数据库脚本
-└── mail.php            # 邮件服务（PHPMailer）
+├── api/          # 60+ API 接口（认证/用户/内容/社交/文件/考勤/推荐/管理后台）
+├── config/       # Config.php（.env管理） + Database.php（PDO） + RateLimiter.php（限流）
+├── middleware/    # CORS / 日志 / 错误 / 认证 — 链式中间件
+├── services/     # UserService / ContentService — 业务逻辑
+├── repositories/ # UserRepository / ContentRepository — 数据访问
+├── uploads/      # 上传文件
+├── downloads/    # APK 下载
+├── sql/          # 数据库脚本
+└── mail.php      # 邮件（PHPMailer）
 
-admin-web/              # 管理后台前端（原生 HTML/JS/CSS）
+admin-web/        # 管理后台（原生 HTML/JS/CSS）
+pages/            # uni-app (Vue 3) 前端页面
+components/       # Vue 组件库
+store/            # Vuex 状态管理
+utils/            # 工具函数（请求封装/推荐算法/行为分析/缓存）
 ```
 
 ## 快速开始
 
-### 环境要求
-
-- PHP 7.2+
-- MySQL 5.7+ / MariaDB 10.2+
-- Apache 2.4+（mod_rewrite）或 Nginx 1.16+
-
-### 安装
-
 ```bash
-# 1. 克隆项目
 git clone git@github.com:jackchenjiufu/Simple.git
 cd Simple
-
-# 2. 安装 PHP 依赖
 composer install
-
-# 3. 配置环境变量
-cp server/config/.env.example server/config/.env
-# 编辑 .env 填入数据库连接信息
-
-# 4. 导入数据库
+cp server/config/.env.example server/config/.env   # 编辑数据库配置
 mysql -u root -p < server/sql/doo-app.sql
-
-# 5. 配置 Web 服务器指向 server/ 目录
 ```
-
-### 初始化
 
 ```bash
-# 初始化数据库结构
+# 初始化
 curl http://localhost/server/api/init_database.php
-
-# 重置管理员密码为 admin123
-curl http://localhost/server/api/reset_admin.php
-
-# 检查部署状态
-curl http://localhost/server/api/check_admin_setup.php
+curl http://localhost/server/api/reset_admin.php        # 管理员 → admin123
 ```
 
-### 管理后台
+## API 概览
 
-访问 `http://localhost/admin-web/login.html`，使用管理员账号登录。
+| 模块 | 接口数 | 核心功能 |
+|------|--------|----------|
+| 认证 | 8 | 登录/注册/改密/忘记密码（频率限制 + 邮件验证码） |
+| 用户 | 8 | 用户列表/画像/等级/行为分析/个性化推荐 |
+| 社交 | 8 | 关注/粉丝/私信/聊天记录/收藏 |
+| 内容 | 12 | CRUD/轮播图/推荐/视频流/文章/公告 |
+| 文件 | 7 | 上传/下载/预览/批量导入（类型白名单） |
+| 考勤薪资 | 4 | 上下班打卡 + 加班费 + 五险一金 + 个税（江苏标准） |
+| 推荐系统 | 1 | 4 种算法/CURD/A/B测试/实时监控/手动推荐 |
+| RBAC | 1 | 4 角色 + 12 权限/动态分配 |
+| 爬虫 | 3 | 抖音热榜→自动发文章 / picsum→自动发图 |
+| 系统 | 7 | 监控/部署/APK代理/AI代理/版本管理 |
+| 管理后台 | 12 | 用户/内容/轮播/消息/日志/统计/反馈/权限管理 |
 
-## 核心特性
-
-| 特性 | 说明 |
-|------|------|
-| **中间件链** | CORS → 日志 → 错误 → 认证，可插拔 |
-| **分层架构** | Service（业务） → Repository（数据） |
-| **频率限制** | 基于 IP + 操作的数据库限流 |
-| **密码安全** | bcrypt 哈希，`password_hash` / `password_verify` |
-| **SQL 注入防护** | 全量 PDO 预处理 + 参数绑定 |
-| **CORS 管理** | `.env` 可控的跨域白名单 |
-| **请求日志** | JSON 格式请求/响应日志（含处理耗时） |
-| **错误处理** | 统一异常捕获，JSON 错误响应 |
-
-## API 响应格式
-
-所有接口统一返回：
+## 响应格式
 
 ```json
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": { ... }
-}
+{ "code": 200, "message": "成功", "data": { ... } }
 ```
 
-## API 接口一览
+## 安全
 
-### 认证
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/login.php` | 用户登录 |
-| POST | `/api/register.php` | 用户注册 |
-| POST | `/api/change_password.php` | 修改密码 |
-| POST | `/api/forgot_password.php` | 忘记密码 |
-| POST | `/api/reset_password.php` | 重置密码 |
-
-### 用户
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/get_users.php` | 用户列表 |
-| GET | `/api/user_profile.php` | 用户画像 |
-| PUT | `/api/update_user.php` | 更新用户 |
-| DELETE | `/api/delete_account.php` | 删除账号 |
-
-### 内容
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/content.php` | 内容列表/详情 |
-| POST | `/api/content.php` | 创建内容 |
-| PUT | `/api/content.php` | 更新内容 |
-| DELETE | `/api/content.php` | 删除内容 |
-| GET | `/api/get_carousels.php` | 轮播图 |
-| GET | `/api/recommend.php` | 推荐内容 |
-| GET | `/api/feed.php` | 视频流 |
-
-### 社交
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET/POST/DELETE | `/api/follow.php` | 关注/取消/列表 |
-| GET | `/api/check_follow.php` | 检查关注状态 |
-| GET | `/api/messages.php` | 消息列表 |
-| POST | `/api/send_message.php` | 发送消息 |
-| GET | `/api/get_chat_history.php` | 聊天记录 |
-| GET/POST | `/api/get_collections.php` | 收藏管理 |
-
-### 文件
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/upload.php` | 文件上传 |
-| POST | `/api/upload_image.php` | 图片上传 |
-| GET | `/api/files.php` | 文件列表 |
-
-### 管理后台
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/admin_login.php` | 管理员登录 |
-| GET | `/api/admin_stats.php` | 数据统计 |
-| CRUD | `/api/admin_users.php` | 用户管理 |
-| CRUD | `/api/admin_content.php` | 内容管理 |
-| CRUD | `/api/admin_carousels.php` | 轮播图管理 |
-| CRUD | `/api/admin_messages.php` | 消息管理 |
-| GET | `/api/admin_logs.php` | 操作日志 |
-
-### 系统
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/system_monitor.php` | 系统监控 |
-| POST | `/api/user_behavior.php` | 行为数据同步 |
-| POST | `/api/deploy.php` | 文件部署 |
-| POST | `/api/ai_proxy.php` | AI 代理 |
-
-## 中间件使用
-
-```php
-// index.php 中的中间件链构建
-$corsMiddleware = new CorsMiddleware($db);
-$logMiddleware = new LogMiddleware($db);
-$errorMiddleware = new ErrorMiddleware($db);
-
-$corsMiddleware->setNext($logMiddleware)
-               ->setNext($errorMiddleware);
-
-$response = $corsMiddleware->handle($requestData);
-```
-
-## 频率限制
-
-```php
-// 5 分钟内最多 5 次登录尝试
-$rateLimiter = new RateLimiter($db, 5, 5);
-
-if ($rateLimiter->isRateLimited('login')) {
-    http_response_code(429);
-    echo json_encode(['code' => 429, 'message' => '请 5 分钟后再试']);
-    exit;
-}
-```
-
-## 前端项目
-
-项目同时包含一个 uni-app（Vue 3）前端：
-
-```bash
-npm install
-npm run dev      # Web 开发
-npm run build    # 构建 H5
-```
+- bcrypt 密码哈希 | 全量 PDO 预处理 | 频率限制
+- Session + Token 双重认证 | CORS 白名单 | 文件上传白名单 + 大小限制
 
 ## 技术栈
 
-- **后端**: PHP + MySQL + PDO
-- **前端**: uni-app (Vue 3) + Vite + Capacitor
-- **邮件**: PHPMailer
-- **认证**: Session + Token
+**后端**: PHP + MySQL + PDO + PHPMailer  
+**前端**: uni-app (Vue 3) + Vite + Capacitor  
+**文档**: [完整架构与功能文档](./项目架构与功能文档.md)
 
 ## License
 
