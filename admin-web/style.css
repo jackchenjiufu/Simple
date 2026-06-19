@@ -707,6 +707,42 @@ body {
 	color: #e6a23c;
 }
 
+.status-active {
+	background-color: #f0f9eb;
+	color: #67c23a;
+}
+
+.status-inactive {
+	background-color: #fdf6ec;
+	color: #e6a23c;
+}
+
+/* 反馈管理列宽 */
+.cell-type {
+	width: 90px;
+}
+
+.cell-contact {
+	width: 130px;
+}
+
+/* 反馈操作按钮 */
+.btn-read {
+	background-color: #409eff;
+	color: #ffffff;
+}
+.btn-read:hover {
+	background-color: #66b1ff;
+}
+
+.btn-process {
+	background-color: #67c23a;
+	color: #ffffff;
+}
+.btn-process:hover {
+	background-color: #85ce61;
+}
+
 .role-badge {
 	padding: 4px 8px;
 	border-radius: 4px;
