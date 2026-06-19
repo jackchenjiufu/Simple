@@ -66,14 +66,14 @@ class RateLimiter {
      */
     public function recordAttempt($action) {
         $ip = getClientIp();
+        $windowStart = date('Y-m-d H:i:s', time() - $this->windowSeconds);
 
         // 尝试增加现有窗口的计数
-        $sec = (int)$this->windowSeconds;
         $update = "UPDATE rate_limits SET attempts = attempts + 1 
                    WHERE ip = :ip AND action = :action 
-                   AND window_start >= NOW() - INTERVAL {$sec} SECOND";
+                   AND window_start >= :ws";
         $s = $this->db->prepare($update);
-        $s->execute([':ip' => $ip, ':action' => $action]);
+        $s->execute([':ip' => $ip, ':action' => $action, ':ws' => $windowStart]);
 
         if ($s->rowCount() === 0) {
             // 无现有窗口，插入新记录
