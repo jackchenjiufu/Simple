@@ -2,6 +2,7 @@
 // 设置CORS头，允许跨域请求
 // 设置响应内容类型为JSON
 header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Origin: *");
 // 允许的请求方法
 header("Access-Control-Allow-Methods: POST");
 // 允许的请求头

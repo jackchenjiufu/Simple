@@ -135,5 +135,15 @@ class UserRepository {
         $stmt->execute();
         return $stmt->rowCount() > 0;
     }
+
+    /**
+     * 获取用户总数
+     * @return int 用户总数
+     */
+    public function getUserCount() {
+        $query = "SELECT COUNT(*) FROM users";
+        $stmt = $this->db->query($query);
+        return (int)$stmt->fetchColumn();
+    }
 }
 ?>
