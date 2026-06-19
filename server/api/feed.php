@@ -2,6 +2,15 @@
 // 设置CORS头，允许跨域请求
 // 设置响应内容类型为JSON
 header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+
+// 处理 OPTIONS 预检
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
 
 // 引入数据库连接类
 include_once __DIR__ . '/../config/Database.php';

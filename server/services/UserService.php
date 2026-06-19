@@ -134,18 +134,20 @@ class UserService {
     public function getUserList($page = 1, $pageSize = 10) {
         // 计算偏移量
         $offset = ($page - 1) * $pageSize;
-        
+
         // 获取用户列表
         $users = $this->userRepository->getUserList($pageSize, $offset);
-        
-        // 这里可以添加获取总用户数的逻辑，用于分页
-        
+
+        // 获取真实用户总数
+        $total = $this->userRepository->getUserCount();
+
         return [
             'users' => $users,
             'pagination' => [
-                'page' => $page,
-                'pageSize' => $pageSize,
-                'total' => count($users) // 临时使用，实际应该从数据库获取
+                'page' => (int)$page,
+                'pageSize' => (int)$pageSize,
+                'total' => $total,
+                'totalPages' => (int)ceil($total / $pageSize)
             ]
         ];
     }

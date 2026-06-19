@@ -37,7 +37,9 @@ $logMiddleware = new LogMiddleware($db);
 $corsMiddleware = new CorsMiddleware($db);
 $authMiddleware = new AuthMiddleware($db);
 
-// 构建中间件链
+// 构建中间件链: CORS → 日志 → 错误
+// 注意: AuthMiddleware 不在全局链中，由各路由处理器按需调用
+// 需要认证的路由在处理函数内通过 $_SESSION['user_id'] 校验
 $corsMiddleware->setNext($logMiddleware)->setNext($errorMiddleware);
 
 // 获取请求信息

@@ -39,18 +39,20 @@ class ContentService {
     public function getContentList($filters = [], $page = 1, $pageSize = 10) {
         // 计算偏移量
         $offset = ($page - 1) * $pageSize;
-        
+
         // 获取内容列表
         $contentList = $this->contentRepository->getContentList($filters, $pageSize, $offset);
-        
-        // 这里可以添加获取总内容数的逻辑，用于分页
-        
+
+        // 获取真实内容总数（基于相同筛选条件）
+        $total = $this->contentRepository->getContentCount($filters);
+
         return [
             'contentList' => $contentList,
             'pagination' => [
-                'page' => $page,
-                'pageSize' => $pageSize,
-                'total' => count($contentList) // 临时使用，实际应该从数据库获取
+                'page' => (int)$page,
+                'pageSize' => (int)$pageSize,
+                'total' => $total,
+                'totalPages' => (int)ceil($total / $pageSize)
             ]
         ];
     }

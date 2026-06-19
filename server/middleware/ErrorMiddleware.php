@@ -33,25 +33,31 @@ class ErrorMiddleware extends Middleware {
     private function handleException(Exception $e) {
         // 记录异常信息
         $this->logException($e);
-        
+
         // 根据异常类型返回不同的响应
         $statusCode = $this->getStatusCodeForException($e);
         $message = $this->getMessageForException($e);
-        
+
         // 设置 HTTP 状态码
         http_response_code($statusCode);
-        
-        // 返回错误响应
-        return [
+
+        // 返回错误响应 — 生产环境不暴露内部详情
+        $response = [
             'code' => $statusCode,
-            'message' => $message,
-            'error' => [
+            'message' => $message
+        ];
+
+        // 仅调试模式暴露堆栈信息
+        if (Config::get('api.debug', false)) {
+            $response['error'] = [
                 'type' => get_class($e),
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
-            ]
-        ];
+            ];
+        }
+
+        return $response;
     }
     
     /**
@@ -62,24 +68,26 @@ class ErrorMiddleware extends Middleware {
     private function handleError(Error $e) {
         // 记录错误信息
         $this->logError($e);
-        
-        // 设置 HTTP 状态码
+
         $statusCode = 500;
-        
-        // 设置 HTTP 状态码
         http_response_code($statusCode);
-        
-        // 返回错误响应
-        return [
+
+        // 生产环境不暴露内部错误详情
+        $response = [
             'code' => $statusCode,
-            'message' => '服务器内部错误',
-            'error' => [
+            'message' => '服务器内部错误'
+        ];
+
+        if (Config::get('api.debug', false)) {
+            $response['error'] = [
                 'type' => get_class($e),
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
-            ]
-        ];
+            ];
+        }
+
+        return $response;
     }
     
     /**

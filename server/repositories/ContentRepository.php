@@ -164,6 +164,45 @@ class ContentRepository {
     }
     
     /**
+     * 获取内容总数（支持筛选条件）
+     * @param array $filters 过滤条件
+     * @return int 内容总数
+     */
+    public function getContentCount($filters = []) {
+        $whereClause = [];
+        $params = [];
+
+        if (!empty($filters['type'])) {
+            $whereClause[] = "type = :type";
+            $params[':type'] = $filters['type'];
+        }
+        if (!empty($filters['user_id'])) {
+            $whereClause[] = "user_id = :user_id";
+            $params[':user_id'] = $filters['user_id'];
+        }
+        if (!empty($filters['category'])) {
+            $whereClause[] = "category = :category";
+            $params[':category'] = $filters['category'];
+        }
+        if (!empty($filters['status'])) {
+            $whereClause[] = "status = :status";
+            $params[':status'] = $filters['status'];
+        }
+
+        $query = "SELECT COUNT(*) FROM content";
+        if (!empty($whereClause)) {
+            $query .= " WHERE " . implode(" AND ", $whereClause);
+        }
+
+        $stmt = $this->db->prepare($query);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
      * 获取推荐内容
      * @param int $limit 限制数量
      * @param int $offset 偏移量

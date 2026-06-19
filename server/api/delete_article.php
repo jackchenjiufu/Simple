@@ -1,13 +1,11 @@
 <?php
 /**
  * delete_article.php - 删除文章API接口
- * 
- * 功能：
- * - 根据文章ID删除文章
- * - 提供完整的错误处理和响应
- * 
- * 请求方法：
- * - POST: 删除文章
+ */
+
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
  */
 
 // 设置CORS头，允许跨域请求

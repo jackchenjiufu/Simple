@@ -1,13 +1,11 @@
 <?php
 /**
  * get_articles.php - 获取文章列表API接口
- * 
- * 功能：
- * - 提供文章列表查询和分页
- * - 支持按创建时间排序
- * - 提供完整的错误处理和响应
- * 
- * 请求方法：
+ */
+
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
  * - GET: 获取文章列表
  */
 
