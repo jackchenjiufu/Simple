@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . "/cors_headers.php";
 
 if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
