@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlainChen · 主页</title>
+  <!-- 字体: Inter 优雅且完美支持中文，搭配等宽字体用于技术标签 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=SF+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 图标库 (免费) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ----- 全局重置与变量 (保持原风格，适配中文) ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #fafafa;
+      --bg-card: #ffffff;
+      --text-primary: #1d1d1f;
+      --text-secondary: #6b6b70;
+      --text-mono: #6f6f77;
+      --accent: #2563eb;
+      --accent-light: #3b82f6;
+      --border-light: #eaeaea;
+      --border-medium: #d4d4d8;
+      --shadow-sm: 0 5px 15px -8px rgba(0,0,0,0.1);
+      --shadow-hover: 0 15px 30px -12px rgba(0,0,0,0.15);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 0;
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 80px 40px;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: 50px 24px; }
+    }
+
+    /* 排版 */
+    h1, h2, h3 {
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 8vw, 4.5rem);
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      margin: 2.5rem 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    h2::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border-medium) 20%, transparent);
+      margin-left: 10px;
+    }
+
+    h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    a:hover {
+      color: var(--accent);
+    }
+
+    /* 头部区域 */
+    .intro {
+      margin-bottom: 4rem;
+    }
+
+    .subhead {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .lead {
+      font-size: 1.15rem;
+      max-width: 600px;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    .inline-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--border-light);
+      padding-top: 2rem;
+    }
+    .inline-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid transparent;
+    }
+    .inline-links a:hover {
+      color: var(--accent);
+      border-bottom-color: var(--accent-light);
+    }
+
+    /* 关于段落 */
+    .about-text p {
+      margin-bottom: 1.2rem;
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    /* 经历卡片 */
+    .experience-item {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border-light);
+      transition: background 0.15s;
+      border-radius: 8px;
+    }
+    .experience-item:hover {
+      background: #f8f8fa;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    .exp-period {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--text-mono);
+      letter-spacing: -0.2px;
+    }
+    .exp-content {
+      display: flex;
+      flex-direction: column;
+    }
+    .exp-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+    .exp-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 0.8rem;
+    }
+    .tech-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 0.8rem;
+      margin-top: 0.5rem;
+    }
+    .tech-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: #f0f0f4;
+      color: #44444a;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      letter-spacing: -0.2px;
+      transition: 0.1s;
+    }
+    .tech-tag:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* 项目卡片 */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.8rem;
+      margin-top: 1rem;
+    }
+    .project-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 1.8rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .project-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--accent-light);
+    }
+    .project-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+    .project-title i {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      opacity: 0.7;
+      transition: 0.2s;
+    }
+    .project-card:hover .project-title i {
+      color: var(--accent);
+      opacity: 1;
+      transform: translateX(4px);
+    }
+    .project-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1.2rem;
+      flex: 1;
+    }
+    .project-tech {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+    .project-tech span {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      background: #f0f0f4;
+      padding: 0.2rem 0.7rem;
+      border-radius: 30px;
+      color: #3a3a42;
+    }
+
+    /* 底部 (与上一版保持一致，致敬原作者) */
+    .footer-note {
+      margin-top: 5rem;
+      font-size: 0.9rem;
+      color: var(--text-mono);
+      border-top: 1px solid var(--border-light);
+      padding-top: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+    }
+    .footer-note i {
+      color: var(--accent-light);
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: var(--accent);
+      color: white;
+      padding: 8px 16px;
+      z-index: 100;
+    }
+    .skip-link:focus {
+      top: 10px;
+      left: 10px;
+    }
+
+    @media (max-width: 700px) {
+      .experience-item {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+        padding: 1.2rem 0;
+      }
+      .exp-period {
+        font-size: 0.85rem;
+      }
+      h2 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 无障碍跳过链接 -->
+  <a href="#main-content" class="skip-link">跳转到主要内容</a>
+
+  <main id="main-content" class="container">
+    <!-- ========== 头部：PlainChen 信息 ========== -->
+    <div class="intro">
+      <h1>PlainChen</h1>
+      <div class="subhead">前端开发 / 全栈爱好者</div>
+      <p class="lead">构建可访问、像素级完美的数字体验，热爱设计与工程的结合。</p>
+      <!-- 社交/联系链接 (请替换为您的真实链接) -->
+      <div class="inline-links">
+        <a href="#"><i class="fa-regular fa-envelope"></i> plain.chen@example.com</a>
+        <a href="#"><i class="fa-regular fa-file-pdf"></i> 简历</a>
+        <a href="#"><i class="fa-brands fa-github"></i> GitHub</a>
+        <a href="#"><i class="fa-brands fa-linkedin"></i> LinkedIn</a>
+      </div>
+    </div>
+
+    <!-- ========== 关于我 (中文内容) ========== -->
+    <section>
+      <h2>关于</h2>
+      <div class="about-text">
+        <p>我是一名前端工程师，专注于 Web 可访问性与用户体验。我相信优雅的代码和精良的设计同等重要，致力于在每一个项目中实现像素级的还原与流畅的交互。</p>
+        <p>目前在一家初创公司担任前端负责人，负责设计系统的维护与组件库的开发。我与设计师和产品经理紧密合作，确保可访问性成为产品架构的核心部分，并推动团队采用现代化的前端实践。</p>
+        <p>之前曾在多家互联网公司实习，参与过电商后台、可视化工具、品牌官网等项目。业余时间我也维护着一个技术博客，记录学习心得和开发踩坑经验。此外，我是开源爱好者，偶尔向知名库提交 PR。</p>
+        <p>工作之外，我喜欢打羽毛球、摄影，也沉迷于《塞尔达传说》寻找呀哈哈。如果你对前端、可访问性或设计系统感兴趣，欢迎与我交流！</p>
+      </div>
+    </section>
+
+    <!-- ========== 工作经历 (中文占位，请按需修改) ========== -->
+    <section>
+      <h2>经历</h2>
+
+      <!-- 条目 1: 当前工作 -->
+      <div class="experience-item">
+        <span class="exp-period">2023 — 至今</span>
+        <div class="exp-content">
+          <div class="exp-title">前端负责人 · 极客科技 (示例公司)</div>
+          <p class="exp-desc">领导前端团队重构核心产品的前端架构，基于 React + TypeScript 开发组件库，建立可访问性规范 (WCAG 2.1 AA)。推动代码审查、自动化测试和文档建设，提升团队开发效率和产品质量。</p>
+          <div class="tech-tags">
+            <span class="tech-tag">React</span>
+            <span class="tech-tag">TypeScript</span>
+            <span class="tech-tag">Next.js</span>
+            <span class="tech-tag">Storybook</span>
+            <span class="tech-tag">Jest</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 条目 2: 上一份工作 -->
+      <div class="experience-item">
+        <span class="exp-period">2021 — 2023</span>
+        <div class="exp-content">
+          <div class="exp-title">前端开发工程师 · 云创设计 (示例公司)</div>
+          <p class="exp-desc">参与设计系统的搭建和维护，负责多个后台管理系统的前端开发。与 UX 设计师紧密合作，实现复杂的数据可视化组件和交互动效。同时负责团队内部技术分享，引入新技术栈。</p>
+          <div class="tech-tags">
+            <span class="tech-tag">Vue</span>
+            <span class="tech-tag">Vuex</span>
+            <span class="tech-tag">Element UI</span>
+            <span class="tech-tag">D3.js</span>
+            <span class="tech-tag">Webpack</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 条目 3: 实习经历 -->
+      <div class="experience-item">
+        <span class="exp-period">2020 — 2021</span>
+        <div class="exp-content">
+          <div class="exp-title">前端实习生 · 某互联网公司</div>
+          <p class="exp-desc">协助开发公司官网和营销活动页面，优化页面性能和 SEO。参与组件库的初期建设，编写可复用的 UI 组件。维护老旧项目并修复跨浏览器兼容性问题。</p>
+          <div class="tech-tags">
+            <span class="tech-tag">HTML5</span>
+            <span class="tech-tag">CSS3</span>
+            <span class="tech-tag">JavaScript</span>
+            <span class="tech-tag">jQuery</span>
+            <span class="tech-tag">Bootstrap</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 项目作品 (中文项目示例) ========== -->
+    <section>
+      <h2>项目</h2>
+      <div class="projects-grid">
+
+        <!-- 项目 1: 可视化仪表盘 -->
+        <div class="project-card">
+          <div class="project-title">
+            DataV 仪表盘 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </div>
+          <p class="project-desc">一个开源的响应式数据可视化仪表盘，支持多种图表类型和实时数据更新。基于 React 和 ECharts 构建，适配移动端和深色模式。</p>
+          <div class="project-tech">
+            <span>React</span><span>ECharts</span><span>SCSS</span>
+          </div>
+        </div>
+
+        <!-- 项目 2: 个人博客系统 -->
+        <div class="project-card">
+          <div class="project-title">
+            PlainChen Blog <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </div>
+          <p class="project-desc">使用 Next.js 和 MDX 搭建的技术博客，支持静态生成、语法高亮、评论系统。通过 Vercel 部署，每月访问量约 2k。</p>
+          <div class="project-tech">
+            <span>Next.js</span><span>MDX</span><span>Tailwind</span><span>Vercel</span>
+          </div>
+        </div>
+
+        <!-- 项目 3: 可访问性检测工具 (a11y) -->
+        <div class="project-card">
+          <div class="project-title">
+            A11y 伴侣 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </div>
+          <p class="project-desc">浏览器扩展，帮助开发者快速检测页面中的可访问性问题。基于 axe-core 开发，提供直观的问题列表和修复建议。已在 Chrome 商店发布。</p>
+          <div class="project-tech">
+            <span>JavaScript</span><span>Chrome API</span><span>axe-core</span>
+          </div>
+        </div>
+
+        <!-- 项目 4: 旧版个人主页 v4 -->
+        <div class="project-card">
+          <div class="project-title">
+            PlainChen v4 (旧版) <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </div>
+          <p class="project-desc">上一个版本的 portfolio 网站，使用 Gatsby 构建，设计灵感来自 Brittany Chiang。目前已迁移至当前版本。</p>
+          <div class="project-tech">
+            <span>Gatsby</span><span>Styled Components</span><span>Netlify</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 底部 (与上一版完全一致，致敬原作者) ========== -->
+    <footer class="footer-note">
+      <span><i class="fa-regular fa-copyright"></i> 重构致敬 ·  Brittany Chiang 设计</span>
+      <span>
+        <i class="fa-solid fa-mug-saucer"></i>  Pixel perfect
+      </span>
+    </footer>
+  </main>
+</body>
+</html>
