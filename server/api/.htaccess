@@ -1,11 +1,8 @@
 RewriteEngine On
 
-# 处理文件列表和删除
-RewriteRule ^files$ files.php [QSA,L]
-RewriteRule ^files/([0-9a-zA-Z]+)$ files.php?id=$1 [QSA,L]
-
-# 处理文件上传
-RewriteRule ^files/upload$ files_upload.php [QSA,L]
-
-# 处理文件预览
-RewriteRule ^files/([0-9a-zA-Z]+)/preview$ files_preview.php?id=$1 [QSA,L]
+# 所有 /api/* 请求统一路由到 index.php
+# index.php 自身不重写（避免循环）
+RewriteCond %{REQUEST_URI} !/index\.php$
+# 将 /api/ 后面的路径作为 __route 参数传递给 index.php
+# /api/login.php?id=1  →  index.php?__route=login.php&id=1
+RewriteRule ^(.+)$ index.php?__route=$1 [QSA,L]
