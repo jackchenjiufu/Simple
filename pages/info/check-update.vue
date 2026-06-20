@@ -80,8 +80,12 @@
 			<view class="info-card">
 				<text class="card-title">更新日志</text>
 				<view class="log-item">
+					<text class="log-version">v1.1.5</text>
+				<view class="log-item">
 					<text class="log-version">v1.1.4</text>
 					<text class="log-desc">性能优化与Bug修复</text>
+				</view>
+					<text class="log-desc">Security fixes, UI unification, login gate</text>
 				</view>
 				<view class="log-item">
 					<text class="log-version">v1.1.3</text>
