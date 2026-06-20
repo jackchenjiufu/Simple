@@ -1,12 +1,8 @@
 @echo off
-REM 宝塔面板定时抓取热搜数据并发布文章的批处理文件
-REM 每天中午12点执行
+REM 静默执行 — 零命令行窗口
+REM 宝塔面板 / Windows计划任务 定时抓取热搜数据
 
-REM 设置工作目录为脚本所在目录
 cd /d "%~dp0"
 
-REM 执行抓取热搜的API
-curl -X GET "http://139.196.185.197:7070/doo/server/api/crawl_hotsearch.php"
-
-REM 记录执行日志
-echo %date% %time% - 热搜抓取任务执行完成 >> "%~dp0crawl_hotsearch.log"
+REM 使用 PowerShell 隐藏窗口执行 curl
+powershell -WindowStyle Hidden -Command "& {curl -s -X GET 'http://139.196.185.197:7070/doo/server/api/crawl_hotsearch.php' >> '%~dp0crawl_hotsearch.log' 2>&1; Add-Content '%~dp0crawl_hotsearch.log' \"%date% %time% - done\"}"
