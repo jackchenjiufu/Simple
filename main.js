@@ -7,25 +7,6 @@
 import App from './App.vue'
 
 // Vue 2 版本初始化
-// #ifndef VUE3
-import Vue from 'vue'
-import store from './store' // 导入状态管理
-
-// 关闭生产环境提示
-Vue.config.productionTip = false
-
-// 设置应用类型
-App.mpType = 'app'
-
-// 创建Vue实例
-const app = new Vue({
-	...App,  // 扩展App组件
-	store     // 注入状态管理
-})
-
-// 挂载应用
-app.$mount()
-// #endif
 
 // Vue 3 版本初始化
 // #ifdef VUE3

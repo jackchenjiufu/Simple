@@ -29,8 +29,7 @@ import apiConfig from '../../../utils/api.js';
 export default {
 	data() {
 		return {
-			statusBarHeight: 0, list: [], refreshing: false,
-			apiBase: 'http://139.196.185.197:7070/doo/server/api/'
+			statusBarHeight: 0, list: [], refreshing: false
 		}
 	},
 	onLoad() {
@@ -42,7 +41,7 @@ export default {
 		async loadData() {
 			try {
 				const res = await uni.request({
-					url: this.apiBase + 'announcements.php',
+					url: apiConfig.baseUrl + 'announcements.php',
 					method: 'POST',
 					data: { action: 'get_announcements' },
 					header: { 'Content-Type': 'application/json' }
@@ -51,12 +50,14 @@ export default {
 				if (result.code === 200) {
 					this.list = result.data || [];
 				}
-			} catch(e) {}
+			} catch(e) { console.error(e); }
 		},
-		onRefresh() {
+		async onRefresh() {
 			this.refreshing = true;
-			this.loadData();
-			setTimeout(() => { this.refreshing = false; }, 500);
+			try {
+				await this.loadData();
+			} catch(e) { console.error(e); }
+			this.refreshing = false;
 		},
 		viewDetail(id) {
 			uni.navigateTo({ url: '/pages/content/announcement-detail?id=' + id });

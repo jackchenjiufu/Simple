@@ -37,6 +37,7 @@
 
 <script>
 import Skeleton from '../../skeleton/skeleton.vue';
+import apiConfig from '../../../utils/api.js';
 
 export default {
   name: 'RecommendCard',
@@ -54,15 +55,7 @@ export default {
       this.$emit('click', card, index);
     },
     formatImageUrl(url) {
-      if (!url) return '/static/img/default-cover.png';
-      url = url.trim().replace(/`/g, '');
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        if (url.includes('139.196.185.197') && !url.includes('7070')) {
-          url = url.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
-        }
-        return url;
-      }
-      return url.startsWith('/') ? `http://139.196.185.197:7070${url}` : '/static/img/default-cover.png';
+      return apiConfig.getImageUrl(url);
     }
   }
 };

@@ -61,6 +61,7 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
 		return {
@@ -108,7 +109,7 @@ export default {
 		},
 		loadMyArticles() {
 			uni.request({
-				url: 'http://139.196.185.197:7070/doo/server/api/get_articles.php',
+				url: apiConfig.getUrl(apiConfig.endpoints.getArticles),
 				method: 'GET',
 				data: {
 					limit: 100,
@@ -168,7 +169,7 @@ export default {
 					if (res.confirm) {
 						// 调用删除API
 						uni.request({
-							url: 'http://139.196.185.197:7070/doo/server/api/delete_article.php',
+							url: apiConfig.getUrl(apiConfig.endpoints.deleteArticle),
 							method: 'POST',
 							header: {
 								'Content-Type': 'application/json'

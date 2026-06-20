@@ -29,6 +29,7 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 	export default {
 		data() {
 			return {
@@ -37,8 +38,7 @@
 				oldPassword: '',
 				newPassword: '',
 				confirmPassword: '',
-				apiBase: 'http://139.196.185.197:7070/doo/server/api/'
-			}
+}
 		},
 		onLoad() {
 			const systemInfo = uni.getSystemInfoSync();
@@ -92,21 +92,19 @@
 				});
 				
 				try {
+					const token = uni.getStorageSync('token');
 					const res = await uni.request({
-						url: this.apiBase + 'change_password.php',
+						url: apiConfig.baseUrl + 'change_password.php',
 						method: 'POST',
 						data: {
-							user_id: this.userInfo.id,
 							old_password: this.oldPassword,
 							new_password: this.newPassword
 						},
 						header: {
-							'Content-Type': 'application/json'
+							'Content-Type': 'application/json',
+							'Authorization': token ? 'Bearer ' + token : ''
 						}
-					});
-					
-					uni.hideLoading();
-					
+					});					
 					
 					if (res.statusCode === 200) {
 						uni.showToast({
@@ -140,6 +138,8 @@
 						if (res.confirm) {
 							uni.removeStorageSync('userInfo');
 							uni.removeStorageSync('isLoggedIn');
+							uni.removeStorageSync('token');
+							uni.removeStorageSync('userId');
 							
 							uni.showToast({
 								title: '已退出登录',

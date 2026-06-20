@@ -35,6 +35,7 @@
 
 <script>
 import Skeleton from '../../skeleton/skeleton.vue';
+import apiConfig from '../../../utils/api.js';
 
 export default {
   name: 'Carousel',
@@ -50,16 +51,7 @@ export default {
     onChange(e) { this.current = e.detail.current; },
     clickItem(item) { this.$emit('click', item); },
     formatImageUrl(url) {
-      if (!url) return '/static/img/default-cover.png';
-      url = url.trim().replace(/`/g, '');
-      if (url.startsWith('http')) {
-        if (url.includes('139.196.185.197') && !url.includes('7070')) {
-          url = url.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
-        }
-        return url;
-      }
-      if (url.startsWith('/')) return `http://139.196.185.197:7070${url}`;
-      return '/static/img/default-cover.png';
+      return apiConfig.getImageUrl(url);
     }
   }
 };

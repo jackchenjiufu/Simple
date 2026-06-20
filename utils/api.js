@@ -85,6 +85,27 @@ const apiConfig = {
      */
     getUrl(endpoint) {
         return this.baseUrl + endpoint;
+    },
+
+    /**
+     * 统一修复图片URL：补全端口和协议
+     * @param {string} url - 原始图片URL
+     * @returns {string} 修复后的完整URL
+     */
+    getImageUrl(url) {
+        if (!url) return '/static/img/default-cover.png';
+        url = url.trim().replace(/`/g, '');
+        // 已经是完整URL
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            if (url.includes('139.196.185.197') && !url.includes('7070')) {
+                url = url.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
+                url = url.replace('https://139.196.185.197/', 'http://139.196.185.197:7070/');
+            }
+            return url;
+        }
+        // 相对路径
+        if (url.startsWith('/')) return this.baseUrl.replace(/api\/$/, '') + url.substr(1);
+        return '/static/img/default-cover.png';
     }
 };
 

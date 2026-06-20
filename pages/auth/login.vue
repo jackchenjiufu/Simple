@@ -102,6 +102,7 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
 		return {
@@ -111,7 +112,6 @@ export default {
 				email: '',
 			isRegister: false,
 			statusBarHeight: 0,
-			apiBase: 'http://139.196.185.197:7070/doo/server/api/',
 			loading: false,
 			agreedToTerms: false,
 			focusedField: ''
@@ -183,9 +183,9 @@ export default {
 			this.loading = true;
 			try {
 				const res = await uni.request({
-					url: this.apiBase + 'register.php',
+					url: apiConfig.baseUrl + 'register.php',
 					method: 'POST',
-					data: { username: this.username, password: this.password, email: this.email },
+					data: { username: this.username, password: this.password },
 					header: { 'Content-Type': 'application/json' }
 				});
 				this.loading = false;
@@ -205,9 +205,9 @@ export default {
 			this.loading = true;
 			try {
 				const res = await uni.request({
-					url: this.apiBase + 'login.php',
+					url: apiConfig.baseUrl + 'login.php',
 					method: 'POST',
-					data: { username: this.username, password: this.password, email: this.email },
+					data: { username: this.username, password: this.password },
 					header: { 'Content-Type': 'application/json' }
 				});
 				this.loading = false;

@@ -26,9 +26,10 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
-		return { statusBarHeight: 0, myImages: [], isLoggedIn: false, userId: 0, apiBase: 'http://139.196.185.197:7070/doo/server/api/' }
+		return { statusBarHeight: 0, myImages: [], isLoggedIn: false, userId: 0}
 	},
 	onLoad() {
 		const info = uni.getSystemInfoSync();
@@ -43,7 +44,7 @@ export default {
 		goBack() { uni.navigateBack(); },
 		loadMyImages() {
 			uni.request({
-				url: this.apiBase + 'content.php',
+				url: apiConfig.baseUrl + 'content.php',
 				method: 'GET',
 				data: { limit: 100, offset: 0, status: 'published' },
 				success: (res) => {
@@ -54,7 +55,7 @@ export default {
 								.filter(item => item.user_id == this.userId && item.image_url)
 								.map(item => ({ url: item.image_url, title: item.title || '' }));
 						}
-					} catch(e) {}
+					} catch(e) { console.error(e); }
 				}
 			});
 		},

@@ -1,13 +1,13 @@
 {
 	"pages": [
 		{
-			"path": "pages/tabbar/tabbar-1/tabbar-1",
+			"path": "pages/auth/login",
 			"style": {
 				"navigationStyle": "custom"
 			}
 		},
 		{
-			"path": "pages/auth/login",
+			"path": "pages/tabbar/tabbar-1/tabbar-1",
 			"style": {
 				"navigationStyle": "custom"
 			}
