@@ -27,6 +27,7 @@
 
 <script>
 import Skeleton from '../../skeleton/skeleton.vue';
+import apiConfig from '../../../utils/api.js';
 
 export default {
   name: 'UserCard',
@@ -39,15 +40,7 @@ export default {
       this.$emit('click', user);
     },
     formatAvatarUrl(avatar) {
-      if (!avatar) return '/static/img/default-avatar.png';
-      avatar = avatar.trim().replace(/`/g, '');
-      if (avatar.startsWith('http')) {
-        if (avatar.includes('139.196.185.197') && !avatar.includes('7070')) {
-          return avatar.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
-        }
-        return avatar;
-      }
-      return `http://139.196.185.197:7070${avatar}`;
+      return apiConfig.getImageUrl(avatar);
     }
   }
 };

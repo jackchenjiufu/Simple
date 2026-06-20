@@ -78,6 +78,7 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
 		return {
@@ -92,8 +93,7 @@ export default {
 			passwordMatch: false,
 			userInfo: null,
 			focusedField: '',
-			apiBase: 'http://139.196.185.197:7070/doo/server/api/'
-		};
+};
 	},
 	computed: {
 		canSubmit() {
@@ -150,7 +150,7 @@ export default {
 			uni.showLoading({ title: '修改中...' });
 			try {
 				const res = await uni.request({
-					url: this.apiBase + 'change_password.php',
+					url: apiConfig.baseUrl + 'change_password.php',
 					method: 'POST',
 					data: {
 						user_id: this.userInfo.id,

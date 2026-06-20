@@ -1,41 +1,60 @@
 <template>
 	<view class="content">
-		<!-- 状态栏占位 -->
 		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
-		<!-- 导航栏 -->
-		<view class="nav-bar">
-			<view class="nav-back" @click="goBack">
-				<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
+
+		<!-- 深蓝色头部 -->
+		<view class="header-section">
+			<view class="nav-bar">
+				<view class="nav-back" @click="goBack">
+					<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
+				</view>
+				<text class="nav-title">关于我们</text>
+				<view class="nav-placeholder"></view>
 			</view>
-			<text class="nav-title">关于我们</text>
-			<view class="nav-placeholder"></view>
+			<view class="deco-dot dot-1"></view>
+			<view class="deco-dot dot-2"></view>
 		</view>
 
-		<scroll-view class="content-area" scroll-y="true">
-			<view class="about-content">
-				<view class="logo-section">
-					<image class="logo" src="/static/logo.png" mode="aspectFit"></image>
+		<scroll-view class="body" scroll-y="true">
+			<view class="app-info-card">
+				<view class="app-logo-wrap">
+					<image class="app-logo" src="/static/logo.png" mode="aspectFit"></image>
 				</view>
-				<view class="info-section">
-					<text class="info-title">应用介绍</text>
-					<text class="info-text">Origin是一款优秀的个人APP正在处于开发测试中。</text>
+				<text class="app-name">Simple Server</text>
+				<text class="app-desc">一个禅意构造的APP</text>
+			</view>
+
+			<view class="info-card">
+				<text class="card-title">版本信息</text>
+				<view class="version-row">
+					<text class="row-label">当前版本</text>
+					<text class="row-value">{{ currentVersion }}</text>
 				</view>
-				<view class="info-section">
-					<text class="info-title">版本信息</text>
-					<text class="info-text">当前版本：{{ currentVersion }}</text>
-					<text class="info-text" v-if="latestVersion !== currentVersion">最新版本：{{ latestVersion }}</text>
-				</view>
-				<view class="info-section">
-					<text class="info-title">联系我们</text>
-					<text class="info-text">微信：ChenSauce</text>
-					<text class="info-text">INS：400-888-8888</text>
+				<view class="version-row" v-if="latestVersion !== currentVersion">
+					<text class="row-label">最新版本</text>
+					<text class="row-value new-version">{{ latestVersion }}</text>
 				</view>
 			</view>
+
+			<view class="info-card">
+				<text class="card-title">联系我们</text>
+				<view class="contact-row">
+					<text class="contact-icon">📧</text>
+					<text class="contact-text">chensauce@qq.com</text>
+				</view>
+				<view class="contact-row">
+					<text class="contact-icon">💬</text>
+					<text class="contact-text">微信：ChenSauce</text>
+				</view>
+			</view>
+
+			<text class="footer-text">Origin v{{ currentVersion }}</text>
 		</scroll-view>
 	</view>
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
 		return {
@@ -50,144 +69,70 @@ export default {
 		this.loadVersion();
 	},
 	methods: {
-		goBack() {
-			uni.navigateBack();
-		},
-		
+		goBack() { uni.navigateBack(); },
 		async loadVersion() {
-			
 			try {
-				const systemInfo = uni.getSystemInfoSync();
-				const currentVersion = systemInfo.appVersion || '1.0.0';
-				
-				const response = await uni.request({
-					url: 'http://139.196.185.197:7070/doo/server/api/check_update.php',
+				const info = uni.getSystemInfoSync();
+				const ver = info.appVersion || '1.0.0';
+				const res = await uni.request({
+					url: apiConfig.baseUrl + 'check_update.php',
 					method: 'POST',
-					data: {
-						currentVersion: currentVersion
-					},
-					header: {
-						'Content-Type': 'application/json'
-					}
+					data: { currentVersion: ver },
+					header: { 'Content-Type': 'application/json' }
 				});
-				
-				
-				if (response.statusCode === 200) {
-					let result;
-					if (typeof response.data === 'string') {
-						result = JSON.parse(response.data);
-					} else {
-						result = response.data;
+				if (res.statusCode === 200) {
+					const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+					if (result?.code === 200) {
+						this.currentVersion = result.data?.currentVersion || ver;
+						this.latestVersion = result.data?.latestVersion || ver;
 					}
-					
-					
-					if (result && result.code === 200) {
-						const data = result.data || {};
-						this.currentVersion = data.currentVersion || currentVersion;
-						this.latestVersion = data.latestVersion || currentVersion;
-					} else {
-					}
-				} else {
 				}
-			} catch (error) {
-			}
+			} catch (e) { console.error(e); }
 		}
 	}
 };
 </script>
 
-<style lang="scss" scoped>
-.content {
-	width: 100%;
-	min-height: 100vh;
-	background-color: #ffffff;
-	display: flex;
-	flex-direction: column;
-}
+<style>
+.content { width: 100%; min-height: 100vh; background-color: #ffffff; display: flex; flex-direction: column; }
+.status-bar { width: 100%; background: #1b44a6; }
 
-.nav-bar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	height: 44px;
-	background-color: #ffffff;
-	padding: 0 15px;
-	border-bottom: 1px solid #f0f0f0;
-}
+.header-section { position: relative; background: #1b44a6; border-radius: 0 0 48upx 48upx; padding-bottom: 140upx; overflow: hidden; }
+.nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 12upx 24upx 0; position: relative; z-index: 2; }
+.nav-back { width: 72upx; height: 72upx; display: flex; align-items: center; justify-content: center; }
+.back-icon { width: 48upx; height: 48upx; }
+.nav-title { font-size: 32upx; font-weight: 600; color: #ffffff; letter-spacing: 2upx; }
+.nav-placeholder { width: 72upx; }
+.header-content { position: relative; z-index: 2; padding: 20upx 40upx 0; text-align: left; padding-left: 48upx; }
+.header-title { font-size: 34upx; font-weight: 700; color: #ffffff; display: block; }
+.deco-dot { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.08); z-index: 1; }
+.dot-1 { width: 120upx; height: 120upx; top: -30upx; right: -20upx; }
+.dot-2 { width: 80upx; height: 80upx; bottom: 10upx; left: -20upx; }
 
-.nav-back {
-	width: 72upx;
-	height: 72upx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
+.body { flex: 1; background: #ffffff; padding: 0 40upx; margin-top: -40upx; box-sizing: border-box; }
 
-.back-icon {
-	width: 48upx;
-	height: 48upx;
-}
-
-.nav-title {
-	flex: 1;
+.app-info-card {
+	background: #ffffff;
+	border-radius: 16upx;
+	padding: 48upx 32upx;
 	text-align: center;
-	font-size: 18px;
-	font-weight: bold;
-	color: #303132;
+	margin-bottom: 24upx;
+	box-shadow: 0 2upx 12upx rgba(0,0,0,0.06);
 }
+.app-logo-wrap { width: 120upx; height: 120upx; background: #f3f4f6; border-radius: 28upx; display: flex; align-items: center; justify-content: center; margin: 0 auto 16upx; }
+.app-logo { width: 72upx; height: 72upx; }
+.app-name { display: block; font-size: 36upx; font-weight: 700; color: #303132; margin-bottom: 8upx; letter-spacing: 4upx; }
+.app-desc { display: block; font-size: 24upx; color: #6b7280; }
 
-.nav-placeholder {
-	width: 30px;
-}
-
-.content-area {
-	flex: 1;
-	overflow: hidden;
-}
-
-.about-content {
-	padding: 20px;
-}
-
-.logo-section {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 40px 0;
-}
-
-.logo {
-	width: 100px;
-	height: 100px;
-	margin-bottom: 20px;
-}
-
-.app-name {
-	font-size: 32px;
-	font-weight: bold;
-	color: #3071f6;
-}
-
-.info-section {
-	background-color: #ffffff;
-	border-radius: 8px;
-	padding: 20px;
-	margin-bottom: 15px;
-}
-
-.info-title {
-	display: block;
-	font-size: 16px;
-	font-weight: bold;
-	color: #303132;
-	margin-bottom: 10px;
-}
-
-.info-text {
-	display: block;
-	font-size: 14px;
-	color: #909398;
-	line-height: 1.8;
-	margin-bottom: 8px;
-}
+.info-card { background: #ffffff; border-radius: 16upx; padding: 28upx 24upx; margin-bottom: 16upx; box-shadow: 0 2upx 12upx rgba(0,0,0,0.06); }
+.card-title { display: block; font-size: 28upx; font-weight: 600; color: #303132; margin-bottom: 16upx; }
+.version-row { display: flex; justify-content: space-between; align-items: center; padding: 10upx 0; }
+.row-label { font-size: 26upx; color: #6b7280; }
+.row-value { font-size: 26upx; color: #303132; font-weight: 500; }
+.new-version { color: #3071f6; font-weight: 600; }
+.contact-row { display: flex; align-items: center; gap: 12upx; margin-bottom: 12upx; }
+.contact-row:last-child { margin-bottom: 0; }
+.contact-icon { font-size: 28upx; }
+.contact-text { font-size: 26upx; color: #6b7280; }
+.footer-text { display: block; text-align: center; font-size: 22upx; color: #c0c4cc; padding: 24upx 0 40upx; }
 </style>

@@ -29,9 +29,10 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
-		return { statusBarHeight: 0, favorites: [], isLoggedIn: false, userId: 0, apiBase: 'http://139.196.185.197:7070/doo/server/api/' }
+		return { statusBarHeight: 0, favorites: [], isLoggedIn: false, userId: 0}
 	},
 	onLoad() {
 		const info = uni.getSystemInfoSync();
@@ -46,14 +47,14 @@ export default {
 		goBack() { uni.navigateBack(); },
 		loadFavorites() {
 			uni.request({
-				url: this.apiBase + 'get_collections.php',
+				url: apiConfig.baseUrl + 'get_collections.php',
 				method: 'GET',
 				data: { user_id: this.userId },
 				success: (res) => {
 					try {
 						const result = res.data;
 						if (result.code === 200) this.favorites = result.data || [];
-					} catch(e) {}
+					} catch(e) { console.error(e); }
 				}
 			});
 		},

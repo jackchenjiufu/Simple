@@ -17,10 +17,7 @@
 			<view class="form-card">
 				<view class="form-item">
 					<text class="input-label">邮箱</text>
-					<view class="input-wrapper" :class="{ 'input-focused': focusedField === 'username' }">
-						<input class="input" v-model="email" placeholder="请输入注册邮箱"
-							@focus="focusedField='username'" @blur="focusedField=''" />
-					</view>
+					<input class="input" v-model="email" placeholder="请输入注册邮箱" />
 				</view>
 
 				<button class="btn-primary" @click="handleSubmit" :class="{ 'btn-loading': loading }">
@@ -37,15 +34,14 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
 		return {
-			username: '',
 			statusBarHeight: 0,
 			loading: false,
 			focusedField: '',
-			apiBase: 'http://139.196.185.197:7070/doo/server/api/'
-		}
+}
 	},
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
@@ -57,13 +53,13 @@ export default {
 		},
 		async handleSubmit() {
 			if (!this.email) {
-				uni.showToast({ title: '请输入用户名', icon: 'none' });
+				uni.showToast({ title: '请输入邮箱', icon: 'none' });
 				return;
 			}
 			this.loading = true;
 			try {
 				const res = await uni.request({
-					url: this.apiBase + 'forgot_password.php',
+					url: apiConfig.baseUrl + 'forgot_password.php',
 					method: 'POST',
 					data: { email: this.email },
 					header: { 'Content-Type': 'application/json' }

@@ -62,13 +62,13 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
 		return {
 			statusBarHeight: 0, isLoggedIn: false, userInfo: null, avatarUrl: '/static/img/qa.png',
 			nickname: '', email: '', registerTime: '', showUploadModal: false,
-			apiBase: 'http://139.196.185.197:7070/doo/server/api/'
-		}
+}
 	},
 	onLoad() {
 		const info = uni.getSystemInfoSync();
@@ -88,12 +88,7 @@ export default {
 			}
 		},
 		fixImageUrl(url) {
-			if (!url || url.startsWith('/static/')) return url;
-			if (!url.includes(':')) return 'http://139.196.185.197:7070' + url;
-			if (url.includes('139.196.185.197') && !url.includes('7070')) {
-				return url.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
-			}
-			return url;
+			return apiConfig.getImageUrl(url);
 		},
 		formatDate(d) {
 			if (!d) return '-';
@@ -117,7 +112,7 @@ export default {
 		async uploadAvatar(filePath) {
 			uni.showLoading({ title:'上传中...' });
 			try {
-				const res = await uni.uploadFile({ url: this.apiBase + 'upload.php', filePath, name:'file' });
+				const res = await uni.uploadFile({ url: apiConfig.baseUrl + 'upload.php', filePath, name:'file' });
 				const data = JSON.parse(res.data);
 				uni.hideLoading();
 				if (data.code === 200) {
@@ -135,7 +130,7 @@ export default {
 			try {
 				const data = { user_id: this.userInfo.id, nickname: this.nickname, avatar: this.avatarUrl };
 				if (this.email) data.email = this.email;
-				const res = await uni.request({ url: this.apiBase + 'update_user.php', method:'POST', data,
+				const res = await uni.request({ url: apiConfig.baseUrl + 'update_user.php', method:'POST', data,
 					header: {'Content-Type':'application/json'} });
 				uni.hideLoading();
 				if (res.statusCode === 200) {

@@ -5,7 +5,7 @@
 
 import apiConfig from './api.js';
 import cache from './cache.js';
-import { debounce, throttle } from './debounce-throttle.js';
+import { debounce } from './debounce-throttle.js';
 
 // 请求队列管理
 const requestQueue = new Map();
@@ -25,8 +25,6 @@ const DEFAULT_RETRY_DELAY = 1000;
  * @param {number} options.cacheTime - 缓存时间（毫秒），默认为30分钟
  * @param {boolean} options.debounce - 是否使用防抖，默认为false
  * @param {number} options.debounceTime - 防抖时间（毫秒），默认为300ms
- * @param {boolean} options.throttle - 是否使用节流，默认为false
- * @param {number} options.throttleTime - 节流时间（毫秒），默认为300ms
  * @param {number} options.retry - 重试次数，默认为3
  * @param {number} options.retryDelay - 重试延迟（毫秒），默认为1000ms
  * @returns {Promise<Object>} 请求结果
@@ -40,8 +38,6 @@ async function request(endpoint, options = {}) {
     cacheTime = 30 * 60 * 1000,
     debounce: useDebounce = false,
     debounceTime = 300,
-    throttle: useThrottle = false,
-    throttleTime = 300,
     retry = DEFAULT_RETRY_COUNT,
     retryDelay = DEFAULT_RETRY_DELAY
   } = options;
@@ -61,6 +57,10 @@ async function request(endpoint, options = {}) {
     }
   }
 
+  // 自动附加 Token
+  const token = uni.getStorageSync('token');
+  const authHeader = token ? { 'Authorization': 'Bearer ' + token } : {};
+
   // 构建请求参数
   const requestOptions = {
     url: url,
@@ -68,6 +68,7 @@ async function request(endpoint, options = {}) {
     data: data,
     header: {
       'Content-Type': 'application/json',
+      ...authHeader,
       ...header
     }
   };
@@ -145,10 +146,6 @@ async function request(endpoint, options = {}) {
         // 使用防抖，避免频繁请求
         const debouncedRequest = debounce(sendRequest, debounceTime);
         return await debouncedRequest();
-      } else if (useThrottle) {
-        // 使用节流，限制请求频率
-        const throttledRequest = throttle(sendRequest, throttleTime);
-        return await throttledRequest();
       } else {
         // 直接发送请求
         return await sendRequest();
@@ -247,3 +244,18 @@ export default {
    */
   delete: del
 };
+
+/**
+ * 全局拦截：自动为所有 uni.request 注入 Token
+ */
+(function() {
+  const original = uni.request;
+  uni.request = function(options) {
+    const token = uni.getStorageSync('token');
+    if (token) {
+      options.header = options.header || {};
+      options.header['Authorization'] = options.header['Authorization'] || 'Bearer ' + token;
+    }
+    return original.call(this, options);
+  };
+})();

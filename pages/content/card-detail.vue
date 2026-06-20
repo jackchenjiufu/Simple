@@ -1,19 +1,6 @@
 <template>
 	<view class="content">
-		<!-- 状态栏占位 -->
-		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
-		
-		<!-- 导航栏 -->
-		<view class="nav-bar">
-			<!-- 返回按钮 -->
-			<view class="nav-back" @click="goBack">
-				<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
-			</view>
-			<!-- 标题 -->
-			<text class="nav-title">{{ pageTitle }}</text>
-			<!-- 占位，保持标题居中 -->
-			<view class="nav-placeholder"></view>
-		</view>
+		<NavBar title="详情" />
 
 		<!-- 图片显示区域 -->
 		<view class="image-container">
@@ -31,11 +18,13 @@
 </template>
 
 <script>
+import NavBar from '../../components/nav-bar.vue';
+import apiConfig from '../../utils/api.js';
 export default {
+	components: { NavBar },
 	data() {
 		return {
-			statusBarHeight: 0,
-			pageTitle: '详情',
+
 			cardData: {
 				id: 0,
 				title: '',
@@ -65,14 +54,10 @@ export default {
 					}
 				}
 				
-				return url || 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=default%20placeholder%20image';
+				return url || '/static/img/default-cover.png';
 			}
 		},
 	onLoad(options) {
-		// 获取状态栏高度
-		const systemInfo = uni.getSystemInfoSync();
-		this.statusBarHeight = systemInfo.statusBarHeight || 0;
-		
 		// 加载用户信息
 		this.loadUserInfo();
 		
@@ -97,7 +82,6 @@ export default {
 		if (eventChannel) {
 			eventChannel.on('setCard', (data) => {
 				this.cardData = data;
-				this.pageTitle = data.title;
 			});
 		} else {
 			// 使用默认数据，确保页面能显示
@@ -109,9 +93,6 @@ export default {
 		}
 	},
 	methods: {
-		goBack() {
-			uni.navigateBack();
-		},
 		onImageLoad() {
 		},
 		onImageError(e) {
@@ -159,7 +140,7 @@ export default {
 			}
 			
 			uni.request({
-				url: 'http://139.196.185.197:7070/doo/server/api/add_collection.php',
+				url: apiConfig.getUrl('add_collection.php'),
 				method: 'POST',
 				header: {
 					'Content-Type': 'application/x-www-form-urlencoded'

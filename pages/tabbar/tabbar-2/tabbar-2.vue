@@ -68,7 +68,6 @@
 					<text class="card-toggle">{{ showSalarySettings ? '收起' : '展开' }}</text>
 				</view>
 				<view v-if="showSalarySettings">
-				<text class="card-title">薪资设置</text>
 				<view class="form-row">
 					<text class="form-label">底薪</text>
 					<input class="form-input right" v-model="salaryForm.base_salary" type="digit" placeholder="0" />
@@ -219,6 +218,7 @@
 </template>
 
 <script>
+import apiConfig from '../../../utils/api.js';
 const STD_HOURS = 174;
 
 export default {
@@ -233,7 +233,6 @@ export default {
 			stats: { totalDays: 0, totalHours: '0.0', totalOvertimeSalary: '0' },
 			salaryForm: { base_salary: '0', bonus: '0', performance_score: '0', performance_rate: '1.0' },
 			rateConfig: { normal: 1.5, weekend: 2.0, holiday: 3.0 },
-			apiBase: 'http://139.196.185.197:7070/doo/server/api/',
 
 			showDatePicker: false, dpYear: now.getFullYear(), dpMonth: now.getMonth() + 1,
 			showSalarySettings: false,
@@ -359,7 +358,7 @@ export default {
 		async loadData() {
 			try {
 				const res = await uni.request({
-					url: this.apiBase + 'overtime.php',
+					url: apiConfig.baseUrl + 'overtime.php',
 					data: { user_id: this.userInfo.id, month: new Date().toISOString().substr(0,7) }
 				});
 				if (res.data.code === 200) {
@@ -373,7 +372,7 @@ export default {
 					} else { this.salary = null; }
 					if (d.rate_config) this.rateConfig = d.rate_config;
 				}
-			} catch(e) {}
+			} catch(e) { console.error(e); }
 		},
 		async submitOvertime() {
 			const h = parseFloat(this.formHours);
@@ -387,7 +386,7 @@ export default {
 			uni.showLoading({ title:'提交中...' });
 			try {
 				const res = await uni.request({
-					url: this.apiBase + 'overtime.php', method:'POST',
+					url: apiConfig.baseUrl + 'overtime.php', method:'POST',
 					data: { user_id: this.userInfo.id, date: this.formDate, hours: h, rate, multiplier: mult, note: this.formNote },
 					header: {'Content-Type':'application/json'}
 				});
@@ -404,7 +403,7 @@ export default {
 			try {
 				const rate = parseFloat(this.salaryForm.base_salary) / STD_HOURS;
 				const res = await uni.request({
-					url: this.apiBase + 'overtime.php', method:'PUT',
+					url: apiConfig.baseUrl + 'overtime.php', method:'PUT',
 					data: { action:'save_salary', user_id: this.userInfo.id,
 						base_salary: parseFloat(this.salaryForm.base_salary)||0,
 						bonus: parseFloat(this.salaryForm.bonus)||0,
@@ -428,7 +427,7 @@ export default {
 			uni.showLoading({ title:'删除中...' });
 			try {
 				const res = await uni.request({
-					url: this.apiBase + 'overtime.php', method:'DELETE',
+					url: apiConfig.baseUrl + 'overtime.php', method:'DELETE',
 					data: { id: this.deletingId, user_id: this.userInfo.id },
 					header: {'Content-Type':'application/json'}
 				});

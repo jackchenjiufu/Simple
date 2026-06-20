@@ -2,7 +2,7 @@
     "name" : "Simple Server",
     "appid" : "__UNI__F3BE11F",
     "description" : "一个禅意构造的APP",
-    "versionName" : "1.1.4",
+    "versionName" : "1.1.5",
     "versionCode" : 502,
     "transformPx" : false,
     "compatConfig" : {
@@ -46,7 +46,7 @@
                 "autoclose" : true,
                 "delay" : 1500,
                 "android" : {
-                    "xxhdpi" : ""
+                    "xxhdpi" : "F:/chenj/Pictures/Sc.png"
                 }
             },
             "icons" : {

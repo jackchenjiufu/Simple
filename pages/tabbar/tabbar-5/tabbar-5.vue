@@ -432,7 +432,7 @@ export default {
 				personalInfo: '/pages/user/personal-info', // 个人信息
 
 feedback: '/pages/user/my-feedback', // 问题反馈
-				aboutUs: '/pages/info/check-update', // 关于
+				aboutUs: '/pages/info/about-us', // 关于
 				systemSettings: '/pages/info/system-settings', // 系统设置
 				admin: '/pages/admin/admin' // 管理中心
 			};

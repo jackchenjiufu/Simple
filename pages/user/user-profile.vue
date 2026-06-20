@@ -330,7 +330,7 @@ export default {
 			// 跳转到文章详情
 			goToArticle(articleId) {
 				uni.navigateTo({
-					url: `/pages/article/article-detail?id=${articleId}`
+					url: `/pages/content/article-detail?id=${articleId}`
 				});
 			},
 		
@@ -344,65 +344,12 @@ export default {
 					// 处理头像URL，确保包含正确的端口号
 					let avatar = user.avatar;
 					if (avatar) {
-						// 去除可能存在的空格和反引号
-						avatar = avatar.trim().replace(/`/g, '');
-						if (!avatar.includes(':')) {
-							// 相对路径，添加完整URL
-							avatar = `http://139.196.185.197:7070${avatar}`;
-						} else if (avatar.includes('http') && !avatar.includes('7070')) {
-							// 已经是完整URL，但缺少正确端口
-							if (avatar.startsWith('http://')) {
-								// 替换http://开头的URL，添加7070端口
-								if (avatar.includes('139.196.185.197')) {
-									// 已经包含正确IP，只需要添加端口号
-									avatar = avatar.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
-								} else {
-									// 其他HTTP URL，替换为正确的IP和端口
-									avatar = avatar.replace(/^http:\/\/[^\/]+\//, 'http://139.196.185.197:7070/');
-								}
-							} else if (avatar.startsWith('https://')) {
-								// HTTPS URL，替换为正确的IP和端口
-								if (avatar.includes('139.196.185.197')) {
-									// 已经包含正确IP，只需要添加端口号
-									avatar = avatar.replace('https://139.196.185.197/', 'http://139.196.185.197:7070/');
-								} else {
-									// 其他HTTPS URL，替换为正确的IP和端口
-									avatar = avatar.replace(/^https:\/\/[^\/]+\//, 'http://139.196.185.197:7070/');
-								}
-							}
-						}
+						avatar = apiConfig.getImageUrl(avatar);
 					}
-					
 					// 处理背景图片URL，确保包含正确的端口号
 					let background_image = user.background_image;
 					if (background_image) {
-						// 去除可能存在的空格和反引号
-						background_image = background_image.trim().replace(/`/g, '');
-						if (!background_image.includes(':')) {
-							// 相对路径，添加完整URL
-							background_image = `http://139.196.185.197:7070${background_image}`;
-						} else if (background_image.includes('http') && !background_image.includes('7070')) {
-							// 已经是完整URL，但缺少正确端口
-							if (background_image.startsWith('http://')) {
-								// 替换http://开头的URL，添加7070端口
-								if (background_image.includes('139.196.185.197')) {
-									// 已经包含正确IP，只需要添加端口号
-									background_image = background_image.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
-								} else {
-									// 其他HTTP URL，替换为正确的IP和端口
-									background_image = background_image.replace(/^http:\/\/[^\/]+\//, 'http://139.196.185.197:7070/');
-								}
-							} else if (background_image.startsWith('https://')) {
-								// HTTPS URL，替换为正确的IP和端口
-								if (background_image.includes('139.196.185.197')) {
-									// 已经包含正确IP，只需要添加端口号
-									background_image = background_image.replace('https://139.196.185.197/', 'http://139.196.185.197:7070/');
-								} else {
-									// 其他HTTPS URL，替换为正确的IP和端口
-									background_image = background_image.replace(/^https:\/\/[^\/]+\//, 'http://139.196.185.197:7070/');
-								}
-							}
-						}
+						background_image = apiConfig.getImageUrl(background_image);
 					}
 					
 					this.userInfo = {

@@ -81,6 +81,7 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	data() {
 		return {
@@ -88,7 +89,6 @@ export default {
 			isLoggedIn: false,
 			submitting: false,
 			showTypePicker: false,
-			apiBase: 'http://139.196.185.197:7070/doo/server/api/',
 			form: {
 				type: '',
 				content: '',
@@ -128,7 +128,7 @@ export default {
 			const userInfo = uni.getStorageSync('userInfo');
 
 			uni.request({
-				url: this.apiBase + 'feedback.php',
+				url: apiConfig.baseUrl + 'feedback.php',
 				method: 'POST',
 				data: {
 					user_id: userInfo.id,

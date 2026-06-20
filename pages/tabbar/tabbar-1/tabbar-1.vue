@@ -130,21 +130,19 @@ import request from '../../../utils/request.js';
 import NavBar from '../../../components/modules/nav-bar/nav-bar.vue';
 import Carousel from '../../../components/modules/carousel/carousel.vue';
 import RecommendCard from '../../../components/modules/recommend-card/recommend-card.vue';
-import UserCard from '../../../components/modules/user-card/user-card.vue';
+
 
 const API_BASE = apiConfig.baseUrl;
 
 export default {
-	components: { NavBar, Carousel, RecommendCard, UserCard },
+	components: { NavBar, Carousel, RecommendCard },
 	data() {
 		return {
 			activeTab: 'recommend',
 			activeTabIndex: 0,
 			statusBarHeight: 0,
-			pageHeight: 0,
 			carouselList: [],
 			cardList: [],
-			recommendedList: [],
 			currentRecommendId: '',
 			refreshing: false,
 			loadingRecommend: false,
@@ -177,7 +175,6 @@ export default {
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
-		this.pageHeight = systemInfo.windowHeight || systemInfo.screenHeight;
 		this.loadCarouselData();
 			this.generateRecommendations();
 	},
@@ -284,7 +281,6 @@ export default {
 				{ id: 3, title: '精选内容', author: '推荐系统', cover: '/static/img/banner3.jpg', type: 'image', recommendedBy: 'default' },
 				{ id: 4, title: '关注推荐', author: '推荐系统', cover: '/static/img/banner4.jpg', type: 'image', recommendedBy: 'default' }
 			];
-			this.recommendedList = this.cardList;
 		},
 		loadMoreCards() {
 			if (this.loadingMore || !this.hasMoreCards) return;
@@ -346,9 +342,33 @@ export default {
 			try { await this.loadArticles(); } catch (e) { /* silent */ }
 			this.articlesRefreshing = false;
 		},
-		agentSend() {
-		var t = this.agentInput.trim();if(!t||this.agentLoading)return;this.agentInput="";this.agentLoading=true;this.agentMsgs.push({role:"user",content:t});this.agentMsgs.push({role:"ai",content:"...",wait:true});var that=this;this.$nextTick(function(){that.agentScrl="agent-bottom"});uni.request({url:"http://192.168.1.10:8080/v1/chat/completions",method:"POST",header:{"Content-Type":"application/json"},data:{model:"gpt-3.5-turbo",messages:[{role:"user",content:t}],max_tokens:500},timeout:90000,success:function(r){that.agentLoading=false;that.agentMsgs=that.agentMsgs.filter(function(m){return !m.wait});var rr=(r.data&&r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||"";that.agentMsgs.push({role:"ai",content:rr||"..."});that.$nextTick(function(){that.agentScrl="agent-bottom"})},fail:function(){that.agentLoading=false;that.agentMsgs=that.agentMsgs.filter(function(m){return !m.wait});that.agentMsgs.push({role:"ai",content:"连接失败"})}})}
-		,
+		async agentSend() {
+			const t = this.agentInput.trim();
+			if (!t || this.agentLoading) return;
+			this.agentInput = '';
+			this.agentLoading = true;
+			this.agentMsgs.push({ role: 'user', content: t });
+			this.agentMsgs.push({ role: 'ai', content: '...', wait: true });
+			this.$nextTick(() => { this.agentScrl = 'agent-bottom'; });
+			try {
+				const res = await uni.request({
+					url: API_BASE + 'ai_proxy.php',
+					method: 'POST',
+					header: { 'Content-Type': 'application/json' },
+					data: { message: t, max_tokens: 500 },
+					timeout: 90000
+				});
+				this.agentLoading = false;
+				this.agentMsgs = this.agentMsgs.filter(m => !m.wait);
+				const reply = res?.data?.data?.reply || res?.data?.reply || '...';
+				this.agentMsgs.push({ role: 'ai', content: reply });
+			} catch (e) {
+				this.agentLoading = false;
+				this.agentMsgs = this.agentMsgs.filter(m => !m.wait);
+				this.agentMsgs.push({ role: 'ai', content: '连接失败' });
+			}
+			this.$nextTick(() => { this.agentScrl = 'agent-bottom'; });
+		},
 		viewArticle(article) {
 			uni.navigateTo({
 				url: '/pages/content/article-detail',

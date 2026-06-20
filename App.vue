@@ -5,58 +5,83 @@
 </template>
 
 <script>
-/**
- * 应用入口组件
- * 整个应用的根组件，负责管理应用的生命周期和全局配置
- */
 export default {
-	/**
-	 * 应用启动时触发
-	 * 可以在这里添加初始化逻辑，如：
-	 * - 检查更新
-	 * - 初始化用户状态
-	 * - 加载全局配置
-	 */
+	globalData: {
+		userInfo: null
+	},
 	onLaunch: function() {
-		// 应用启动时可以添加一些初始化逻辑
+		var loginPages = [
+			"pages/auth/login",
+			"pages/auth/forgot-password",
+			"pages/auth/reset-password"
+		];
+		function isLoginPage(url) {
+			for (var i = 0; i < loginPages.length; i++) {
+				if (url.indexOf(loginPages[i]) >= 0) return true;
+			}
+			return false;
+		}
+		function redirectToLogin() {
+			// 获取当前页面栈
+			var pages = getCurrentPages();
+			var currentPath = pages.length > 0 ? pages[pages.length - 1].route : '';
+			// 已在登录页则不再跳转
+			if (isLoginPage(currentPath)) return;
+			uni.reLaunch({ url: "/pages/auth/login" });
+		}
+		var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
+		if (!isLoggedIn) {
+			redirectToLogin();
+		}
+		uni.addInterceptor("navigateTo", {
+			invoke: function(args) {
+				var url = args.url.split("?")[0];
+				if (isLoginPage(url)) return true;
+				var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
+				if (!isLoggedIn) {
+					uni.reLaunch({ url: "/pages/auth/login" });
+					return false;
+				}
+				return true;
+			}
+		});
+		uni.addInterceptor("switchTab", {
+			invoke: function(args) {
+				var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
+				if (!isLoggedIn) {
+					uni.reLaunch({ url: "/pages/auth/login" });
+					return false;
+				}
+				return true;
+			}
+		});
+		uni.addInterceptor("reLaunch", {
+			invoke: function(args) {
+				var url = args.url.split("?")[0];
+				if (isLoginPage(url)) return true;
+				var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
+				if (!isLoggedIn) {
+					uni.reLaunch({ url: "/pages/auth/login" });
+					return false;
+				}
+				return true;
+			}
+		});
 	},
-	
-	/**
-	 * 应用显示时触发
-	 * 当应用从后台切换到前台时调用
-	 * 可以在这里添加显示时的逻辑，如：
-	 * - 刷新数据
-	 * - 恢复用户会话
-	 */
 	onShow: function() {
-		// 应用显示时的逻辑
 	},
-	
-	/**
-	 * 应用隐藏时触发
-	 * 当应用从前台切换到后台时调用
-	 * 可以在这里添加隐藏时的逻辑，如：
-	 * - 暂停后台任务
-	 * - 保存应用状态
-	 */
 	onHide: function() {
-		// 应用隐藏时的逻辑
 	}
 };
 </script>
 
 <style>
-/* 引入全局CSS文件 */
 @import "./static/css/global.css";
-
-/* 应用容器样式 */
 .app-container {
 	width: 100%;
 	height: 100vh;
 	background-color: var(--bg-light);
 }
-
-/* 解决一些机型上的滚动问题 */
 page {
 	width: 100%;
 	height: 100%;

@@ -137,11 +137,10 @@
 </template> 
 
 <script>
-import imageLazy from '../../../components/image-lazy/image-lazy.vue';
+import apiConfig from '../../../utils/api.js';
 
 export default {
 	components: {
-		imageLazy
 	},
 	data() {
 			return {
@@ -237,13 +236,36 @@ export default {
 			this.uploading = true;
 			this.uploadProgress = 0;
 			const totalImages = this.selectedImages.length;
-			let uploadedImages = 0;
-			let failedImages = 0;
-			
+			let uploadedCount = 0;
+			let failedCount = 0;
+			let completedCount = 0;
+
+			// 每张图片上传完成后的统一处理
+			const checkAllDone = () => {
+				completedCount++;
+				this.uploadProgress = Math.round((completedCount / totalImages) * 100);
+				if (completedCount < totalImages) return;
+				// 全部完成
+				this.uploading = false;
+				this.uploadProgress = 0;
+				if (uploadedCount > 0) {
+					this.selectedImages = [];
+					this.imageTitle = '';
+					this.tags = [];
+					this.tagInput = '';
+					uni.showToast({
+						title: failedCount > 0 ? `上传 ${uploadedCount} 张，${failedCount} 张失败` : `成功上传 ${uploadedCount} 张图片`,
+						icon: failedCount > 0 ? 'none' : 'success'
+					});
+				} else {
+					uni.showToast({ title: '上传失败，请重试', icon: 'none' });
+				}
+			};
+
 			// 批量上传图片
 			this.selectedImages.forEach((imagePath, index) => {
 				uni.uploadFile({
-					url: 'http://139.196.185.197:7070/doo/server/api/upload_image.php',
+					url: apiConfig.getUrl('upload_image.php'),
 					filePath: imagePath,
 					name: 'image',
 					formData: {
@@ -253,81 +275,15 @@ export default {
 						category: 'photography',
 						user_id: this.userInfo?.id || 1
 					},
-					onProgressUpdate: (progress) => {
-						// 计算整体上传进度
-						const currentProgress = Math.round((uploadedImages * 100 + progress.progress) / totalImages);
-						this.uploadProgress = Math.min(currentProgress, 100);
-					},
 					success: (res) => {
 						try {
 							const result = JSON.parse(res.data);
-							if (result.code === 200) {
-								// 上传成功
-								uploadedImages++;
-							} else {
-								failedImages++;
-							}
-						} catch (error) {
-							failedImages++;
-						}
-						
-						// 检查是否所有图片都已上传完成
-						if (uploadedImages + failedImages === totalImages) {
-							this.uploading = false;
-							this.uploadProgress = 0;
-							
-							// 显示上传结果
-							if (uploadedImages > 0) {
-								// 重置表单
-								this.selectedImages = [];
-								this.imageTitle = '';
-								this.tags = [];
-								this.tagInput = '';
-								
-								// 显示成功提示
-								uni.showToast({
-									title: `成功上传 ${uploadedImages} 张图片`,
-									icon: 'success'
-								});
-							} else {
-								// 显示失败提示
-								uni.showToast({
-									title: '上传失败，请重试',
-									icon: 'none'
-								});
-							}
-						}
+							if (result.code === 200) uploadedCount++;
+							else failedCount++;
+						} catch (e) { failedCount++; }
+						checkAllDone();
 					},
-					fail: (err) => {
-						failedImages++;
-						
-						// 检查是否所有图片都已上传完成
-						if (uploadedImages + failedImages === totalImages) {
-							this.uploading = false;
-							this.uploadProgress = 0;
-							
-							// 显示上传结果
-							if (uploadedImages > 0) {
-								// 重置表单
-								this.selectedImages = [];
-								this.imageTitle = '';
-								this.tags = [];
-								this.tagInput = '';
-								
-								// 显示成功提示
-								uni.showToast({
-									title: `成功上传 ${uploadedImages} 张图片`,
-									icon: 'success'
-								});
-							} else {
-								// 显示失败提示
-								uni.showToast({
-									title: '上传失败，请重试',
-									icon: 'none'
-								});
-							}
-						}
-					}
+					fail: () => { failedCount++; checkAllDone(); }
 				});
 			});
 		},
@@ -346,7 +302,7 @@ export default {
 			
 			// 发布文章
 			uni.request({
-				url: 'http://139.196.185.197:7070/doo/server/api/upload_article.php',
+				url: apiConfig.getUrl('upload_article.php'),
 				method: 'POST',
 				header: {
 					'Content-Type': 'application/json'
@@ -602,7 +558,7 @@ export default {
 					cursor: pointer;
 					transition: all var(--transition-fast);
 					&:hover {
-						background-color: var(--danger-color);
+						background-color: #ff4757;
 					}
 				}
 			}
@@ -619,7 +575,7 @@ export default {
 				color: var(--primary-color);
 				cursor: pointer;
 				&.delete {
-					color: var(--danger-color);
+					color: #ff4757;
 				}
 			}
 		}
@@ -678,7 +634,7 @@ export default {
 				color: var(--text-tertiary);
 				cursor: pointer;
 				&:hover {
-					color: var(--danger-color);
+					color: #ff4757;
 				}
 			}
 		}
