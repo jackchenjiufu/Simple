@@ -2,7 +2,7 @@
 	<view class="content">
 		<NavBar title="文章详情" />
 
-		<scroll-view class="article-content" scroll-y="true">
+		<scroll-view class="article-content" scroll-y="true" show-scrollbar="false">
 			<view class="article-header">
 				<text class="article-title">{{ article.title }}</text>
 				<view class="article-meta">
@@ -75,8 +75,8 @@ export default {
 </script>
 
 <style>
-.content { width: 100%; height: 100vh; background-color: #ffffff; display: flex; flex-direction: column; }
-.article-content { flex: 1; padding: 24upx; }
+	.content { width: 100%; height: 100vh; background-color: #ffffff; display: flex; flex-direction: column; overflow: hidden; }
+	.article-content { flex: 1; min-height: 0; padding: 24upx; }
 .article-header { margin-bottom: 32upx; }
 .article-title { font-size: 36upx; font-weight: 600; color: #1f2937; line-height: 1.3; margin-bottom: 16upx; display: block; }
 .author-info { display: flex; align-items: center; margin-bottom: 12upx; gap: 12upx; }

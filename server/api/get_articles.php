@@ -6,14 +6,10 @@
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
- * - GET: 获取文章列表
- */
 
 // 设置CORS头，允许跨域请求
 // 设置响应内容类型为JSON
-header("Content-Type: application/json; charset=UTF-8");
 // 允许的请求方法
-header("Access-Control-Allow-Methods: GET, OPTIONS");
 // 允许的请求头
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
@@ -66,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // 生成摘要
             $article['excerpt'] = mb_substr(strip_tags($article['content']), 0, 100) . '...';
         }
+        unset($article);
         
         // 返回成功响应
         http_response_code(200);

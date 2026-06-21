@@ -26,7 +26,7 @@ $db = $database->getConnection();
 // 获取POST数据
 $input = json_decode(file_get_contents("php://input"), true);
 
-$user_id = isset($input['user_id']) ? intval($input['user_id']) : 0;
+$user_id = $_SESSION['user_id'] ?? 0;
 $type = isset($input['type']) ? trim($input['type']) : '';
 $content = isset($input['content']) ? trim($input['content']) : '';
 $contact = isset($input['contact']) ? trim($input['contact']) : '';

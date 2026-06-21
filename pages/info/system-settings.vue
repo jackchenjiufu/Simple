@@ -146,7 +146,7 @@ export default {
 			uni.removeStorageSync('token'); this.isLoggedIn = false;
 			this.showLogoutModal = false;
 			uni.showToast({ title: '已退出登录', icon: 'success' });
-			setTimeout(() => uni.navigateBack(), 1500);
+			setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 1500);
 		},
 		openUserAgreement() { uni.navigateTo({ url: '/pages/info/user-agreement' }); },
 		openPrivacyPolicy() { uni.navigateTo({ url: '/pages/info/privacy-policy' }); },

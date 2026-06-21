@@ -51,11 +51,6 @@ if (!file_exists($uploadDir)) {
     mkdir($uploadDir, 0777, true);
 }
 
-// 启用异步处理（如果支持）
-if (function_exists('fastcgi_finish_request')) {
-    fastcgi_finish_request();
-}
-
 /**
  * 处理文件上传
  */
@@ -89,7 +84,7 @@ if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
         $maxSize = 50 * 1024 * 1024;
         
         // 验证文件大小
-        if ($fileSize < $maxSize) {
+        if ($fileSize <= $maxSize) {
             // 移动上传文件到目标目录
             if (move_uploaded_file($fileTmpPath, $uploadFilePath)) {
                 // 生成文件URL（直接存储到服务器）

@@ -179,14 +179,17 @@ export default {
 .content {
 	width: 100%;
 	min-height: 100vh;
+	height: 100vh;
 	background-color: #ffffff;
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
 }
 
 .status-bar {
 	width: 100%;
 	background: #1b44a6;
+	flex-shrink: 0;
 }
 
 /* ===================== 深蓝色头部 ===================== */

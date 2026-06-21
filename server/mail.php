@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/config/Config.php';
 
 function send_mail(string $toEmail, string $toName, string $subject, string $htmlBody, string $altBody = ''): bool

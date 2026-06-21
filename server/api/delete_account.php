@@ -46,9 +46,6 @@ try {
     $stmt = $pdo->prepare("DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?");
     $stmt->execute([$userId, $userId]);
 
-    $stmt = $pdo->prepare("DELETE FROM user_behavior WHERE user_id = ?");
-    $stmt->execute([$userId]);
-
     $stmt = $pdo->prepare("DELETE FROM contents WHERE user_id = ?");
     $stmt->execute([$userId]);
 
@@ -59,6 +56,15 @@ try {
     $stmt->execute([$userId]);
 
     $stmt = $pdo->prepare("DELETE FROM admin_logs WHERE user_id = ?");
+    $stmt->execute([$userId]);
+
+    $stmt = $pdo->prepare("DELETE FROM overtime WHERE user_id = ?");
+    $stmt->execute([$userId]);
+
+    $stmt = $pdo->prepare("DELETE FROM salary_config WHERE user_id = ?");
+    $stmt->execute([$userId]);
+
+    $stmt = $pdo->prepare("DELETE FROM files WHERE user_id = ?");
     $stmt->execute([$userId]);
 
     $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");

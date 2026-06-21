@@ -6,8 +6,8 @@
 		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 		
 		<!-- 背景横幅，可点击更换背景 -->
-		<view class="background-banner" :style="{ backgroundImage: 'url(' + backgroundUrl + ')' }" @click="changeBackground">
-			<view class="banner-overlay"></view>
+		<view class="background-banner" :style="{ backgroundImage: 'url(' + backgroundUrl + ')', marginTop: '-' + statusBarHeight + 'px', height: bannerHeight + 'px' }" @click="changeBackground">
+		<view class="banner-overlay"></view>
 		</view>
 		
 		<!-- 用户卡片，包含头像、昵称和登录/注册按钮 -->
@@ -56,10 +56,6 @@
 				<text class="menu-arrow">›</text>
 			</view>
 			<!-- 管理员入口，仅对管理员用户显示 -->
-			<view class="menu-item admin-entry" v-if="isLoggedIn && userInfo && userInfo.role === 'admin'" @click="handleMenuClick('admin')">
-				<text class="menu-text">管理中心</text>
-				<text class="menu-arrow">›</text>
-			</view>
 		</view>
 	</view>
 </template>
@@ -76,6 +72,7 @@ export default {
 			isLoggedIn: false, // 登录状态
 			backgroundUrl: 'https://via.placeholder.com/750x450/f33e54/ffffff?text=Background', // 背景图URL
 			statusBarHeight: 0, // 状态栏高度
+			bannerHeight: 0, // 背景横幅总高度（含状态栏延伸部分）
 			userInfo: null, // 用户信息对象
 			apiBase: 'http://139.196.185.197:7070/doo/server/api/', // API基础地址
 			registerTime: '' // 注册时间
@@ -89,6 +86,11 @@ export default {
 		// 获取系统信息，设置状态栏高度
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
+		
+		// 计算背景横幅高度：将450upx转换为px（uni-app中750rpx=屏幕宽度），再加上状态栏高度
+		// 这样背景图可以覆盖到状态栏背后，实现透明状态栏效果
+		const bannerBaseHeight = (450 / 750) * systemInfo.windowWidth;
+		this.bannerHeight = bannerBaseHeight + this.statusBarHeight;
 		
 		// 加载用户信息
 		this.loadUserInfo();
@@ -311,7 +313,7 @@ export default {
 				
 				// 上传图片到服务器
 				const uploadRes = await uni.uploadFile({
-					url: this.apiBase + 'upload',
+					url: this.apiBase + 'upload.php',
 					filePath: filePath,
 					name: 'file'
 				});
@@ -390,8 +392,8 @@ export default {
 				
 				// 发送请求更新用户信息
 				const res = await uni.request({
-					url: this.apiBase + 'users/' + this.userInfo.id,
-					method: 'PUT',
+					url: this.apiBase + 'update_user.php',
+					method: 'POST',
 					data: data,
 					header: {
 						'Content-Type': 'application/json'
@@ -434,7 +436,6 @@ export default {
 feedback: '/pages/user/my-feedback', // 问题反馈
 				aboutUs: '/pages/info/about-us', // 关于
 				systemSettings: '/pages/info/system-settings', // 系统设置
-				admin: '/pages/admin/admin' // 管理中心
 			};
 			
 			// 获取页面URL并跳转
@@ -464,7 +465,6 @@ feedback: '/pages/user/my-feedback', // 问题反馈
 
 	.status-bar {
 		width: 100%;
-		background-color: var(--bg-color);
 	}
 
 	.background-banner {

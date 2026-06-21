@@ -2,7 +2,7 @@
 	<view class="content">
 		<NavBar title="用户协议" />
 
-		<scroll-view class="doc-container" scroll-y="true">
+		<scroll-view class="doc-container" scroll-y="true" show-scrollbar="false">
 			<view class="doc-content">
 				<text class="doc-section-title">1. 引言</text>
 				<text class="doc-text">欢迎使用 Date Of Origin（简称"本应用"）。本用户协议（以下简称"本协议"）是您与本应用之间关于使用本应用服务所订立的协议。</text>
@@ -85,8 +85,8 @@ export default {
 </script>
 
 <style>
-.content { width: 100%; height: 100vh; background-color: #f8f9fb; display: flex; flex-direction: column; }
-.doc-container { flex: 1; padding: 20px; }
+.content { width: 100%; height: 100vh; background-color: #f8f9fb; display: flex; flex-direction: column; overflow: hidden; }
+.doc-container { flex: 1; min-height: 0; padding: 20px; }
 .doc-content { line-height: 1.8; }
 .doc-section-title { display: block; font-size: 15px; font-weight: 600; color: #303132; margin-top: 20px; margin-bottom: 8px; }
 .doc-section-title:first-child { margin-top: 0; }

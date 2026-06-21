@@ -119,8 +119,12 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // 获取用户ID（这里使用固定值，实际应用中应该从会话或token中获取）
-    $userId = isset($_POST['user_id']) ? $_POST['user_id'] : 1;
+    // 从会话获取用户ID
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    $userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+    if (!$userId) {
+        throw new Exception('请先登录');
+    }
     
     // 检查content表是否存在，如果不存在则创建
     $checkTableSql = "SHOW TABLES LIKE 'content'";

@@ -58,9 +58,9 @@ switch ($method) {
             http_response_code(200);
             echo json_encode(array("message" => "获取成功", "code" => 200, "data" => $result), JSON_UNESCAPED_UNICODE);
 
-        } else if ($action === 'check') {
-            $target_id = isset($_GET['user_id']) ? $_GET['user_id'] : 0;
-            $query = "SELECT COUNT(*) as count FROM follows WHERE follower_id = :user_id AND following_id = :target_id";
+    } else if ($action === 'check') {
+        $target_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+        $query = "SELECT COUNT(*) as count FROM follows WHERE follower_id = :user_id AND following_id = :target_id";
             $stmt = $db->prepare($query);
             $stmt->bindParam(":user_id", $user_id);
             $stmt->bindParam(":target_id", $target_id);
