@@ -12,7 +12,7 @@ define('DEPLOY_TOKEN', 'doo_deploy_2024');
 
 // 允许写入的目录
 $allowedDirs = [
-    '/www/wwwroot/139.196.185.197_7070/doo/server/api/',
+    '/www/wwwroot/139.196.185.197_7070/doo/server/',
     '/www/wwwroot/139.196.185.197_7070/doo/admin-web/',
 ];
 

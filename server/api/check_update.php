@@ -45,6 +45,12 @@ try {
     $stmt->execute();
     // 获取结果
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // 查询全部版本历史（更新日志）
+    $logQuery = "SELECT version, description, created_at FROM app_versions ORDER BY created_at DESC";
+    $logStmt = $db->prepare($logQuery);
+    $logStmt->execute();
+    $changelog = $logStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // 如果有版本数据，更新最新版本号
     if ($result) {
@@ -73,7 +79,8 @@ try {
             "latestVersion" => $latestVersion,
             "hasUpdate" => $hasUpdate,
             "downloadUrl" => $downloadUrl,
-            "description" => $description ?? ''
+            "description" => $description ?? '',
+            "changelog" => $changelog ?? []
         )
     ), JSON_UNESCAPED_UNICODE);
 

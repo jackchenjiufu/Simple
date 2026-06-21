@@ -17,6 +17,15 @@
 					</view>
 					<text class="item-arrow">›</text>
 				</view>
+				<view class="settings-item" @click="clearCache">
+					<view class="item-left">
+						<text class="item-text">清理缓存</text>
+					</view>
+					<view class="item-right">
+						<text class="item-sub">{{ cacheSize }}</text>
+						<text class="item-arrow">›</text>
+					</view>
+				</view>
 				<view class="settings-item" @click="goToChangePassword">
 					<view class="item-left">
 						<text class="item-text">修改密码</text>
@@ -106,12 +115,14 @@ export default {
 			isLoggedIn: false,
 			showLogoutModal: false,
 			showDeleteAccountModal: false,
+			cacheSize: '计算中...',
 		};
 	},
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
 		this.isLoggedIn = !!uni.getStorageSync('isLoggedIn');
+			this.getCacheSize();
 	},
 	methods: {
 		checkUpdate() { uni.navigateTo({ url: '/pages/info/check-update' }); },
@@ -148,7 +159,59 @@ export default {
 			uni.showToast({ title: '已退出登录', icon: 'success' });
 			setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 1500);
 		},
-		openUserAgreement() { uni.navigateTo({ url: '/pages/info/user-agreement' }); },
+		clearCache() {
+				uni.showModal({
+					title: '清理缓存',
+					content: '当前缓存 ' + this.cacheSize + '，确定要清理吗？',
+					success: (res) => {
+						if (res.confirm) {
+							try {
+								// @ts-ignore
+								if (typeof plus !== 'undefined' && plus.cache) {
+									plus.cache.clear(() => {
+										uni.clearStorageSync();
+										this.cacheSize = '0 B';
+										uni.showToast({ title: '缓存已清理', icon: 'success' });
+									});
+								} else {
+									uni.clearStorageSync();
+									this.cacheSize = '0 B';
+									uni.showToast({ title: '缓存已清理', icon: 'success' });
+								}
+							} catch(e) {
+								uni.showToast({ title: '清理失败', icon: 'none' });
+							}
+						}
+					}
+				});
+			},
+			getCacheSize() {
+				try {
+					// @ts-ignore
+					if (typeof plus !== 'undefined' && plus.cache) {
+						plus.cache.calculate((size) => {
+							this.cacheSize = this.formatSize(size);
+						});
+					} else {
+						// H5: 估算 localStorage 大小
+						let total = 0;
+						for (let key in localStorage) {
+							if (localStorage.hasOwnProperty(key)) {
+								total += localStorage[key].length * 2;
+							}
+						}
+						this.cacheSize = total > 0 ? this.formatSize(total) : '< 1 KB';
+					}
+				} catch(e) {
+					this.cacheSize = '未知';
+				}
+			},
+			formatSize(bytes) {
+				if (bytes < 1024) return bytes + ' B';
+				if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+				return (bytes / 1048576).toFixed(1) + ' MB';
+			},
+			openUserAgreement() { uni.navigateTo({ url: '/pages/info/user-agreement' }); },
 		openPrivacyPolicy() { uni.navigateTo({ url: '/pages/info/privacy-policy' }); },
 		openDocumentation() { uni.navigateTo({ url: '/pages/info/documentation' }); }
 	}
@@ -172,6 +235,8 @@ export default {
 .item-left { display: flex; align-items: center; gap: 16upx; }
 .item-text { font-size: 28upx; color: #303132; }
 .item-text.danger-text { color: #ef4444; }
+.item-right { display: flex; align-items: center; gap: 12upx; }
+.item-sub { font-size: 24upx; color: #9ca3af; }
 .item-arrow { font-size: 32upx; color: #c0c4cc; font-weight: 300; }
 
 /* ===================== 弹窗 ===================== */
