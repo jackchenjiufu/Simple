@@ -9,7 +9,7 @@
 			<view class="nav-placeholder"></view>
 		</view>
 
-		<scroll-view class="body" scroll-y="true" v-if="isLoggedIn">
+		<scroll-view class="body" scroll-y="true" v-if="isLoggedIn" show-scrollbar="false">
 			<view class="form-section">
 				<!-- 反馈类型 -->
 				<view class="form-group">
@@ -57,9 +57,11 @@
 		</view>
 
 		<!-- 类型选择弹窗 -->
-		<view class="modal-overlay" v-if="showTypePicker" @click.self="showTypePicker = false">
+		<view class="modal-overlay" v-if="showTypePicker" @click.self="showTypePicker = false" :class="{ show: showTypePicker }">
 			<view class="modal-content" @click.stop>
+				<view class="modal-handle"></view>
 				<view class="modal-header">
+					<text class="modal-icon">📋</text>
 					<text class="modal-title">选择反馈类型</text>
 				</view>
 				<view class="type-list">
@@ -346,20 +348,30 @@ export default {
 	align-items: flex-end;
 	justify-content: center;
 	z-index: 9999;
+	animation: fadeIn 0.2s ease;
 }
 
 .modal-content {
 	background-color: #ffffff;
 	border-radius: 24upx 24upx 0 0;
 	width: 100%;
-	padding: 32upx 28upx;
+	padding: 16upx 28upx 40upx;
 	padding-bottom: calc(40upx + env(safe-area-inset-bottom));
 	box-shadow: 0 -4upx 20upx rgba(0, 0, 0, 0.08);
+	animation: slideUp 0.3s ease;
+}
+
+.modal-handle {
+	width: 64upx;
+	height: 6upx;
+	background: #e5e7eb;
+	border-radius: 3upx;
+	margin: 0 auto 20upx;
 }
 
 .modal-header {
 	text-align: center;
-	margin-bottom: 24upx;
+	margin-bottom: 28upx;
 }
 
 .modal-title {
@@ -376,13 +388,23 @@ export default {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 28upx 16upx;
+	padding: 24upx 20upx;
+	margin-bottom: 4upx;
+	border-radius: 12upx;
 	border-bottom: 1px solid #f3f4f6;
+	transition: all 0.15s ease;
+}
+
+.type-item:active {
+	background: #f3f6fc;
+	transform: scale(0.98);
 }
 
 .type-item.active {
 	background: #f0f5ff;
 	border-radius: 12upx;
+	border-left: 4upx solid #3071f6;
+	padding-left: 16upx;
 }
 
 .type-item:last-child {
@@ -404,15 +426,27 @@ export default {
 	width: 100%;
 	height: 88upx;
 	line-height: 88upx;
-	background: #f3f4f6;
-	color: #303132;
+	background: #ffffff;
+	color: #3071f6;
 	font-size: 28upx;
+	font-weight: 500;
 	border-radius: 16upx;
-	border: none;
+	border: 2upx solid #3071f6;
+	transition: all 0.15s ease;
 }
 
 .modal-close-btn:active {
-	opacity: 0.7;
+	background: #f0f5ff;
+	transform: scale(0.98);
+}
+
+@keyframes slideUp {
+	from { transform: translateY(100%); }
+	to { transform: translateY(0); }
+}
+@keyframes fadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
 }
 
 /* 隐藏滚动条 */

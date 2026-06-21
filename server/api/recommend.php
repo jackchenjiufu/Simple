@@ -75,14 +75,14 @@ class RecommendationSystem {
         } catch (Exception $e) {
             return [
                 'code' => 500,
-                'message' => '推荐系统错误: ' . $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'message' => '推荐系统错误: ' . $e->getMessage()
             ];
         }
     }
     
     // 获取活跃的A/B测试
     private function getActiveAbTest() {
+        try {
         $cacheKey = 'active_ab_test';
         $cachedTest = $this->getFromCache($cacheKey, 60); // 1分钟缓存
         if ($cachedTest) {
@@ -99,6 +99,9 @@ class RecommendationSystem {
         }
         
         return $test;
+        } catch (Exception $e) {
+            return null;
+        }
     }
     
     // 根据流量分配选择算法

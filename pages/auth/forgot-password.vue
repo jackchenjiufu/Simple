@@ -40,9 +40,10 @@ export default {
 		return {
 			statusBarHeight: 0,
 			loading: false,
-			focusedField: '',
-}
-	},
+			email: '',
+	focusedField: '',
+	}
+},
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;

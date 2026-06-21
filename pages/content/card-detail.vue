@@ -143,7 +143,7 @@ export default {
 				url: apiConfig.getUrl('add_collection.php'),
 				method: 'POST',
 				header: {
-					'Content-Type': 'application/x-www-form-urlencoded'
+				'Content-Type': 'application/json'
 				},
 				data: {
 					user_id: this.userId,
@@ -234,9 +234,10 @@ export default {
 	background-color: #000000;
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
 }
 
-.status-bar {
+	.status-bar {
 		background-color: var(--bg-color);
 	}
 

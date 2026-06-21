@@ -2,7 +2,7 @@
 	<view class="content">
 		<NavBar title="隐私政策" />
 
-		<scroll-view class="doc-container" scroll-y="true">
+		<scroll-view class="doc-container" scroll-y="true" show-scrollbar="false">
 			<view class="doc-content">
 				<text class="doc-section-title">1. 引言</text>
 				<text class="doc-text">欢迎使用 Date Of Origin（简称"本应用"）。我们非常重视您的隐私保护和个人信息安全。本隐私政策旨在向您说明我们如何收集、使用、存储、共享和保护您的个人信息，以及您享有的权利和如何行使这些权利。</text>
@@ -52,8 +52,8 @@ export default {
 </script>
 
 <style>
-.content { width: 100%; height: 100vh; background-color: #f8f9fb; display: flex; flex-direction: column; }
-.doc-container { flex: 1; padding: 20px; }
+.content { width: 100%; height: 100vh; background-color: #f8f9fb; display: flex; flex-direction: column; overflow: hidden; }
+.doc-container { flex: 1; min-height: 0; padding: 20px; }
 .doc-content { line-height: 1.8; }
 .doc-section-title { display: block; font-size: 15px; font-weight: 600; color: #303132; margin-top: 20px; margin-bottom: 8px; }
 .doc-section-title:first-child { margin-top: 0; }

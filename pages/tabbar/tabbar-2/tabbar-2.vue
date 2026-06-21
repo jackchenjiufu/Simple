@@ -1,10 +1,9 @@
 <template>
-	<view class="content">
+	<view class="content" :style="{ height: contentHeight }">
 		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
-		<view class="nav-bar">
-			<text class="nav-title">工资记录</text>
-			<text class="nav-subtitle" v-if="isLoggedIn">{{ currentMonth }}</text>
-		</view>
+	<view class="nav-bar">
+		<text class="nav-title">工资记录</text>
+	</view>
 
 		<view v-if="!isLoggedIn" class="login-required">
 			<text class="login-icon">⏰</text>
@@ -13,7 +12,7 @@
 			<button class="login-btn" @click="goLogin">立即登录</button>
 		</view>
 
-		<scroll-view v-else class="body" scroll-y="true">
+		<scroll-view v-else class="body" scroll-y="true" show-scrollbar="false">
 			<!-- 月度汇总 -->
 			<view class="stats-card">
 				<view class="stats-row three">
@@ -226,12 +225,12 @@ export default {
 		const now = new Date();
 		return {
 			statusBarHeight: 0, isLoggedIn: false, userInfo: null,
-			currentMonth: `${now.getFullYear()}年${now.getMonth()+1}月`,
+			contentHeight: '100vh',
 			formDate: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`,
 			formHours: '1.0', formNote: '',
 			records: [], salary: null,
 			stats: { totalDays: 0, totalHours: '0.0', totalOvertimeSalary: '0' },
-			salaryForm: { base_salary: '0', bonus: '0', performance_score: '0', performance_rate: '1.0' },
+			salaryForm: { base_salary: '0', bonus: '0', performance_score: '0', performance_rate: '1.0', social_insurance: false, si_pension: '8', si_medical: '2', si_unemployment: '0.5', si_housing: '8' },
 			rateConfig: { normal: 1.5, weekend: 2.0, holiday: 3.0 },
 
 			showDatePicker: false, dpYear: now.getFullYear(), dpMonth: now.getMonth() + 1,
@@ -246,18 +245,26 @@ export default {
 		}
 	},
 	computed: {
-		formRateLabel() {
-			if (this.isHoliday(this.formDate)) return '节假日 ' + this.rateConfig.holiday + 'x';
-			const day = new Date(this.formDate).getDay();
-			if (day === 0 || day === 6) return '周末 ' + this.rateConfig.weekend + 'x';
-			return '平日 ' + this.rateConfig.normal + 'x';
-		},
-		formRateType() {
-			if (this.isHoliday(this.formDate)) return 'holiday';
-			const day = new Date(this.formDate).getDay();
-			return day === 0 || day === 6 ? 'weekend' : 'normal';
-		},
-		autoOvertimeRate() {
+	formRateLabel() {
+		const date = this.formDate;
+		if (!date) return '平日 ' + this.rateConfig.normal + 'x';
+		const d = date.substr(0, 10);
+		if (this.holidayMap.indexOf(d) >= 0) return '节假日 ' + this.rateConfig.holiday + 'x';
+		const day = new Date(this.formDate).getDay();
+		if (this.workdayMap.indexOf(d) >= 0) return '平日 ' + this.rateConfig.normal + 'x';
+		if (day === 0 || day === 6) return '周末 ' + this.rateConfig.weekend + 'x';
+		return '平日 ' + this.rateConfig.normal + 'x';
+	},
+	formRateType() {
+		const date = this.formDate;
+		if (!date) return 'normal';
+		const d = date.substr(0, 10);
+		if (this.holidayMap.indexOf(d) >= 0) return 'holiday';
+		const day = new Date(this.formDate).getDay();
+		if (this.workdayMap.indexOf(d) >= 0) return 'normal';
+		return day === 0 || day === 6 ? 'weekend' : 'normal';
+	},
+	autoOvertimeRate() {
 			const base = parseFloat(this.salaryForm.base_salary) || 0;
 			return base > 0 ? (base / STD_HOURS).toFixed(1) : '--';
 		},
@@ -278,8 +285,8 @@ export default {
 					isToday: dateStr === todayStr,
 					isSelected: dateStr === this.formDate,
 					isWeekend: [0,6].includes(new Date(dateStr).getDay()),
-					isHoliday: this.isHoliday ? this.isHoliday(dateStr) : false,
-					isWorkday: this.isWorkday ? this.isWorkday(dateStr) : false,
+					isHoliday: this.holidayMap.indexOf(dateStr) >= 0,
+					isWorkday: this.workdayMap.indexOf(dateStr) >= 0,
 					date: dateStr
 				});
 			}
@@ -289,13 +296,14 @@ export default {
 	onLoad() {
 		const info = uni.getSystemInfoSync();
 		this.statusBarHeight = info.statusBarHeight || 0;
+		this.contentHeight = info.windowHeight + 'px';
 		const userInfo = uni.getStorageSync('userInfo');
 		if (userInfo && uni.getStorageSync('isLoggedIn')) {
 			this.isLoggedIn = true; this.userInfo = userInfo;
 			this.loadData();
 		}
 		this.loadHolidays();
-	},
+},
 	onShow() {
 		const ui = uni.getStorageSync('userInfo');
 		if (ui && uni.getStorageSync('isLoggedIn')) {
@@ -308,40 +316,37 @@ export default {
 		}
 	},
 	methods: {
-		async loadHolidays() {
-			// 2026年节假日数据
-			this.holidayMap = [
-				'2026-01-01', // 元旦
-				'2026-01-02',
-				'2026-01-03',
-				'2026-01-28','2026-01-29','2026-01-30','2026-01-31','2026-02-01','2026-02-02','2026-02-03', // 春节
-				'2026-02-04','2026-02-05','2026-02-06','2026-02-07','2026-02-08','2026-02-09','2026-02-10','2026-02-11',
-				'2026-04-04','2026-04-05','2026-04-06', // 清明节
-				'2026-05-01','2026-05-02','2026-05-03','2026-05-04','2026-05-05', // 劳动节
-				'2026-06-19','2026-06-20','2026-06-21', // 端午节（6月19日）
-				'2026-10-01','2026-10-02','2026-10-03','2026-10-04','2026-10-05','2026-10-06','2026-10-07', // 国庆节
-			];
-			// 2026年调休上班日
-			this.workdayMap = [
-				'2026-01-04', // 周日补元旦
-				'2026-02-14','2026-02-15', // 周末补春节
-				'2026-04-12', // 周日补清明
-				'2026-04-26', // 周日补劳动节
-				'2026-06-23', // 端午调休
-				'2026-09-27','2026-10-10', // 补国庆
-			];
-		},
-		isHoliday(dateStr) {
-			if (!dateStr) return false;
-			const d = dateStr.substr(0, 10);
-			return this.holidayMap.indexOf(d) >= 0;
-		},
-		isWorkday(dateStr) {
-			if (!dateStr) return false;
-			const d = dateStr.substr(0, 10);
-			return this.workdayMap.indexOf(d) >= 0;
-		},
 		goLogin() { uni.navigateTo({ url: '/pages/auth/login' }); },
+		async loadHolidays() {
+			// 先用备用数据（确保始终有基线数据）
+			this.holidayMap = [
+				'2026-01-01', '2026-01-28','2026-01-29','2026-01-30',
+				'2026-01-31','2026-02-01','2026-02-02','2026-02-03',
+				'2026-04-04','2026-04-05','2026-04-06',
+				'2026-05-01','2026-05-02','2026-05-03','2026-05-04','2026-05-05',
+				'2026-06-19','2026-06-20','2026-06-21',
+				'2026-10-01','2026-10-02','2026-10-03','2026-10-04','2026-10-05','2026-10-06','2026-10-07',
+			];
+			this.workdayMap = [
+				'2026-01-04', '2026-02-14','2026-02-15',
+				'2026-06-23', '2026-04-26', '2026-09-27','2026-10-10',
+			];
+			// 尝试从 API 补充额外节假日数据（不覆盖备用数据）
+			try {
+				const res = await uni.request({
+					url: 'https://timor.tech/api/holiday/year/' + new Date().getFullYear(),
+					dataType: 'json'
+				});
+				if (res.data && res.data.code === 0 && res.data.holiday) {
+					const holidays = res.data.holiday;
+					for (const dateStr in holidays) {
+						const info = holidays[dateStr];
+						if (info.holiday && this.holidayMap.indexOf(dateStr) === -1) this.holidayMap.push(dateStr);
+						if (info.replace && this.workdayMap.indexOf(info.replace) === -1) this.workdayMap.push(info.replace);
+					}
+				}
+			} catch(e) { console.error('节假日API请求失败', e); }
+		},
 		adj(d) { let h = parseFloat(this.formHours)||0; this.formHours = Math.max(0.5, h+d).toFixed(1); },
 		changeMonth(d) {
 			this.dpMonth += d;
@@ -369,7 +374,19 @@ export default {
 						const base = d.salary_config.base_salary || 0;
 						this.salary = { ...d.salary_config, overtime_rate_auto: base > 0 ? (base/STD_HOURS).toFixed(1) : null,
 				si_config: d.salary_config || {} };
-					} else { this.salary = null; }
+					// 回填薪资设置表单（Issue #1 修复：加载已保存数据）
+					this.salaryForm = {
+						base_salary: String(d.salary_config.base_salary || 0),
+						bonus: String(d.salary_config.bonus || 0),
+						performance_score: String(d.salary_config.performance_score || 0),
+						performance_rate: String(d.salary_config.performance_rate || 1.0),
+						social_insurance: !!d.salary_config.social_insurance,
+						si_pension: String(d.salary_config.si_pension || 8),
+						si_medical: String(d.salary_config.si_medical || 2),
+						si_unemployment: String(d.salary_config.si_unemployment || 0.5),
+						si_housing: String(d.salary_config.si_housing || 8),
+					};
+			} else { this.salary = null; }
 					if (d.rate_config) this.rateConfig = d.rate_config;
 				}
 			} catch(e) { console.error(e); }
@@ -377,9 +394,11 @@ export default {
 		async submitOvertime() {
 			const h = parseFloat(this.formHours);
 			if (!h || h <= 0) { uni.showToast({ title:'请输入有效时长', icon:'none' }); return; }
+			const d = this.formDate.substr(0, 10);
 			const day = new Date(this.formDate).getDay();
 			let mult = this.rateConfig.normal;
-			if (this.isHoliday(this.formDate)) { mult = this.rateConfig.holiday; }
+			if (this.holidayMap.indexOf(d) >= 0) { mult = this.rateConfig.holiday; }
+			else if (this.workdayMap.indexOf(d) >= 0) { mult = this.rateConfig.normal; }
 			else if (day === 0 || day === 6) { mult = this.rateConfig.weekend; }
 			const base = parseFloat(this.salaryForm.base_salary) || (this.salary ? this.salary.base_salary : 0);
 			const rate = base > 0 ? base / STD_HOURS : 30;
@@ -444,18 +463,17 @@ export default {
 </script>
 
 <style>
-.content { min-height: 100vh; background: #f8f9fb; display: flex; flex-direction: column; }
-.status-bar { width: 100%; background: #ffffff; }
-.nav-bar { display:flex; flex-direction:column; align-items:center; padding:12upx 24upx 16upx; background:#fff; border-bottom:1px solid #f0f0f0; }
+	.content { background: #f8f9fb; display: flex; flex-direction: column; overflow: hidden; }
+	.status-bar { width: 100%; background: #ffffff; flex-shrink:0; }
+	.nav-bar { display:flex; flex-direction:column; align-items:center; padding:12upx 24upx 16upx; background:#fff; border-bottom:1px solid #f0f0f0; flex-shrink:0; }
 .nav-title { font-size:32upx; font-weight:700; color:#1b44a6; }
-.nav-subtitle { font-size:22upx; color:#909398; margin-top:4upx; }
 .login-required { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40upx; }
 .login-icon { font-size:80upx; margin-bottom:20upx; }
 .login-title { font-size:32upx; font-weight:600; color:#303132; margin-bottom:8upx; }
 .login-sub { font-size:26upx; color:#909398; margin-bottom:40upx; }
 .login-btn { width:400upx; height:88upx; line-height:88upx; background:#3071f6; color:#fff; font-size:28upx; font-weight:600; border-radius:16upx; border:none; }
-.body { flex:1; padding:24upx; }
-.stats-card { background:linear-gradient(135deg,#1b44a6,#3071f6); border-radius:20upx; padding:28upx 24upx; margin-bottom:24upx; box-shadow:0 8upx 32upx rgba(48,113,246,0.25); }
+	.body { flex:1; min-height:0; padding:24upx; }
+	.stats-card { background:linear-gradient(135deg,#1b44a6,#3071f6); border-radius:20upx; padding:28upx 24upx; margin-bottom:24upx; box-shadow:0 8upx 32upx rgba(48,113,246,0.25); }
 .stats-row { display:flex; }
 .stats-row.three .stat-item { flex:1; text-align:center; }
 .stats-row.two .stat-item { flex:1; text-align:center; padding:8upx 0; }
@@ -505,7 +523,7 @@ export default {
 .record-right { text-align:right; flex-shrink:0; display:flex; align-items:center; gap:16upx; }
 .record-hours { font-size:28upx; font-weight:600; color:#3071f6; }
 .record-salary { font-size:22upx; color:#f59e0b; }
-.record-delete { font-size:22upx; color:#ef4444; padding:8upx; }
+.record-delete { font-size:22upx; color:#dc2626; padding:12upx; font-weight:600; }
 .deduction-detail { margin-top:8upx; padding:12upx 16upx; background:rgba(255,255,255,0.1); border-radius:12upx; }
 .dd-title { display:block; font-size:20upx; color:rgba(255,255,255,0.5); margin-bottom:8upx; }
 .dd-row { display:flex; justify-content:space-between; padding:4upx 0; }
@@ -566,6 +584,6 @@ export default {
 	width:100%; height:96upx; line-height:96upx; font-size:30upx; font-weight:500;
 	border-radius:16upx; border:none; margin-bottom:12upx;
 }
-.action-sheet-btn.danger { background:#fef2f2; color:#ef4444; font-weight:600; }
+.action-sheet-btn.danger { background:#ef4444; color:#ffffff; font-weight:600; }
 .action-sheet-btn.cancel { background:#ffffff; color:#303132; border:1px solid #e5e7eb; }
 </style>

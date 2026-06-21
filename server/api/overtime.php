@@ -8,6 +8,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 require_once __DIR__ . '/../config/Database.php';
 
+// 会话认证
+if (session_status() === PHP_SESSION_NONE) session_start();
+$sessionUserId = $_SESSION['user_id'] ?? null;
+if (!$sessionUserId) {
+    http_response_code(401);
+    echo json_encode(['code' => 401, 'message' => '请先登录']);
+    exit;
+}
+
 $database = new Database();
 $db = $database->getConnection();
 
@@ -55,15 +64,13 @@ $db->exec("CREATE TABLE IF NOT EXISTS salary_config (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-$userId = (int)($_GET['user_id'] ?? $_POST['user_id'] ?? 0);
+$userId = $sessionUserId;
 $method = $_SERVER['REQUEST_METHOD'];
 
 $input = json_decode(file_get_contents('php://input'), true);
-if (!$userId && isset($input['user_id'])) $userId = (int)$input['user_id'];
 
 // ====== 薪资配置 ======
 if ($method === 'PUT' && isset($input['action']) && $input['action'] === 'save_salary') {
-    $userId = (int)($input['user_id'] ?? 0);
     if (!$userId) { http_response_code(400); echo json_encode(['code'=>400,'message'=>'缺少用户ID']); exit; }
 
     $stmt = $db->prepare("INSERT INTO salary_config (user_id, base_salary, bonus, performance_score, performance_rate, overtime_rate, social_insurance, si_pension, si_medical, si_unemployment, si_housing)

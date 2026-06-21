@@ -5,7 +5,7 @@
 			<text class="nav-title">消息</text>
 		</view>
 
-		<scroll-view class="body" scroll-y="true" refresher-enabled="true" refresher-triggered="refreshing" @refresherrefresh="onRefresh">
+		<scroll-view class="body" scroll-y="true" show-scrollbar="false" refresher-enabled="true" refresher-triggered="refreshing" @refresherrefresh="onRefresh">
 			<view class="msg-list">
 				<view class="msg-item" v-for="item in list" :key="item.id" @click="viewDetail(item.id)">
 					<view class="msg-avatar">
@@ -71,11 +71,11 @@ export default {
 </script>
 
 <style>
-.content { min-height: 100vh; background: #f8f9fb; display: flex; flex-direction: column; }
-.status-bar { width: 100%; background: #ffffff; }
-.nav-bar { display: flex; align-items: center; justify-content: center; height: 88upx; background: #ffffff; border-bottom: 1px solid #f0f0f0; }
+.content { height: 100vh; background: #f8f9fb; display: flex; flex-direction: column; overflow: hidden; }
+.status-bar { width: 100%; background: #ffffff; flex-shrink:0; }
+.nav-bar { display: flex; align-items: center; justify-content: center; height: 88upx; background: #ffffff; border-bottom: 1px solid #f0f0f0; flex-shrink:0; }
 .nav-title { font-size: 30upx; font-weight: 600; color: #303132; }
-.body { flex: 1; padding: 0; }
+.body { flex: 1; min-height: 0; padding: 0; }
 
 .msg-list { padding: 0; }
 .msg-item {

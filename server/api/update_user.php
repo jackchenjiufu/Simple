@@ -13,6 +13,14 @@ header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
+session_start();
+$currentUserId = $_SESSION['user_id'] ?? null;
+if (!$currentUserId) {
+    http_response_code(401);
+    echo json_encode(['code' => 401, 'message' => '请先登录']);
+    exit;
+}
+
 // 引入数据库连接
 include_once __DIR__ . '/../config/Database.php';
 
@@ -24,8 +32,6 @@ $db = $database->getConnection();
 $rawData = file_get_contents("php://input");
 $data = json_decode($rawData);
 
-// 检查用户ID是否存在
-if (!empty($data->user_id)) {
     $setClauses = array(); // SQL更新语句的SET子句
     $params = array(); // SQL参数
 
@@ -85,9 +91,9 @@ if (!empty($data->user_id)) {
     // 如果有需要更新的数据
     if (count($setClauses) > 0) {
         // 构建SQL更新语句
-        $query = "UPDATE users SET " . implode(", ", $setClauses) . " WHERE id = :user_id";
+        $query = "UPDATE users SET " . implode(", ", $setClauses) . " WHERE id = :uid";
         $stmt = $db->prepare($query);
-        $params[':user_id'] = $data->user_id;
+        $params[':uid'] = $currentUserId;
 
         // 绑定参数
         foreach ($params as $key => $value) {
@@ -107,8 +113,3 @@ if (!empty($data->user_id)) {
         http_response_code(400);
         echo json_encode(array("message" => "没有需要更新的数据", "code" => 400));
     }
-} else {
-    // 用户ID不能为空
-    http_response_code(400);
-    echo json_encode(array("message" => "用户ID不能为空", "code" => 400));
-}

@@ -496,6 +496,8 @@ h3 {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+/* scroll-view 滚动条隐藏（H5 平台） */
+uni-scroll-view ::-webkit-scrollbar { display: none; }
 
 /* 全局按钮样式 */
 .btn {

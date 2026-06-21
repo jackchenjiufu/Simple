@@ -37,7 +37,7 @@ export default {
 </script>
 
 <style>
-.status-bar { width: 100%; background-color: #ffffff; }
+	.status-bar { width: 100%; background-color: #ffffff; flex-shrink: 0; }
 .nav-bar {
 	display: flex;
 	align-items: center;

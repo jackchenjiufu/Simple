@@ -31,37 +31,7 @@
 			}
 		},
 		{
-			"path": "pages/user/settings",
-			"style": {
-				"navigationBarTitleText": "设置"
-			}
-		},
-		{
 			"path": "pages/user/personal-info",
-			"style": {
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/user/my-posts",
-			"style": {
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/user/my-images",
-			"style": {
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/user/my-favorites",
-			"style": {
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/user/my-articles",
 			"style": {
 				"navigationStyle": "custom"
 			}
@@ -73,25 +43,7 @@
 			}
 		},
 		{
-			"path": "pages/user/my-questions",
-			"style": {
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/user/user-profile",
-			"style": {
-				"navigationStyle": "custom"
-			}
-		},
-		{
 			"path": "pages/tabbar/tabbar-2/tabbar-2",
-			"style": {
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/tabbar/tabbar-3/tabbar-3",
 			"style": {
 				"navigationStyle": "custom"
 			}
@@ -106,26 +58,10 @@
 			"path": "pages/tabbar/tabbar-5/tabbar-5",
 			"style": {
 				"navigationStyle": "custom"
-			},
-			"preloadRule": {
-				"user/settings": {
-					"network": "all",
-					"preload": true
-				},
-				"user/edit-profile": {
-					"network": "all",
-					"preload": true
-				}
 			}
 		},
 		{
 			"path": "pages/content/card-detail",
-			"style": {
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/content/message-detail",
 			"style": {
 				"navigationStyle": "custom"
 			}

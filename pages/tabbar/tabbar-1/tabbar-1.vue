@@ -18,11 +18,12 @@
 		>
 			<!-- 推荐 -->
 			<swiper-item class="swiper-item">
-				<scroll-view
-					class="content-area"
-					scroll-y="true"
-					:refresher-enabled="true"
-					:refresher-triggered="refreshing"
+		<scroll-view
+			class="content-area"
+			scroll-y="true"
+			show-scrollbar="false"
+			:refresher-enabled="true"
+			:refresher-triggered="refreshing"
 					@refresherrefresh="onRefresh"
 					@scrolltolower="loadMoreCards"
 					:lower-threshold="50"
@@ -45,11 +46,12 @@
 
 			<!-- 文章 -->
 			<swiper-item class="swiper-item">
-				<scroll-view
-					class="content-area"
-					scroll-y="true"
-					:refresher-enabled="true"
-					:refresher-triggered="articlesRefreshing"
+		<scroll-view
+			class="content-area"
+			scroll-y="true"
+			show-scrollbar="false"
+			:refresher-enabled="true"
+			:refresher-triggered="articlesRefreshing"
 					@refresherrefresh="onArticlesRefresh"
 				>
 					<view class="tab-content">
@@ -98,7 +100,7 @@
 			<!-- 智能体 -->
 			<swiper-item class="swiper-item">
 				<view class="agent-page">
-					<scroll-view class="agent-scroll" scroll-y="true" scroll-with-animation :scroll-into-view="agentScrl">
+				<scroll-view class="agent-scroll" scroll-y="true" scroll-with-animation :scroll-into-view="agentScrl" show-scrollbar="false">
 						<view class="agent-empty" v-if="agentMsgs.length===0">
 							<view class="agent-logo"><text class="agent-logo-icon">✦</text></view>
 							<text class="agent-logo-name">智能助手</text>
@@ -386,12 +388,14 @@ export default {
 	background-color: #ffffff;
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
 }
 
-.status-bar {
-	background-color: #ffffff;
-	width: 100%;
-}
+	.status-bar {
+		background-color: #ffffff;
+		width: 100%;
+		flex-shrink: 0;
+	}
 
 .tab-swiper {
 	width: 100%;
@@ -593,8 +597,8 @@ export default {
 /* 隐藏滚动条 */
 /* 智能体 */
 .agent-page{display:flex;flex-direction:column;height:100%}
-.agent-scroll{flex:1;padding:24upx 20upx;background:#f5f6f8}
-.agent-empty{text-align:center;padding:200upx 0}
+	.agent-scroll{flex:1;min-height:0;padding:24upx 20upx;background:#f5f6f8}
+	.agent-empty{text-align:center;padding:200upx 0}
 .agent-logo{width:88upx;height:88upx;border-radius:24upx;background:linear-gradient(135deg,#1b44a6,#3071f6);display:flex;align-items:center;justify-content:center;margin:0 auto 20upx;box-shadow:0 8upx 30upx rgba(48,113,246,.3)}
 .agent-logo-icon{font-size:48upx;color:#fff}
 .agent-logo-name{font-size:36upx;font-weight:700;color:#1f2937;display:block;margin-bottom:6upx}
