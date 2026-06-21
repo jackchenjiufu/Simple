@@ -441,6 +441,9 @@ export default {
 .btn-submit:disabled {
 	opacity: 0.5;
 }
+.btn-submit::after {
+	border: none;
+}
 
 /* 隐藏滚动条 */
 ::-webkit-scrollbar {

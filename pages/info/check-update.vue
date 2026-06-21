@@ -79,25 +79,15 @@
 
 			<view class="info-card">
 				<text class="card-title">更新日志</text>
-				<view class="log-item">
-					<text class="log-version">v1.1.5</text>
-				<view class="log-item">
-					<text class="log-version">v1.1.4</text>
-					<text class="log-desc">性能优化与Bug修复</text>
+				<view class="log-item" v-for="(item, index) in changelog" :key="index">
+					<view class="log-left">
+						<text class="log-version">v{{ item.version }}</text>
+						<text class="log-desc">{{ item.description || '无说明' }}</text>
+					</view>
+					<text class="log-date">{{ formatDate(item.created_at) }}</text>
 				</view>
-					<text class="log-desc">Security fixes, UI unification, login gate</text>
-				</view>
-				<view class="log-item">
-					<text class="log-version">v1.1.3</text>
-					<text class="log-desc">新增推荐系统与个性化内容</text>
-				</view>
-				<view class="log-item">
-					<text class="log-version">v1.1.2</text>
-					<text class="log-desc">优化UI界面与用户体验</text>
-				</view>
-				<view class="log-item">
-					<text class="log-version">v1.0.0</text>
-					<text class="log-desc">正式版本发布</text>
+				<view class="empty-log" v-if="!changelog || changelog.length === 0">
+					<text class="empty-text">暂无更新记录</text>
 				</view>
 			</view>
 
@@ -115,6 +105,7 @@ export default {
 			status: 'checking',
 			showUpdateDetail: false,
 			currentVersion: '1.0.0',
+				changelog: [],
 			updateInfo: {
 				latestVersion: '',
 				downloadUrl: '',
@@ -156,6 +147,10 @@ export default {
 						this.status = 'available';
 					} else {
 						this.status = 'latest';
+					}
+					// 更新日志不管有无更新都从后端获取
+					if (result?.data?.changelog) {
+						this.changelog = result.data.changelog;
 					}
 				} else {
 					this.status = 'error';
@@ -200,16 +195,20 @@ export default {
 			this.downloading = false;
 			this.downloadProgress = 0;
 			this.downloadTask = null;
+		},
+		formatDate(dateStr) {
+			if (!dateStr) return '';
+			return dateStr.substring(0, 10);
 		}
 	}
 }
 </script>
 
 <style>
-.content { width: 100%; min-height: 100vh; background-color: #ffffff; display: flex; flex-direction: column; }
-.status-bar { width: 100%; background: #1b44a6; }
+.content { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: #ffffff; display: flex; flex-direction: column; }
+.status-bar { width: 100%; background: #1b44a6; flex-shrink: 0; }
 
-.header-section { position: relative; background: #1b44a6; border-radius: 0 0 48upx 48upx; padding-bottom: 60upx; overflow: hidden; }
+.header-section { position: relative; background: #1b44a6; border-radius: 0 0 48upx 48upx; padding-bottom: 60upx; overflow: hidden; flex-shrink: 0; }
 .nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 12upx 24upx 0; position: relative; z-index: 2; }
 .nav-back { width: 72upx; height: 72upx; display: flex; align-items: center; justify-content: center; }
 .back-icon { width: 48upx; height: 48upx; }
@@ -222,7 +221,7 @@ export default {
 .dot-1 { width: 200upx; height: 200upx; top: -60upx; right: -40upx; }
 .dot-2 { width: 120upx; height: 120upx; bottom: 20upx; left: -30upx; }
 
-.body { flex: 1; background: #ffffff; padding: 0 40upx; margin-top: -40upx; box-sizing: border-box; }
+.body { flex: 1; min-height: 0; background: #ffffff; padding: 0 40upx; margin-top: -40upx; box-sizing: border-box; }
 
 .info-card { background: #ffffff; border-radius: 16upx; padding: 28upx 24upx; margin-bottom: 16upx; box-shadow: 0 2upx 12upx rgba(0,0,0,0.06); }
 .card-title { display: block; font-size: 28upx; font-weight: 600; color: #303132; margin-bottom: 16upx; }
@@ -266,9 +265,12 @@ export default {
 .cancel-link { font-size: 22upx; color: #9ca3af; text-decoration: underline; }
 
 .log-item { display: flex; align-items: center; justify-content: space-between; padding: 14upx 0; border-bottom: 1px solid #f5f5f5; }
-.log-item:last-child { border-bottom: none; }
+.log-left { flex: 1; display: flex; flex-direction: column; gap: 4upx; }
 .log-version { font-size: 26upx; font-weight: 600; color: #3071f6; }
 .log-desc { font-size: 24upx; color: #6b7280; }
+.log-date { font-size: 20upx; color: #c0c4cc; flex-shrink: 0; margin-left: 16upx; }
+.empty-log { padding: 24upx 0; text-align: center; }
+.empty-text { font-size: 24upx; color: #c0c4cc; }
 
 .footer-text { display: block; text-align: center; font-size: 22upx; color: #c0c4cc; padding: 24upx 0 40upx; }
 ::-webkit-scrollbar { width: 0; height: 0; display: none; }

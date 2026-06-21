@@ -78,18 +78,7 @@
 					<text v-else>{{ isRegister ? '注册中...' : '登录中...' }}</text>
 				</button>
 
-				<!-- 用户协议 -->
-				<view class="agreement-row" @click="toggleAgreement">
-					<view class="checkbox" :class="{ checked: agreedToTerms }">
-						<text class="checkbox-icon" v-if="agreedToTerms">✓</text>
-					</view>
-					<text class="agreement-text">
-						登录即表示同意
-						<text class="agreement-link" @click.stop="openAgreement('service')">《用户服务权益》</text>
-						<text class="agreement-text">和</text>
-						<text class="agreement-link" @click.stop="openAgreement('privacy')">《隐私政策》</text>
-					</text>
-				</view>
+
 
 				<!-- 切换登录/注册 -->
 				<view class="switch-mode">
@@ -113,7 +102,6 @@ export default {
 			isRegister: false,
 			statusBarHeight: 0,
 			loading: false,
-			agreedToTerms: false,
 			focusedField: ''
 		}
 	},
@@ -151,10 +139,7 @@ export default {
 				return;
 			}
 
-			if (!this.agreedToTerms) {
-				uni.showToast({ title: '请阅读并同意用户服务权益和隐私政策', icon: 'none' });
-				return;
-			}
+
 
 			if (this.isRegister) {
 				await this.register();
@@ -163,20 +148,8 @@ export default {
 			}
 		},
 
-		toggleAgreement() {
-			this.agreedToTerms = !this.agreedToTerms;
-		},
-
 		goForgotPassword() {
 			uni.navigateTo({ url: "/pages/auth/forgot-password" });
-		},
-
-		openAgreement(type) {
-			if (type === 'service') {
-				uni.navigateTo({ url: '/pages/info/user-agreement' });
-			} else {
-				uni.navigateTo({ url: '/pages/info/privacy-policy' });
-			}
 		},
 
 		async register() {
@@ -477,50 +450,6 @@ export default {
 .btn-primary.btn-loading {
 	opacity: 0.7;
 	pointer-events: none;
-}
-
-/* ===================== 协议复选框 ===================== */
-.agreement-row {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 10upx;
-	margin-bottom: 28upx;
-}
-
-.checkbox {
-	width: 28upx;
-	height: 28upx;
-	border: 2upx solid #d0d0d8;
-	border-radius: 6upx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background-color: #ffffff;
-	flex-shrink: 0;
-	transition: all 0.2s ease;
-}
-
-.checkbox.checked {
-	background-color: #3071f6;
-	border-color: #3071f6;
-}
-
-.checkbox-icon {
-	font-size: 16upx;
-	color: #ffffff;
-	font-weight: bold;
-}
-
-.agreement-text {
-	font-size: 22upx;
-	color: #909398;
-	line-height: 1.5;
-}
-
-.agreement-link {
-	color: #3071f6;
-	font-weight: 500;
 }
 
 /* ===================== 切换登录/注册 ===================== */

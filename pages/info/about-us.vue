@@ -119,8 +119,8 @@ export default {
 	margin-bottom: 24upx;
 	box-shadow: 0 2upx 12upx rgba(0,0,0,0.06);
 }
-.app-logo-wrap { width: 120upx; height: 120upx; background: #f3f4f6; border-radius: 28upx; display: flex; align-items: center; justify-content: center; margin: 0 auto 16upx; }
-.app-logo { width: 72upx; height: 72upx; }
+.app-logo-wrap { margin: 0 auto 24upx; text-align: center; }
+.app-logo { width: 150upx; height: 150upx; border-radius: 20upx; }
 .app-name { display: block; font-size: 36upx; font-weight: 700; color: #303132; margin-bottom: 8upx; letter-spacing: 4upx; }
 .app-desc { display: block; font-size: 24upx; color: #6b7280; }
 

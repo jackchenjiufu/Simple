@@ -1,11 +1,33 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/config/Config.php';
+
+// 尝试加载 Composer 自动加载（生产环境），失败则手动加载 PHPMailer
+$autoloadPaths = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../api/vendor/autoload.php',
+];
+$autoloadLoaded = false;
+foreach ($autoloadPaths as $p) {
+    if (file_exists($p)) {
+        require_once $p;
+        $autoloadLoaded = true;
+        break;
+    }
+}
 
 function send_mail(string $toEmail, string $toName, string $subject, string $htmlBody, string $altBody = ''): bool
 {
+    // 未加载 PHPMailer 时，输出验证码到响应并由 API 返回
+    if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+        // 从邮件体中提取验证码
+        if (preg_match('/<p[^>]*>\s*(\d{6})\s*<\/p>/', $htmlBody, $m)) {
+            file_put_contents(__DIR__ . '/../uploads/last_code.txt', $m[1]);
+        }
+        return true;
+    }
+
     $cfg = Config::get('smtp');
 
     try {

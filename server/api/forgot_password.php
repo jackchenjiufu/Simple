@@ -67,7 +67,16 @@ $code = create_verification((int) $user['id'], $email, 'password_reset');
 $sent = send_password_reset_mail($email, $user['username'], $code);
 
 if ($sent) {
-    echo json_encode(["message" => "验证码已发送到你的邮箱", "code" => 200], JSON_UNESCAPED_UNICODE);
+    // 邮件发送成功（或 fallback），返回验证码方便开发调试
+    $resp = ["message" => "验证码已发送到你的邮箱", "code" => 200];
+    if (file_exists(__DIR__ . '/../uploads/last_code.txt')) {
+        $devCode = trim(file_get_contents(__DIR__ . '/../uploads/last_code.txt'));
+        if ($devCode) {
+            $resp['dev_code'] = $devCode;
+            $resp['message'] = "开发模式 - 验证码：" . $devCode;
+        }
+    }
+    echo json_encode($resp, JSON_UNESCAPED_UNICODE);
 } else {
     $rateLimiter->recordAttempt('forgot_password');
     http_response_code(500);

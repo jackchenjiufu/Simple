@@ -109,7 +109,7 @@ export default {
 			uni.showLoading({ title: '发送中...' });
 			try {
 				const res = await uni.request({
-					url: apiConfig.baseUrl + 'forgot_password.php',
+					url: apiConfig.baseUrl + 'send_code.php',
 					method: 'POST',
 					data: { email: this.email },
 					header: { 'Content-Type': 'application/json' }
