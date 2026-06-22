@@ -79,7 +79,7 @@
 
 			<view class="info-card">
 				<text class="card-title">更新日志</text>
-				<view class="log-item" v-for="(item, index) in changelog" :key="index">
+				<view class="log-item" v-for="(item, index) in changelog.slice(0, 5)" :key="index">
 					<view class="log-left">
 						<text class="log-version">v{{ item.version }}</text>
 						<text class="log-desc">{{ item.description || '无说明' }}</text>
@@ -113,27 +113,35 @@ export default {
 			},
 			downloading: false,
 			downloadProgress: 0,
-			downloadTask: null
+			downloadTask: null,
+			_progressTimer: null
 		}
 	},
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
-		this.currentVersion = systemInfo.appVersion || '1.0.0';
+		var apkVer = systemInfo.appVersion || '1.0.0';
+		var wgtVer = uni.getStorageSync('wgtVersion') || '';
+		this.currentVersion = wgtVer && compareVersion(wgtVer, apkVer) > 0
+			? wgtVer : apkVer;
 		this.checkUpdate();
 	},
 	onUnload() {
 		if (this.downloadTask) this.downloadTask.abort();
+		if (this._progressTimer) clearInterval(this._progressTimer);
 	},
 	methods: {
 		goBack() { uni.navigateBack(); },
 		async checkUpdate() {
 			this.status = 'checking';
 			try {
+				var wgtVersion = uni.getStorageSync('wgtVersion') || '';
+				var ver = wgtVersion && compareVersion(wgtVersion, this.currentVersion) > 0
+					? wgtVersion : this.currentVersion;
 				const res = await uni.request({
 					url: apiConfig.baseUrl + 'check_update.php',
 					method: 'POST',
-					data: { currentVersion: this.currentVersion },
+					data: { currentVersion: ver },
 					header: { 'Content-Type': 'application/json' }
 				});
 				if (res.statusCode === 200) {
@@ -166,41 +174,73 @@ export default {
 			}
 			this.downloading = true;
 			this.downloadProgress = 0;
-			this.downloadTask = uni.downloadFile({
-				url: this.updateInfo.downloadUrl,
-				success: (res) => {
-					if (res.statusCode === 200) {
-						this.downloadProgress = 100;
-						uni.showToast({ title: '下载完成', icon: 'success' });
-						setTimeout(() => {
-							this.downloading = false;
-							if (typeof plus !== 'undefined') {
-								plus.runtime.install(res.tempFilePath, { force: false });
-							}
-						}, 1500);
+			var url = this.updateInfo.downloadUrl;
+			var latestVersion = this.updateInfo.latestVersion;
+			if (typeof plus === 'undefined') return;
+			var self = this;
+			self.downloadTask = plus.downloader.createDownload(url,
+				{ filename: '_downloads/' },
+				function(dl, status) {
+					if (status === 200) {
+						self.downloadProgress = 100;
+						uni.showToast({ title: '下载完成，正在安装...', icon: 'none' });
+						var filePath = dl.filename;
+						setTimeout(function() {
+							plus.runtime.install(filePath, { force: false }, function() {
+								uni.setStorageSync('wgtVersion', latestVersion);
+								uni.hideToast();
+								uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
+								setTimeout(function() {
+									plus.runtime.restart();
+								}, 1500);
+							}, function(e) {
+								uni.showToast({ title: '安装失败: ' + (e.message || ''), icon: 'none' });
+								self.downloading = false;
+							});
+						}, 800);
+					} else {
+						self.downloading = false;
+						uni.showToast({ title: '下载失败(' + status + ')', icon: 'none' });
 					}
-				},
-				fail: () => {
-					this.downloading = false;
-					this.downloadProgress = 0;
-					uni.showToast({ title: '下载失败', icon: 'none' });
 				}
-			});
-			this.downloadTask.onProgressUpdate((res) => {
-				this.downloadProgress = res.progress;
-			});
+			);
+			self.downloadTask.start();
+			self._progressTimer = setInterval(function() {
+				if (self.downloadTask) {
+					var p = Math.round(self.downloadTask.downloadedSize / self.downloadTask.totalSize * 100);
+					self.downloadProgress = isNaN(p) ? 0 : p;
+				}
+			}, 200);
 		},
 		cancelDownload() {
-			if (this.downloadTask) this.downloadTask.abort();
+			if (this.downloadTask) {
+				this.downloadTask.abort();
+				this.downloadTask = null;
+			}
+			if (this._progressTimer) {
+				clearInterval(this._progressTimer);
+				this._progressTimer = null;
+			}
 			this.downloading = false;
 			this.downloadProgress = 0;
-			this.downloadTask = null;
 		},
 		formatDate(dateStr) {
 			if (!dateStr) return '';
 			return dateStr.substring(0, 10);
 		}
 	}
+}
+
+function compareVersion(v1, v2) {
+	var a1 = v1.split('.').map(Number);
+	var a2 = v2.split('.').map(Number);
+	for (var i = 0; i < Math.max(a1.length, a2.length); i++) {
+		var n1 = a1[i] || 0;
+		var n2 = a2[i] || 0;
+		if (n1 > n2) return 1;
+		if (n1 < n2) return -1;
+	}
+	return 0;
 }
 </script>
 

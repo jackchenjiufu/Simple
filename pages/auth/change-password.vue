@@ -12,19 +12,33 @@
 				<view class="nav-placeholder"></view>
 			</view>
 			<view class="header-content">
-				<text class="header-title">安全设置</text>
-				<text class="header-subtitle">请设置您的新密码</text>
+				<view class="header-left">
+					<text class="header-greeting">安全设置</text>
+					<text class="header-subtitle">保护您的账号安全</text>
+				</view>
+				<view class="header-right">
+					<view class="character-area">
+						<view class="char-circle char-circle-1"></view>
+						<view class="char-circle char-circle-2"></view>
+						<view class="char-body"></view>
+						<view class="char-head"></view>
+					</view>
+				</view>
 			</view>
+			<!-- 装饰圆点 -->
 			<view class="deco-dot dot-1"></view>
 			<view class="deco-dot dot-2"></view>
+			<view class="deco-dot dot-3"></view>
 		</view>
 
 		<!-- 表单区域 -->
 		<view class="form-section">
 			<view class="form-card">
+				<text class="form-subtitle">请输入原密码并设置新密码</text>
+
 				<!-- 原密码 -->
 				<view class="form-item">
-					<text class="label">原密码</text>
+					<text class="input-label">原密码</text>
 					<view class="input-wrapper" :class="{ 'input-focused': focusedField === 'old' }">
 						<input class="input" v-model="oldPassword" :type="showOldPassword ? 'text' : 'password'"
 							placeholder="请输入原密码" @focus="focusedField='old'" @blur="focusedField=''" />
@@ -36,7 +50,7 @@
 
 				<!-- 新密码 -->
 				<view class="form-item">
-					<text class="label">新密码</text>
+					<text class="input-label">新密码</text>
 					<view class="input-wrapper" :class="{ 'input-focused': focusedField === 'new' }">
 						<input class="input" v-model="newPassword" :type="showNewPassword ? 'text' : 'password'"
 							placeholder="6-20位密码" maxlength="20" @focus="focusedField='new'" @blur="focusedField=''"
@@ -56,7 +70,7 @@
 
 				<!-- 确认密码 -->
 				<view class="form-item">
-					<text class="label">确认密码</text>
+					<text class="input-label">确认密码</text>
 					<view class="input-wrapper" :class="{ 'input-focused': focusedField === 'confirm' }">
 						<input class="input" v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'"
 							placeholder="请再次输入新密码" @focus="focusedField='confirm'" @blur="focusedField=''"
@@ -93,7 +107,7 @@ export default {
 			passwordMatch: false,
 			userInfo: null,
 			focusedField: '',
-};
+		};
 	},
 	computed: {
 		canSubmit() {
@@ -113,9 +127,7 @@ export default {
 		}
 	},
 	methods: {
-		goBack() {
-			uni.navigateBack();
-		},
+		goBack() { uni.navigateBack(); },
 
 		checkPasswordStrength() {
 			if (!this.newPassword) {
@@ -161,10 +173,15 @@ export default {
 				});
 				uni.hideLoading();
 				if (res.statusCode === 200) {
-					uni.showToast({ title: '密码修改成功', icon: 'success' });
-					setTimeout(() => { uni.navigateBack(); }, 1500);
+					const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+					if (result.code === 200) {
+						uni.showToast({ title: '密码修改成功', icon: 'success' });
+						setTimeout(() => { uni.navigateBack(); }, 1500);
+					} else {
+						uni.showToast({ title: result.message || '密码修改失败', icon: 'none' });
+					}
 				} else {
-					uni.showToast({ title: res.data.message || '密码修改失败', icon: 'none' });
+					uni.showToast({ title: '密码修改失败', icon: 'none' });
 				}
 			} catch (error) {
 				uni.hideLoading();
@@ -179,26 +196,24 @@ export default {
 .content {
 	width: 100%;
 	min-height: 100vh;
-	height: 100vh;
 	background-color: #ffffff;
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
 }
 
 .status-bar {
 	width: 100%;
 	background: #1b44a6;
-	flex-shrink: 0;
 }
 
 /* ===================== 深蓝色头部 ===================== */
 .header-section {
 	position: relative;
+	width: 100%;
 	background: #1b44a6;
-	border-radius: 0 0 48upx 48upx;
-	padding-bottom: 60upx;
 	overflow: hidden;
+	box-sizing: border-box;
+	animation: fadeDown 0.5s ease-out;
 }
 
 .nav-bar {
@@ -231,50 +246,117 @@ export default {
 }
 
 .nav-placeholder {
-	width: 60upx;
+	width: 72upx;
 }
 
 .header-content {
 	position: relative;
 	z-index: 2;
-	padding: 20upx 40upx 0;
-	text-align: left;
-	padding-left: 48upx;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	padding: 60upx 48upx 80upx;
+	min-height: 360upx;
 }
 
-.header-title {
-	font-size: 34upx;
+.header-left {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.header-greeting {
+	font-size: 56upx;
 	font-weight: 700;
 	color: #ffffff;
-	display: block;
-	margin-bottom: 8upx;
+	line-height: 1.2;
+	margin-bottom: 12upx;
 }
 
 .header-subtitle {
 	font-size: 24upx;
 	color: rgba(255, 255, 255, 0.65);
-	display: block;
+}
+
+.header-right {
+	width: 220upx;
+	height: 260upx;
+	position: relative;
+	flex-shrink: 0;
+}
+
+.character-area {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+.char-circle-1 {
+	position: absolute;
+	width: 140upx;
+	height: 140upx;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.08);
+	top: 10upx;
+	right: -10upx;
+}
+
+.char-circle-2 {
+	position: absolute;
+	width: 80upx;
+	height: 80upx;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.12);
+	bottom: 20upx;
+	right: 20upx;
+}
+
+.char-body {
+	position: absolute;
+	width: 100upx;
+	height: 120upx;
+	background: rgba(255, 255, 255, 0.15);
+	border-radius: 50upx 50upx 30upx 30upx;
+	bottom: 20upx;
+	right: 40upx;
+}
+
+.char-head {
+	position: absolute;
+	width: 80upx;
+	height: 80upx;
+	background: rgba(255, 215, 200, 0.35);
+	border-radius: 50%;
+	top: 50upx;
+	right: 50upx;
 }
 
 .deco-dot {
 	position: absolute;
 	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.08);
+	background: rgba(255, 255, 255, 0.06);
 	z-index: 1;
 }
 
 .dot-1 {
-	width: 180upx;
-	height: 180upx;
-	top: -50upx;
-	right: -40upx;
+	width: 300upx;
+	height: 300upx;
+	top: -100upx;
+	right: 30upx;
 }
 
 .dot-2 {
+	width: 160upx;
+	height: 160upx;
+	bottom: 40upx;
+	left: -40upx;
+}
+
+.dot-3 {
 	width: 100upx;
 	height: 100upx;
-	bottom: 10upx;
-	left: -20upx;
+	top: 40upx;
+	left: 160upx;
 }
 
 /* ===================== 表单区域 ===================== */
@@ -283,17 +365,25 @@ export default {
 	background: #ffffff;
 	padding: 0 40upx;
 	margin-top: -40upx;
-	padding-top: 0;
 	box-sizing: border-box;
 }
 
 .form-card {
 	background: #ffffff;
 	border-radius: 24upx;
-	padding: 36upx;
-	box-shadow: 0 4upx 24upx rgba(0, 0, 0, 0.06);
+	padding: 40upx 36upx;
+	box-shadow: 0 4upx 32upx rgba(0, 0, 0, 0.06);
 	position: relative;
 	z-index: 3;
+	animation: fadeUp 0.5s ease-out;
+}
+
+.form-subtitle {
+	display: block;
+	font-size: 26upx;
+	color: #9e9fa1;
+	margin-bottom: 40upx;
+	text-align: center;
 }
 
 /* ===================== 表单项 ===================== */
@@ -301,7 +391,7 @@ export default {
 	margin-bottom: 28upx;
 }
 
-.label {
+.input-label {
 	font-size: 26upx;
 	color: #303132;
 	display: block;
@@ -310,8 +400,6 @@ export default {
 }
 
 .input-wrapper {
-	display: flex;
-	align-items: center;
 	background-color: #ffffff;
 	border: 2upx solid #dde1e8;
 	border-radius: 16upx;
@@ -326,13 +414,13 @@ export default {
 }
 
 .input {
-	flex: 1;
+	width: 100%;
 	height: 88upx;
 	font-size: 28upx;
 	color: #1A1A2E;
 	border: none;
 	background: transparent;
-	padding-right: 80upx;
+	box-sizing: border-box;
 }
 
 .input::placeholder {
@@ -342,6 +430,8 @@ export default {
 .toggle-password {
 	position: absolute;
 	right: 20upx;
+	top: 50%;
+	transform: translateY(-50%);
 	font-size: 22upx;
 	color: #909398;
 	z-index: 2;
@@ -427,7 +517,7 @@ export default {
 	border-radius: 16upx;
 	font-size: 32upx;
 	font-weight: 600;
-	letter-spacing: 4upx;
+	letter-spacing: 6upx;
 	border: none;
 	margin-top: 12upx;
 	transition: all 0.25s ease;
@@ -443,6 +533,29 @@ export default {
 }
 .btn-submit::after {
 	border: none;
+}
+
+/* ===================== 动画 ===================== */
+@keyframes fadeUp {
+	from {
+		opacity: 0;
+		transform: translateY(24upx);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeDown {
+	from {
+		opacity: 0;
+		transform: translateY(-20upx);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 /* 隐藏滚动条 */

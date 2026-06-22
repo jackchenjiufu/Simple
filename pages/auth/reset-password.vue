@@ -2,19 +2,33 @@
 	<view class="content">
 		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
+		<!-- 深蓝色头部 -->
 		<view class="header-section">
 			<view class="header-content">
 				<view class="header-left">
 					<text class="header-greeting">重置密码</text>
 					<text class="header-subtitle">验证码已发送到你的邮箱</text>
 				</view>
+				<view class="header-right">
+					<view class="character-area">
+						<view class="char-circle char-circle-1"></view>
+						<view class="char-circle char-circle-2"></view>
+						<view class="char-body"></view>
+						<view class="char-head"></view>
+					</view>
+				</view>
 			</view>
+			<!-- 装饰圆点 -->
 			<view class="deco-dot dot-1"></view>
 			<view class="deco-dot dot-2"></view>
+			<view class="deco-dot dot-3"></view>
 		</view>
 
+		<!-- 表单区域 -->
 		<view class="form-section">
 			<view class="form-card">
+				<text class="form-subtitle">设置新密码以继续使用</text>
+
 				<view class="form-item">
 					<text class="input-label">验证码</text>
 					<view class="input-wrapper" :class="{ 'input-focused': focusedField === 'code' }">
@@ -75,8 +89,8 @@ export default {
 	},
 	onLoad(options) {
 		const systemInfo = uni.getSystemInfoSync();
-		this.statusBarHeight = systemInfo.statusBarHeight || 0;
-		this.email = options.email || '';
+			this.statusBarHeight = systemInfo.statusBarHeight || 0;
+			this.email = options.email ? decodeURIComponent(options.email) : '';
 		this.startCountdown();
 	},
 	onUnload() {
@@ -179,29 +193,283 @@ export default {
 }
 </script>
 
-<style>
-.content { width: 100%; min-height: 100vh; background-color: #ffffff; display: flex; flex-direction: column; }
-.status-bar { width: 100%; background: #1b44a6; }
-.header-section { position: relative; width: 100%; background: #1b44a6; padding: 60upx 48upx 80upx; overflow: hidden; box-sizing: border-box; }
-.header-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; }
-.header-greeting { font-size: 48upx; font-weight: 700; color: #ffffff; margin-bottom: 12upx; }
-.header-subtitle { font-size: 24upx; color: rgba(255,255,255,0.65); }
-.deco-dot { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.08); z-index: 1; }
-.dot-1 { width: 200upx; height: 200upx; top: -60upx; right: -40upx; }
-.dot-2 { width: 120upx; height: 120upx; bottom: 20upx; left: -30upx; }
-.form-section { flex: 1; background: #ffffff; padding: 0 40upx; margin-top: -40upx; box-sizing: border-box; }
-.form-card { background: #ffffff; border-radius: 24upx; padding: 40upx 36upx; box-shadow: 0 4upx 32upx rgba(0,0,0,0.06); position: relative; z-index: 3; }
-.form-item { margin-bottom: 28upx; }
-.input-label { font-size: 26upx; color: #303132; display: block; margin-bottom: 14upx; font-weight: 500; }
-.input-wrapper { background: #ffffff; border: 2upx solid #dde1e8; border-radius: 16upx; padding: 0 20upx; transition: all 0.25s ease; }
-.input-wrapper.input-focused { border-color: #3071f6; box-shadow: 0 0 0 4upx rgba(48,113,246,0.08); }
-.input { width: 100%; height: 88upx; font-size: 28upx; color: #1A1A2E; border: none; background: transparent; box-sizing: border-box; }
-.input::placeholder { color: #b6bcc8; }
-.btn-primary { width: 100%; height: 96upx; line-height: 96upx; background: #3071f6; color: #ffffff; border-radius: 16upx; font-size: 32upx; font-weight: 600; letter-spacing: 6upx; border: none; margin-bottom: 24upx; }
-.btn-primary:active { background: #285ed4; transform: scale(0.98); }
-.btn-primary.btn-loading { opacity: 0.7; pointer-events: none; }
-.switch-mode { text-align: center; display: flex; align-items: center; justify-content: center; gap: 8upx; }
-.switch-text { font-size: 26upx; color: #909398; }
-.switch-link { font-size: 26upx; color: #3071f6; font-weight: 600; }
-.switch-link.disabled { color: #c0c4cc; pointer-events: none; }
+<style lang="scss" scoped>
+.content {
+	width: 100%;
+	min-height: 100vh;
+	background-color: #ffffff;
+	display: flex;
+	flex-direction: column;
+}
+
+.status-bar {
+	width: 100%;
+	background: #1b44a6;
+}
+
+/* ===================== 深蓝色头部 ===================== */
+.header-section {
+	position: relative;
+	width: 100%;
+	background: #1b44a6;
+	overflow: hidden;
+	box-sizing: border-box;
+	animation: fadeDown 0.5s ease-out;
+}
+
+.header-content {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	padding: 60upx 48upx 80upx;
+	min-height: 360upx;
+}
+
+.header-left {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.header-greeting {
+	font-size: 48upx;
+	font-weight: 700;
+	color: #ffffff;
+	line-height: 1.2;
+	margin-bottom: 12upx;
+}
+
+.header-subtitle {
+	font-size: 24upx;
+	color: rgba(255, 255, 255, 0.65);
+}
+
+/* ===================== 右侧角色插画 ===================== */
+.header-right {
+	width: 220upx;
+	height: 260upx;
+	position: relative;
+	flex-shrink: 0;
+}
+
+.character-area {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+.char-circle-1 {
+	position: absolute;
+	width: 140upx;
+	height: 140upx;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.08);
+	top: 10upx;
+	right: -10upx;
+}
+
+.char-circle-2 {
+	position: absolute;
+	width: 80upx;
+	height: 80upx;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.12);
+	bottom: 20upx;
+	right: 20upx;
+}
+
+.char-body {
+	position: absolute;
+	width: 100upx;
+	height: 120upx;
+	background: rgba(255, 255, 255, 0.15);
+	border-radius: 50upx 50upx 30upx 30upx;
+	bottom: 20upx;
+	right: 40upx;
+}
+
+.char-head {
+	position: absolute;
+	width: 80upx;
+	height: 80upx;
+	background: rgba(255, 215, 200, 0.35);
+	border-radius: 50%;
+	top: 50upx;
+	right: 50upx;
+}
+
+/* 装饰圆点 */
+.deco-dot {
+	position: absolute;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.06);
+	z-index: 1;
+}
+
+.dot-1 {
+	width: 300upx;
+	height: 300upx;
+	top: -100upx;
+	right: 30upx;
+}
+
+.dot-2 {
+	width: 160upx;
+	height: 160upx;
+	bottom: 40upx;
+	left: -40upx;
+}
+
+.dot-3 {
+	width: 100upx;
+	height: 100upx;
+	top: 40upx;
+	left: 160upx;
+}
+
+/* ===================== 表单区域 ===================== */
+.form-section {
+	flex: 1;
+	background: #ffffff;
+	padding: 0 40upx;
+	margin-top: -40upx;
+	box-sizing: border-box;
+}
+
+.form-card {
+	background: #ffffff;
+	border-radius: 24upx;
+	padding: 40upx 36upx;
+	box-shadow: 0 4upx 32upx rgba(0, 0, 0, 0.06);
+	position: relative;
+	z-index: 3;
+	animation: fadeUp 0.5s ease-out;
+}
+
+.form-subtitle {
+	font-size: 26upx;
+	color: #9e9fa1;
+	display: block;
+	margin-bottom: 40upx;
+}
+
+/* ===================== 表单项 ===================== */
+.form-item {
+	margin-bottom: 28upx;
+}
+
+.input-label {
+	font-size: 26upx;
+	color: #303132;
+	display: block;
+	margin-bottom: 14upx;
+	font-weight: 500;
+}
+
+.input-wrapper {
+	background-color: #ffffff;
+	border: 2upx solid #dde1e8;
+	border-radius: 16upx;
+	padding: 0 20upx;
+	transition: all 0.25s ease;
+}
+
+.input-wrapper.input-focused {
+	border-color: #3071f6;
+	box-shadow: 0 0 0 4upx rgba(48, 113, 246, 0.08);
+}
+
+.input {
+	width: 100%;
+	height: 88upx;
+	font-size: 28upx;
+	color: #1A1A2E;
+	border: none;
+	background: transparent;
+	box-sizing: border-box;
+}
+
+.input::placeholder {
+	color: #b6bcc8;
+}
+
+/* ===================== 提交按钮 ===================== */
+.btn-primary {
+	width: 100%;
+	height: 96upx;
+	line-height: 96upx;
+	background: #3071f6;
+	color: #ffffff;
+	border-radius: 16upx;
+	font-size: 32upx;
+	font-weight: 600;
+	letter-spacing: 6upx;
+	border: none;
+	margin-bottom: 24upx;
+	transition: all 0.25s ease;
+}
+
+.btn-primary:active {
+	background: #285ed4;
+	transform: scale(0.98);
+}
+
+.btn-primary.btn-loading {
+	opacity: 0.7;
+	pointer-events: none;
+}
+
+/* ===================== 切换模式 ===================== */
+.switch-mode {
+	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8upx;
+}
+
+.switch-text {
+	font-size: 26upx;
+	color: #909398;
+}
+
+.switch-link {
+	font-size: 26upx;
+	color: #3071f6;
+	font-weight: 600;
+}
+
+.switch-link:active {
+	opacity: 0.7;
+}
+
+.switch-link.disabled {
+	color: #c0c4cc;
+	pointer-events: none;
+}
+
+/* ===================== 动画 ===================== */
+@keyframes fadeUp {
+	from {
+		opacity: 0;
+		transform: translateY(24upx);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeDown {
+	from {
+		opacity: 0;
+		transform: translateY(-24upx);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
 </style>

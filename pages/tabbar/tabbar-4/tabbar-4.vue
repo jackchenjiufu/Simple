@@ -5,7 +5,7 @@
 			<text class="nav-title">消息</text>
 		</view>
 
-		<scroll-view class="body" scroll-y="true" show-scrollbar="false" refresher-enabled="true" refresher-triggered="refreshing" @refresherrefresh="onRefresh">
+		<scroll-view class="body" scroll-y="true" show-scrollbar="false" refresher-enabled="true" :refresher-triggered="refreshing" @refresherrefresh="onRefresh">
 			<view class="msg-list">
 				<view class="msg-item" v-for="item in list" :key="item.id" @click="viewDetail(item.id)">
 					<view class="msg-avatar">

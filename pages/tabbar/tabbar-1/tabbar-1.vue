@@ -179,9 +179,14 @@ export default {
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
 		this.loadCarouselData();
 			this.generateRecommendations();
+		// 监听键盘高度变化
+		uni.onKeyboardHeightChange(res => {
+			this.kbHeight = res.height || 0;
+		});
 	},
 	onShow() {
-		},
+		// 键盘监听在 onLoad 已注册，无需重复
+	},
 	methods: {
 		switchTab(tab) {
 			this.activeTab = tab;
