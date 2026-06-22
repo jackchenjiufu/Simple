@@ -64,7 +64,10 @@ try {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         
         // 构建完整的下载URL
-        $downloadUrl = $protocol . '://' . $serverName . ($serverPort !== 80 ? ':' . $serverPort : '') . '/doo/server/downloads/app_v' . str_replace('.', '_', $latestVersion) . '.apk';
+        // 如果有同名WGT优先用WGT（热更新），否则用APK（全量包）
+        $wgtFile = __DIR__ . '/../downloads/app_wgt_v' . str_replace('.', '_', $latestVersion) . '.wgt';
+        $ext = file_exists($wgtFile) ? '.wgt' : '.apk';
+        $downloadUrl = $protocol . '://' . $serverName . ($serverPort !== 80 ? ':' . $serverPort : '') . '/doo/server/downloads/app_' . ($ext === '.wgt' ? 'wgt_v' : 'v') . str_replace('.', '_', $latestVersion) . $ext;
         $description = $result['description'] ?? '新版本已发布';
     }
 

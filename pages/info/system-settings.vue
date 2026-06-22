@@ -17,15 +17,15 @@
 					</view>
 					<text class="item-arrow">›</text>
 				</view>
-				<view class="settings-item" @click="clearCache">
-					<view class="item-left">
-						<text class="item-text">清理缓存</text>
+				<view class="settings-item" @click="showClearCacheModal = true">
+						<view class="item-left">
+							<text class="item-text">清理缓存</text>
+						</view>
+						<view class="item-right">
+							<text class="item-sub">{{ cacheSize }}</text>
+							<text class="item-arrow">›</text>
+						</view>
 					</view>
-					<view class="item-right">
-						<text class="item-sub">{{ cacheSize }}</text>
-						<text class="item-arrow">›</text>
-					</view>
-				</view>
 				<view class="settings-item" @click="goToChangePassword">
 					<view class="item-left">
 						<text class="item-text">修改密码</text>
@@ -71,37 +71,31 @@
 			</view>
 
 			<!-- 退出登录弹窗 -->
-			<view class="modal-overlay" v-if="showLogoutModal" @click.self="showLogoutModal = false">
-				<view class="modal-content" @click.stop>
-					<view class="modal-icon-wrap warn-icon">
-						<text class="modal-icon-text">↵</text>
-					</view>
-					<text class="modal-title">退出登录</text>
-					<text class="modal-desc">退出后需要重新登录才能使用完整功能</text>
-					<view class="modal-divider"></view>
-					<view class="modal-actions">
-						<button class="btn btn-cancel" @click="showLogoutModal = false">取消</button>
-						<button class="btn btn-danger" @click="confirmLogout">确认退出</button>
+				<view class="modal-overlay" v-if="showLogoutModal" @click.self="showLogoutModal = false">
+					<view class="modal-content" @click.stop>
+						<text class="modal-title">退出登录</text>
+						<text class="modal-desc">退出后需要重新登录才能使用完整功能</text>
+						<view class="modal-divider"></view>
+						<view class="modal-actions">
+							<button class="btn btn-cancel" @click="showLogoutModal = false">取消</button>
+							<button class="btn btn-danger" @click="confirmLogout">确认退出</button>
+						</view>
 					</view>
 				</view>
-			</view>
 
-			<!-- 注销账号弹窗 -->
-			<view class="modal-overlay" v-if="showDeleteAccountModal" @click.self="showDeleteAccountModal = false">
-				<view class="modal-content" @click.stop>
-					<view class="modal-icon-wrap danger-icon">
-						<text class="modal-icon-text">✕</text>
-					</view>
-					<text class="modal-title">注销账号</text>
-					<text class="modal-desc">此操作将永久删除你的所有数据</text>
-					<text class="modal-warn">⚠️ 此操作不可撤销，请谨慎操作！</text>
-					<view class="modal-divider"></view>
-					<view class="modal-actions">
-						<button class="btn btn-cancel" @click="showDeleteAccountModal = false">取消</button>
-						<button class="btn btn-danger" @click="confirmDeleteAccount">确认注销</button>
+				<!-- 清理缓存弹窗 -->
+				<view class="modal-overlay" v-if="showClearCacheModal" @click.self="showClearCacheModal = false">
+					<view class="modal-content" @click.stop>
+						<text class="modal-title">清理缓存</text>
+						<text class="modal-desc">当前缓存 {{ cacheSize }}，清理后将释放存储空间。</text>
+						<text class="modal-desc" style="margin-top: 8upx; color: #9ca3af; font-size: 24upx;">注意：清理后需重新登录</text>
+						<view class="modal-divider"></view>
+						<view class="modal-actions">
+							<button class="btn btn-cancel" @click="showClearCacheModal = false">取消</button>
+							<button class="btn btn-danger" @click="confirmClearCache">确认清理</button>
+						</view>
 					</view>
 				</view>
-			</view>
 		</scroll-view>
 	</view>
 </template>
@@ -110,13 +104,13 @@
 import apiConfig from '../../utils/api.js';
 export default {
 	data() {
-		return {
-			statusBarHeight: 0,
-			isLoggedIn: false,
-			showLogoutModal: false,
-			showDeleteAccountModal: false,
-			cacheSize: '计算中...',
-		};
+	return {
+		statusBarHeight: 0,
+		isLoggedIn: false,
+		showLogoutModal: false,
+		showClearCacheModal: false,
+		cacheSize: '计算中...',
+	};
 	},
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
@@ -130,27 +124,11 @@ export default {
 		goToChangePassword() { uni.navigateTo({ url: '/pages/auth/change-password' }); },
 		handleDeleteAccount() {
 			if (!this.isLoggedIn) { uni.showToast({ title: '请先登录', icon: 'none' }); return; }
-			this.showDeleteAccountModal = true;
+			uni.navigateTo({ url: '/pages/user/delete-account' });
 		},
 		handleLogout() {
 			if (!this.isLoggedIn) { uni.showToast({ title: '请先登录', icon: 'none' }); return; }
 			this.showLogoutModal = true;
-		},
-		confirmDeleteAccount() {
-			const userInfo = uni.getStorageSync('userInfo');
-			if (!userInfo?.id) { uni.showToast({ title: '用户信息不存在', icon: 'none' }); return; }
-			uni.showLoading({ title: '注销中...' });
-			uni.request({
-				url: apiConfig.baseUrl + 'delete_account.php', method: 'POST',
-				data: { user_id: userInfo.id }, header: { 'Content-Type': 'application/json' },
-				success: (res) => {
-					uni.hideLoading(); this.showDeleteAccountModal = false;
-					uni.clearStorageSync(); this.isLoggedIn = false;
-					uni.showToast({ title: '账号注销成功', icon: 'success' });
-					setTimeout(() => uni.redirectTo({ url: '/pages/auth/login' }), 2000);
-				},
-				fail: () => { uni.hideLoading(); uni.showToast({ title: '网络错误', icon: 'none' }); }
-			});
 		},
 		confirmLogout() {
 			uni.removeStorageSync('userInfo'); uni.removeStorageSync('isLoggedIn');
@@ -160,30 +138,28 @@ export default {
 			setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 1500);
 		},
 		clearCache() {
-				uni.showModal({
-					title: '清理缓存',
-					content: '当前缓存 ' + this.cacheSize + '，确定要清理吗？',
-					success: (res) => {
-						if (res.confirm) {
-							try {
-								// @ts-ignore
-								if (typeof plus !== 'undefined' && plus.cache) {
-									plus.cache.clear(() => {
-										uni.clearStorageSync();
-										this.cacheSize = '0 B';
-										uni.showToast({ title: '缓存已清理', icon: 'success' });
-									});
-								} else {
-									uni.clearStorageSync();
-									this.cacheSize = '0 B';
-									uni.showToast({ title: '缓存已清理', icon: 'success' });
-								}
-							} catch(e) {
-								uni.showToast({ title: '清理失败', icon: 'none' });
-							}
-						}
+				this.getCacheSize();
+			},
+			confirmClearCache() {
+				try {
+					// @ts-ignore
+					if (typeof plus !== 'undefined' && plus.cache) {
+						plus.cache.clear(() => {
+							uni.clearStorageSync();
+							this.cacheSize = '0 B';
+							this.showClearCacheModal = false;
+							uni.showToast({ title: '缓存已清理', icon: 'success' });
+						});
+					} else {
+						uni.clearStorageSync();
+						this.cacheSize = '0 B';
+						this.showClearCacheModal = false;
+						uni.showToast({ title: '缓存已清理', icon: 'success' });
 					}
-				});
+				} catch(e) {
+					this.showClearCacheModal = false;
+					uni.showToast({ title: '清理失败', icon: 'none' });
+				}
 			},
 			getCacheSize() {
 				try {

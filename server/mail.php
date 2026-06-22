@@ -86,14 +86,13 @@ function create_verification(int $userId, string $email, string $type = 'passwor
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     $code = generate_verification_code();
-    $expiresAt = date('Y-m-d H:i:s', time() + $expireMinutes * 60);
 
     // 使旧验证码失效
     $stmt = $db->prepare("UPDATE email_verifications SET used_at = NOW() WHERE user_id = :uid AND type = :type AND used_at IS NULL");
     $stmt->execute(['uid' => $userId, 'type' => $type]);
 
-    $stmt = $db->prepare("INSERT INTO email_verifications (user_id, email, code, type, expires_at) VALUES (:uid, :email, :code, :type, :expires_at)");
-    $stmt->execute(['uid' => $userId, 'email' => $email, 'code' => $code, 'type' => $type, 'expires_at' => $expiresAt]);
+    $stmt = $db->prepare("INSERT INTO email_verifications (user_id, email, code, type, expires_at) VALUES (:uid, :email, :code, :type, DATE_ADD(NOW(), INTERVAL :minutes MINUTE))");
+    $stmt->execute(['uid' => $userId, 'email' => $email, 'code' => $code, 'type' => $type, 'minutes' => $expireMinutes]);
 
     return $code;
 }

@@ -22,10 +22,8 @@ export default {
 			return false;
 		}
 		function redirectToLogin() {
-			// 获取当前页面栈
 			var pages = getCurrentPages();
 			var currentPath = pages.length > 0 ? pages[pages.length - 1].route : '';
-			// 已在登录页则不再跳转
 			if (isLoginPage(currentPath)) return;
 			uni.reLaunch({ url: "/pages/auth/login" });
 		}
@@ -67,12 +65,50 @@ export default {
 				return true;
 			}
 		});
+		// 安装待处理的WGT更新（上次下载的）
+		this.installPendingWgt();
 	},
 	onShow: function() {
 	},
-	onHide: function() {
+	methods: {
+		// 安装上次下载好的WGT
+		installPendingWgt() {
+			var wgtPath = uni.getStorageSync('pendingWgtPath');
+			if (!wgtPath || typeof plus === 'undefined') return;
+			// 检查文件是否存在
+			plus.io.resolveLocalFileSystemURL(wgtPath, function() {
+				// 文件存在，安装
+				plus.runtime.install(wgtPath, { force: false }, function() {
+					var ver = uni.getStorageSync('pendingWgtVersion') || '';
+					if (ver) uni.setStorageSync('wgtVersion', ver);
+					uni.removeStorageSync('pendingWgtPath');
+					uni.removeStorageSync('pendingWgtVersion');
+					// 延迟重启，避免toast残留
+					setTimeout(function() {
+						plus.runtime.restart();
+					}, 500);
+				}, function() {
+					uni.removeStorageSync('pendingWgtPath');
+					uni.removeStorageSync('pendingWgtVersion');
+				});
+			}, function() {
+				uni.removeStorageSync('pendingWgtPath');
+			});
+		}
 	}
 };
+
+function compareVersion(v1, v2) {
+	var a1 = v1.split('.').map(Number);
+	var a2 = v2.split('.').map(Number);
+	for (var i = 0; i < Math.max(a1.length, a2.length); i++) {
+		var n1 = a1[i] || 0;
+		var n2 = a2[i] || 0;
+		if (n1 > n2) return 1;
+		if (n1 < n2) return -1;
+	}
+	return 0;
+}
 </script>
 
 <style>
