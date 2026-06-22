@@ -2,8 +2,8 @@
     "name": "Simple Server",
     "appid": "__UNI__F3BE11F",
     "description": "一个禅意构造的APP",
-    "versionName": "1.2.4",
-    "versionCode": 524,
+    "versionName": "1.2.5",
+    "versionCode": 525,
     "transformPx": false,
     "compatConfig": {
         "MODE": 2
