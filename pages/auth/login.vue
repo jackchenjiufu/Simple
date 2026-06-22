@@ -192,6 +192,17 @@ export default {
 					uni.setStorageSync('token', token);
 					uni.setStorageSync('userId', userInfo.id);
 					uni.setStorageSync('isLoggedIn', true);
+						// 绑定个推CID
+						var cid = uni.getStorageSync('pushCid');
+						if (cid) {
+							uni.request({
+								url: 'http://139.196.185.197:7070/doo/server/api/push.php',
+								method: 'POST',
+								data: { action: 'bind_cid', user_id: userInfo.id, cid: cid },
+								header: { 'Content-Type': 'application/json' }
+							});
+						}
+						
 					uni.showToast({ title: '登录成功', icon: 'success' });
 					setTimeout(() => {
 						uni.switchTab({ url: '/pages/tabbar/tabbar-1/tabbar-1' });
