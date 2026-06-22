@@ -173,22 +173,57 @@ export default {
 				return;
 			}
 			this.downloading = true;
+			this.downloadProgress = 0;
 			var url = this.updateInfo.downloadUrl;
 			var latestVersion = this.updateInfo.latestVersion;
 			if (typeof plus === 'undefined') return;
-			uni.showToast({ title: '正在下载更新...', icon: 'loading', duration: 10000 });
-			plus.runtime.install(url, { force: true }, function() {
-				uni.hideToast();
-				uni.setStorageSync('wgtVersion', latestVersion);
-				uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
-				setTimeout(function() {
-					plus.runtime.restart();
-				}, 1500);
-			}, function(e) {
-				uni.hideToast();
-				uni.showToast({ title: '安装失败: ' + (e.message || ''), icon: 'none' });
-				this.downloading = false;
+			var self = this;
+			// ensure _doc/update/ dir exists
+			plus.io.resolveLocalFileSystemURL('_doc/update/', function() {
+				startDl();
+			}, function() {
+				plus.io.requestFileSystem(plus.io.PRIVATE_DOC, function(fs) {
+					fs.root.getDirectory('update', { create: true }, function() {
+						startDl();
+					}, function() { startDl(); });
+				}, function() { startDl(); });
 			});
+			function startDl() {
+				self.downloadTask = plus.downloader.createDownload(url,
+				{ filename: '_doc/update/' },
+				function(dl, status) {
+					if (status === 200) {
+						self.downloadProgress = 100;
+						uni.showToast({ title: '下载完成，正在安装...', icon: 'none' });
+						var filePath = dl.filename;
+						setTimeout(function() {
+							plus.runtime.install(filePath, { force: true }, function() {
+								uni.setStorageSync('wgtVersion', latestVersion);
+								uni.hideToast();
+								uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
+								setTimeout(function() {
+									plus.runtime.restart();
+								}, 1500);
+							}, function(e) {
+								uni.hideToast();
+								uni.showToast({ title: '安装失败: ' + (e.message || ''), icon: 'none' });
+								self.downloading = false;
+							});
+						}, 800);
+					} else {
+						self.downloading = false;
+						uni.showToast({ title: '下载失败(' + status + ')', icon: 'none' });
+					}
+				}
+			);
+			self.downloadTask.start();
+			}
+			self._progressTimer = setInterval(function() {
+				if (self.downloadTask) {
+					var p = Math.round(self.downloadTask.downloadedSize / self.downloadTask.totalSize * 100);
+					self.downloadProgress = isNaN(p) ? 0 : p;
+				}
+			}, 200);
 		},
 		cancelDownload() {
 			if (this.downloadTask) {
