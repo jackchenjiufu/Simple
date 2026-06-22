@@ -86,30 +86,28 @@ switch ($action) {
 }
 
 /**
- * 通过个推 REST API V2 发送推送
+ * 通过 DCloud UniPush REST API V3 发送推送
  */
 function sendGetuiPush(string $title, string $content, array $cidList): array {
     $appId = 'o4wWFAWuXE7Ln2V0RBt59A';
     $appKey = 'LEMxKoYP59AnffZpTbmfc3';
-    $masterSecret = 'z5NQOgPGJzAG9LS5jIwxJ7';
+    $appSecret = 'z5NQOgPGJzAG9LS5jIwxJ7';
 
-    // 1. 获取 Auth Token
-    $timestamp = strval(time());
-    $sign = md5($appKey . $timestamp . $masterSecret);
-    $authUrl = 'https://restapi.getui.com/v2/' . $appId . '/auth';
-    $authData = [
+    // 1. 获取 IAT Token
+    $timestamp = intval(microtime(true) * 1000);
+    $secretB64 = base64_encode($appSecret);
+    $authUrl = 'https://api.unipush.dcloud.net.cn/rest/v3/' . $secretB64 . '/iat/auth';
+    $authData = json_encode([
         'appkey' => $appKey,
-        'masterSecret' => $masterSecret,
-        'timestamp' => $timestamp,
-        'sign' => $sign
-    ];
+        'timestamp' => $timestamp
+    ]);
 
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL => $authUrl,
         CURLOPT_POST => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_POSTFIELDS => json_encode($authData),
+        CURLOPT_POSTFIELDS => $authData,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 10,
     ]);
@@ -118,44 +116,35 @@ function sendGetuiPush(string $title, string $content, array $cidList): array {
 
     if ($authCode !== 200) {
         curl_close($ch);
-        return ["code" => 500, "message" => "个推认证失败", "error" => $authResp];
+        return ["code" => 500, "message" => "UniPush认证失败", "error" => $authResp];
     }
 
     $authResult = json_decode($authResp, true);
-    $token = $authResult['token'] ?? '';
+    $iat = $authResult['iat'] ?? '';
 
-    if (!$token) {
+    if (!$iat) {
         curl_close($ch);
-        return ["code" => 500, "message" => "获取Token失败"];
+        return ["code" => 500, "message" => "获取IAT失败"];
     }
 
     // 2. 发送推送
-    $pushUrl = 'https://restapi.getui.com/v2/' . $appId . '/push/list/cid';
-    $pushData = [
-        'request_id' => uniqid('push_', true),
-        'settings' => [
-            'ttl' => 3600000, // 1小时
-        ],
-        'audience' => [
-            'cid' => $cidList,
-        ],
-        'push_message' => [
-            'notification' => [
-                'title' => $title,
-                'body' => $content,
-                'click_type' => 'startapp',
-                'click_type' => 'none',
-            ],
-        ],
-    ];
+    $pushUrl = 'https://api.unipush.dcloud.net.cn/rest/v3/' . $appId . '/push';
+    $pushData = json_encode([
+        'push_token' => $cidList,
+        'push_type' => 'individual',
+        'title' => $title,
+        'content' => $content,
+        'payload' => '',
+        'after_open' => 'go_app',
+    ]);
 
     curl_setopt_array($ch, [
         CURLOPT_URL => $pushUrl,
         CURLOPT_HTTPHEADER => [
             'Content-Type: application/json',
-            'token: ' . $token,
+            'Authorization: Bearer ' . $iat,
         ],
-        CURLOPT_POSTFIELDS => json_encode($pushData),
+        CURLOPT_POSTFIELDS => $pushData,
     ]);
     $pushResp = curl_exec($ch);
     $pushCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -163,12 +152,11 @@ function sendGetuiPush(string $title, string $content, array $cidList): array {
 
     $pushResult = json_decode($pushResp, true);
 
-    if ($pushCode === 200 && ($pushResult['code'] ?? 0) === 0) {
+    if ($pushCode === 200 && ($pushResult['code'] ?? '') === '0') {
         return [
             "code" => 200,
             "message" => "推送成功",
             "sent" => count($cidList),
-            "taskId" => $pushResult['data']['taskId'] ?? '',
         ];
     } else {
         return [
