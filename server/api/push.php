@@ -94,10 +94,14 @@ function sendGetuiPush(string $title, string $content, array $cidList): array {
     $masterSecret = 'z5NQOgPGJzAG9LS5jIwxJ7';
 
     // 1. 获取 Auth Token
+    $timestamp = strval(time());
+    $sign = md5($appKey . $timestamp . $masterSecret);
     $authUrl = 'https://restapi.getui.com/v2/' . $appId . '/auth';
     $authData = [
         'appkey' => $appKey,
-        'masterSecret' => $masterSecret
+        'masterSecret' => $masterSecret,
+        'timestamp' => $timestamp,
+        'sign' => $sign
     ];
 
     $ch = curl_init();
