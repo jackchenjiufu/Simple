@@ -61,6 +61,7 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
 export default {
 	/**
 	 * 组件数据
@@ -74,7 +75,7 @@ export default {
 			statusBarHeight: 0, // 状态栏高度
 			bannerHeight: 0, // 背景横幅总高度（含状态栏延伸部分）
 			userInfo: null, // 用户信息对象
-			apiBase: 'http://139.196.185.197:7070/doo/server/api/', // API基础地址
+			apiBase: '', // API基础地址（在onLoad中初始化）
 			registerTime: '' // 注册时间
 		};
 	},
@@ -91,6 +92,9 @@ export default {
 		// 这样背景图可以覆盖到状态栏背后，实现透明状态栏效果
 		const bannerBaseHeight = (450 / 750) * systemInfo.windowWidth;
 		this.bannerHeight = bannerBaseHeight + this.statusBarHeight;
+		
+		// 初始化API基础地址
+		this.apiBase = apiConfig.baseUrl;
 		
 		// 加载用户信息
 		this.loadUserInfo();
@@ -117,35 +121,11 @@ export default {
 			if (!url) {
 				return '';
 			}
-			
-			let processedUrl = url;
-			if (!processedUrl.includes(':')) {
-				// 相对路径，添加完整 URL
-				processedUrl = `http://139.196.185.197:7070${processedUrl}`;
-			} else if (processedUrl.includes('http') && !processedUrl.includes('7070')) {
-				// 已经是完整 URL，但缺少正确端口
-				if (processedUrl.startsWith('http://')) {
-					// 替换 http:// 开头的 URL，添加 7070 端口
-					if (processedUrl.includes('139.196.185.197')) {
-						// 已经包含正确 IP，只需要添加端口号
-						processedUrl = processedUrl.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
-					} else {
-						// 其他 HTTP URL，替换为正确的 IP 和端口
-						processedUrl = processedUrl.replace(/^http:\/\/[^\/]+\//, 'http://139.196.185.197:7070/');
-					}
-				} else if (processedUrl.startsWith('https://')) {
-					// HTTPS URL，替换为正确的 IP 和端口
-					if (processedUrl.includes('139.196.185.197')) {
-						// 已经包含正确 IP，只需要添加端口号
-						processedUrl = processedUrl.replace('https://139.196.185.197/', 'http://139.196.185.197:7070/');
-					} else {
-						// 其他 HTTPS URL，替换为正确的 IP 和端口
-						processedUrl = processedUrl.replace(/^https:\/\/[^\/]+\//, 'http://139.196.185.197:7070/');
-					}
-				}
+			if (url.startsWith('http://') || url.startsWith('https://')) {
+				return url;
 			}
-			
-			return processedUrl;
+			// 相对路径，拼接完整URL
+			return this.apiBase.replace(/api\/$/, '') + url.replace(/^\//, '');
 		},
 		/**
 		 * 加载用户信息

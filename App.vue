@@ -5,6 +5,7 @@
 </template>
 
 <script>
+import apiConfig from './utils/api.js';
 export default {
 	globalData: {
 		userInfo: null
@@ -67,10 +68,38 @@ export default {
 		});
 		// 安装待处理的WGT更新（上次下载的）
 		this.installPendingWgt();
+		// 后台静默检查WGT更新
+		this.silentCheckWgt();
 	},
 	onShow: function() {
 	},
 	methods: {
+		// 后台静默检查WGT更新
+		silentCheckWgt() {
+			// #ifdef APP-PLUS
+			var storedVer = uni.getStorageSync('wgtVersion') || '';
+			var sysInfo = uni.getSystemInfoSync();
+			var curVer = storedVer || sysInfo.appVersion || '1.0.0';
+			uni.request({
+				url: apiConfig.baseUrl + 'check_update.php',
+				method: 'POST',
+				data: { currentVersion: curVer },
+				success: function(res) {
+					var result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+					if (result?.code === 200 && result.data?.hasUpdate && result.data?.downloadUrl) {
+						var newVer = result.data.latestVersion;
+						var dlUrl = result.data.downloadUrl;
+						plus.downloader.createDownload(dlUrl, { filename: '_doc/update/' }, function(dl, status) {
+							if (status === 200) {
+								uni.setStorageSync('pendingWgtPath', dl.filename);
+								uni.setStorageSync('pendingWgtVersion', newVer);
+							}
+						}).start();
+					}
+				}
+			});
+			// #endif
+		},
 		// 安装上次下载好的WGT
 		installPendingWgt() {
 			var wgtPath = uni.getStorageSync('pendingWgtPath');
@@ -78,7 +107,7 @@ export default {
 			// 检查文件是否存在
 			plus.io.resolveLocalFileSystemURL(wgtPath, function() {
 				// 文件存在，安装
-				plus.runtime.install(wgtPath, { force: false }, function() {
+				plus.runtime.install(wgtPath, { force: true }, function() {
 					var ver = uni.getStorageSync('pendingWgtVersion') || '';
 					if (ver) uni.setStorageSync('wgtVersion', ver);
 					uni.removeStorageSync('pendingWgtPath');

@@ -109,6 +109,7 @@ export default {
 			updateInfo: {
 				latestVersion: '',
 				downloadUrl: '',
+				apkDownloadUrl: '',
 				description: ''
 			},
 			downloading: false,
@@ -150,6 +151,7 @@ export default {
 						this.updateInfo = {
 							latestVersion: result.data.latestVersion,
 							downloadUrl: result.data.downloadUrl,
+							apkDownloadUrl: result.data.apkDownloadUrl || '',
 							description: result.data.description
 						};
 						this.status = 'available';
@@ -168,62 +170,93 @@ export default {
 			}
 		},
 		startDownload() {
-			if (!this.updateInfo.downloadUrl) {
+			if (!this.updateInfo.downloadUrl && !this.updateInfo.apkDownloadUrl) {
 				uni.showToast({ title: '下载地址无效', icon: 'none' });
 				return;
 			}
 			this.downloading = true;
 			this.downloadProgress = 0;
 			var url = this.updateInfo.downloadUrl;
+			var apkUrl = this.updateInfo.apkDownloadUrl;
 			var latestVersion = this.updateInfo.latestVersion;
 			if (typeof plus === 'undefined') return;
 			var self = this;
-			// ensure _doc/update/ dir exists
-			plus.io.resolveLocalFileSystemURL('_doc/update/', function() {
-				startDl();
-			}, function() {
-				plus.io.requestFileSystem(plus.io.PRIVATE_DOC, function(fs) {
-					fs.root.getDirectory('update', { create: true }, function() {
-						startDl();
-					}, function() { startDl(); });
-				}, function() { startDl(); });
-			});
-			function startDl() {
-				self.downloadTask = plus.downloader.createDownload(url,
-				{ filename: '_doc/update/' },
-				function(dl, status) {
+
+			// === WGT更新：下载 → 安装 → 重启 ===
+			if (url) {
+				uni.showToast({ title: '正在下载更新包...', icon: 'loading', duration: 15000 });
+				var dtask = plus.downloader.createDownload(url, { filename: '_doc/update/' }, function(d, status) {
+					uni.hideToast();
 					if (status === 200) {
-						self.downloadProgress = 100;
-						uni.showToast({ title: '下载完成，正在安装...', icon: 'none' });
-						var filePath = dl.filename;
-						setTimeout(function() {
-							plus.runtime.install(filePath, { force: true }, function() {
-								uni.setStorageSync('wgtVersion', latestVersion);
-								uni.hideToast();
-								uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
-								setTimeout(function() {
-									plus.runtime.restart();
-								}, 1500);
-							}, function(e) {
-								uni.hideToast();
+						uni.showToast({ title: '正在安装WGT...', icon: 'loading', duration: 5000 });
+						plus.runtime.install(d.filename, { force: true }, function() {
+							uni.hideToast();
+							uni.setStorageSync('wgtVersion', latestVersion);
+							uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
+							setTimeout(function() {
+								plus.runtime.restart();
+							}, 1500);
+						}, function(e) {
+							uni.hideToast();
+							// WGT安装失败 → 降级到APK下载安装
+							if (apkUrl) {
+								self._downloadAndInstallApk(apkUrl);
+							} else {
 								uni.showToast({ title: '安装失败: ' + (e.message || ''), icon: 'none' });
 								self.downloading = false;
-							});
-						}, 800);
+							}
+						});
 					} else {
-						self.downloading = false;
-						uni.showToast({ title: '下载失败(' + status + ')', icon: 'none' });
+						// WGT下载失败 → 降级到APK下载安装
+						if (apkUrl) {
+							self._downloadAndInstallApk(apkUrl);
+						} else {
+							uni.showToast({ title: '下载失败', icon: 'none' });
+							self.downloading = false;
+						}
 					}
-				}
-			);
-			self.downloadTask.start();
+				});
+				dtask.start();
+				dtask.addEventListener('statechanged', function(task, status) {
+					if (task.state === 3 && task.totalSize > 0) {
+						self.downloadProgress = parseInt(task.downloadedSize / task.totalSize * 100);
+					}
+				});
+				return;
 			}
-			self._progressTimer = setInterval(function() {
-				if (self.downloadTask) {
-					var p = Math.round(self.downloadTask.downloadedSize / self.downloadTask.totalSize * 100);
-					self.downloadProgress = isNaN(p) ? 0 : p;
+
+			// === APK更新：下载 → 安装 ===
+			if (apkUrl) {
+				self._downloadAndInstallApk(apkUrl);
+			}
+		},
+		_downloadAndInstallApk(apkUrl) {
+			var self = this;
+			uni.showToast({ title: '正在下载APK...', icon: 'loading', duration: 10000 });
+			var dtask = plus.downloader.createDownload(apkUrl, { filename: '_doc/update/' }, function(d, status) {
+				uni.hideToast();
+				if (status === 200) {
+					uni.showToast({ title: '下载完成，正在安装...', icon: 'none', duration: 3000 });
+					plus.runtime.install(d.filename, {}, function() {
+						uni.showToast({ title: '安装成功', icon: 'none' });
+						self.downloading = false;
+					}, function(e) {
+						plus.runtime.openURL(apkUrl);
+						uni.showToast({ title: '安装失败，已打开浏览器下载', icon: 'none' });
+						self.downloading = false;
+					});
+				} else {
+					uni.showToast({ title: '下载失败，已打开浏览器重试', icon: 'none' });
+					plus.runtime.openURL(apkUrl);
+					self.downloading = false;
 				}
-			}, 200);
+			});
+			dtask.start();
+			dtask.addEventListener('statechanged', function(task, status) {
+				if (task.state === 3 && task.totalSize > 0) {
+					self.downloadProgress = parseInt(task.downloadedSize / task.totalSize * 100);
+				}
+			});
 		},
 		cancelDownload() {
 			if (this.downloadTask) {

@@ -196,7 +196,7 @@ export default {
 						var cid = uni.getStorageSync('pushCid');
 						if (cid) {
 							uni.request({
-								url: 'http://139.196.185.197:7070/doo/server/api/push.php',
+								url: apiConfig.baseUrl + 'push.php',
 								method: 'POST',
 								data: { action: 'bind_cid', user_id: userInfo.id, cid: cid },
 								header: { 'Content-Type': 'application/json' }

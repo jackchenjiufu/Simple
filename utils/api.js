@@ -97,10 +97,6 @@ const apiConfig = {
         url = url.trim().replace(/`/g, '');
         // 已经是完整URL
         if (url.startsWith('http://') || url.startsWith('https://')) {
-            if (url.includes('139.196.185.197') && !url.includes('7070')) {
-                url = url.replace('http://139.196.185.197/', 'http://139.196.185.197:7070/');
-                url = url.replace('https://139.196.185.197/', 'http://139.196.185.197:7070/');
-            }
             return url;
         }
         // 相对路径

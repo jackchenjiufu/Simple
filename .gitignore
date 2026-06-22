@@ -10,3 +10,5 @@ vendor/
 *.ipa
 .hermes/
 server/api/check_update_patched.php
+server/
+admin-web/
