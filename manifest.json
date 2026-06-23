@@ -13,7 +13,8 @@
         "compilerVersion": 3,
         "modules": {
             "Camera": {},
-            "VideoPlayer": {}
+            "VideoPlayer": {},
+            "Push": {}
         },
         "distribute": {
             "android": {
@@ -39,7 +40,9 @@
                 "dSYMs": false,
                 "idfa": false
             },
-            "sdkConfigs": {},
+            "sdkConfigs": {
+                "push": {}
+            },
             "splashscreen": {
                 "androidStyle": "default",
                 "useOriginalMsgbox": false,
