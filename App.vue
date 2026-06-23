@@ -20,48 +20,44 @@ function connectWebSocket() {
 	if (!userId) return;
 
 	try {
-		// 使用原生 WebSocket API（比 uni.connectSocket 更稳定）
-		wsSocket = new WebSocket(WS_URL);
+		wsSocket = uni.connectSocket({ url: WS_URL });
 
-		wsSocket.onopen = function() {
+		wsSocket.onOpen(function() {
 			wsConnected = true;
 			clearTimeout(wsReconnectTimer);
-			wsSocket.send(JSON.stringify({ type: 'auth', userId: userId }));
+			wsSocket.send({ data: JSON.stringify({ type: 'auth', userId: userId }) });
 			console.log('WebSocket 已连接');
-
-			// 启动心跳（每10秒）
 			clearInterval(wsHeartbeatTimer);
 			wsHeartbeatTimer = setInterval(function() {
-				if (wsConnected && wsSocket && wsSocket.readyState === WebSocket.OPEN) {
-					wsSocket.send(JSON.stringify({ type: 'ping' }));
+				if (wsConnected && wsSocket) {
+					wsSocket.send({ data: JSON.stringify({ type: 'ping' }) });
 				}
 			}, 10000);
-		};
+		});
 
-		wsSocket.onmessage = function(event) {
+		wsSocket.onMessage(function(res) {
 			try {
-				var msg = JSON.parse(event.data);
+				var msg = JSON.parse(res.data);
 				handleWsMessage(msg);
 			} catch(e) {}
-		};
+		});
 
-		wsSocket.onclose = function() {
+		wsSocket.onClose(function() {
 			wsConnected = false;
 			wsSocket = null;
 			clearInterval(wsHeartbeatTimer);
 			console.log('WebSocket 已断开');
-			// 快速重连
 			wsReconnectTimer = setTimeout(function() {
 				if (uni.getStorageSync('isLoggedIn')) {
 					connectWebSocket();
 				}
 			}, 1000);
-		};
+		});
 
-		wsSocket.onerror = function() {
+		wsSocket.onError(function() {
 			wsConnected = false;
 			console.log('WebSocket 连接错误');
-		};
+		});
 	} catch(e) {
 		console.log('WebSocket 创建失败:', e);
 	}
@@ -85,8 +81,8 @@ function handleWsMessage(msg) {
 		case 'pong':
 			break;
 		case 'ping':
-			if (wsConnected && wsSocket && wsSocket.readyState === WebSocket.OPEN) {
-				wsSocket.send(JSON.stringify({ type: 'pong' }));
+			if (wsConnected && wsSocket) {
+				wsSocket.send({ data: JSON.stringify({ type: 'pong' }) });
 			}
 			break;
 		case 'kick':
