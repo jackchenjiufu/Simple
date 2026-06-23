@@ -4,19 +4,18 @@
  */
 const WebSocket = require('ws');
 const mysql = require('mysql2/promise');
+const http = require('http');
 
 const WS_PORT = 1884;
-const PING_INTERVAL = 5000; // 5秒心跳
+const API_PORT = 1885;
+const PING_INTERVAL = 8000; // 8秒心跳
 
-const userConnections = new Map(); // userId => ws
-const pendingMessages = new Map(); // userId => [messages]
+const userConnections = new Map();
+const pendingMessages = new Map();
 
 const dbConfig = {
-    host: 'localhost',
-    user: 'root',
-    password: '320722',
-    database: 'doo-app',
-    charset: 'utf8mb4'
+    host: 'localhost', user: 'root', password: '320722',
+    database: 'doo-app', charset: 'utf8mb4'
 };
 
 const wss = new WebSocket.Server({ port: WS_PORT });
@@ -24,9 +23,6 @@ const wss = new WebSocket.Server({ port: WS_PORT });
 wss.on('connection', (ws, req) => {
     ws.userId = null;
     ws.alive = true;
-
-    // 心跳检测
-    ws.on('pong', () => { ws.alive = true; });
 
     ws.on('message', async (data) => {
         try {
@@ -44,21 +40,19 @@ wss.on('connection', (ws, req) => {
         }
     });
 
-    ws.on('error', (err) => {
-        console.log(`[错误] ${err.message}`);
-    });
+    ws.on('error', () => {});
 });
 
-// 定时心跳检测
+// 定时心跳：发送 JSON ping，等客户端回复 pong
 const pingTimer = setInterval(() => {
     wss.clients.forEach(ws => {
-        if (ws.alive === false) {
+        if (!ws.alive) {
             console.log(`[超时] 关闭无响应连接`);
             ws.terminate();
             return;
         }
         ws.alive = false;
-        ws.ping();
+        ws.send(JSON.stringify({ type: 'ping' }));
     });
 }, PING_INTERVAL);
 
@@ -72,7 +66,6 @@ async function handleMessage(ws, msg) {
                 ws.send(JSON.stringify({ type: 'auth_result', success: false }));
                 return;
             }
-            // 踢掉旧连接
             const old = userConnections.get(userId);
             if (old && old !== ws) {
                 old.send(JSON.stringify({ type: 'kick' }));
@@ -80,14 +73,16 @@ async function handleMessage(ws, msg) {
             }
             userConnections.set(userId, ws);
             ws.userId = userId;
+            ws.alive = true;
             ws.send(JSON.stringify({ type: 'auth_result', success: true }));
-            console.log(`[认证] userId=${userId} 连接成功`);
+            console.log(`[认证] userId=${userId}`);
 
-            // 发送待发消息
+            // 发送离线缓存消息
             const pending = pendingMessages.get(userId);
             if (pending && pending.length) {
                 pending.forEach(m => ws.send(m));
                 pendingMessages.delete(userId);
+                console.log(`[缓存] userId=${userId} ${pending.length}条消息已送达`);
             }
 
             // 发送最新公告
@@ -109,10 +104,6 @@ async function handleMessage(ws, msg) {
             }
             break;
 
-        case 'ping':
-            ws.send(JSON.stringify({ type: 'pong' }));
-            break;
-
         case 'pong':
             ws.alive = true;
             break;
@@ -122,10 +113,7 @@ async function handleMessage(ws, msg) {
     }
 }
 
-// 内部推送 API (HTTP)
-const http = require('http');
-const API_PORT = 1885;
-
+// ===== 内部 HTTP 推送 API =====
 const apiServer = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'application/json');
@@ -156,7 +144,6 @@ const apiServer = http.createServer((req, res) => {
                 console.log(`[推送] 发送给 userId=${userId}`);
                 res.end(JSON.stringify({ code: 200, msg: '已发送', delivered: true }));
             } else {
-                // 离线缓存
                 if (!pendingMessages.has(userId)) pendingMessages.set(userId, []);
                 pendingMessages.get(userId).push(JSON.stringify(payload));
                 console.log(`[推送] userId=${userId} 离线，已缓存`);
@@ -169,8 +156,8 @@ const apiServer = http.createServer((req, res) => {
     });
 });
 
-apiServer.listen(API_PORT, '127.0.0.1', () => {
-    console.log(`推送API: http://127.0.0.1:${API_PORT}`);
-});
+apiServer.listen(API_PORT, '127.0.0.1');
+console.log(`DOO WebSocket 服务 (Node.js)`);
 console.log(`端口: ${WS_PORT}`);
 console.log(`心跳: ${PING_INTERVAL}ms`);
+console.log(`API: http://127.0.0.1:${API_PORT}`);
