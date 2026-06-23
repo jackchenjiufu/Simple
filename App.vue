@@ -15,36 +15,35 @@ var wsConnected = false;
 var wsHeartbeatTimer = null;
 
 function connectWebSocket() {
-	if (wsConnected || wsSocket) return;
+	if (wsConnected) return;
 	var userId = uni.getStorageSync('userId');
 	if (!userId) return;
 
 	try {
-		wsSocket = uni.connectSocket({ url: WS_URL });
+		uni.connectSocket({ url: WS_URL });
 
-		wsSocket.onOpen(function() {
+		uni.onSocketOpen(function() {
 			wsConnected = true;
 			clearTimeout(wsReconnectTimer);
-			wsSocket.send({ data: JSON.stringify({ type: 'auth', userId: userId }) });
+			uni.sendSocketMessage({ data: JSON.stringify({ type: 'auth', userId: userId }) });
 			console.log('WebSocket 已连接');
 			clearInterval(wsHeartbeatTimer);
 			wsHeartbeatTimer = setInterval(function() {
-				if (wsConnected && wsSocket) {
-					wsSocket.send({ data: JSON.stringify({ type: 'ping' }) });
+				if (wsConnected) {
+					uni.sendSocketMessage({ data: JSON.stringify({ type: 'ping' }) });
 				}
 			}, 10000);
 		});
 
-		wsSocket.onMessage(function(res) {
+		uni.onSocketMessage(function(res) {
 			try {
 				var msg = JSON.parse(res.data);
 				handleWsMessage(msg);
 			} catch(e) {}
 		});
 
-		wsSocket.onClose(function() {
+		uni.onSocketClose(function() {
 			wsConnected = false;
-			wsSocket = null;
 			clearInterval(wsHeartbeatTimer);
 			console.log('WebSocket 已断开');
 			wsReconnectTimer = setTimeout(function() {
@@ -54,7 +53,7 @@ function connectWebSocket() {
 			}, 1000);
 		});
 
-		wsSocket.onError(function() {
+		uni.onSocketError(function() {
 			wsConnected = false;
 			console.log('WebSocket 连接错误');
 		});
@@ -66,11 +65,8 @@ function connectWebSocket() {
 function disconnectWebSocket() {
 	clearTimeout(wsReconnectTimer);
 	clearInterval(wsHeartbeatTimer);
-	if (wsSocket) {
-		try { wsSocket.close(); } catch(e) {}
-		wsSocket = null;
-	}
 	wsConnected = false;
+	try { uni.closeSocket(); } catch(e) {}
 }
 
 function handleWsMessage(msg) {
@@ -81,8 +77,8 @@ function handleWsMessage(msg) {
 		case 'pong':
 			break;
 		case 'ping':
-			if (wsConnected && wsSocket) {
-				wsSocket.send({ data: JSON.stringify({ type: 'pong' }) });
+			if (wsConnected) {
+				uni.sendSocketMessage({ data: JSON.stringify({ type: 'pong' }) });
 			}
 			break;
 		case 'kick':
