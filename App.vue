@@ -172,26 +172,49 @@ export default {
 				method: 'POST',
 				data: { currentVersion: curVer },
 				success: function(res) {
-					var result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
-					if (result?.code === 200 && result.data?.hasUpdate && result.data?.downloadUrl) {
-						var newVer = result.data.latestVersion;
-						var dlUrl = result.data.downloadUrl;
-						// #ifdef APP-PLUS
-						plus.downloader.createDownload(dlUrl, { filename: '_doc/update/' }, function(dl, status) {
-							if (status === 200) {
-								uni.setStorageSync('pendingWgtPath', dl.filename);
-								uni.setStorageSync('pendingWgtVersion', newVer);
+					try {
+						var result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+						if (result && result.code === 200 && result.data && result.data.hasUpdate && result.data.downloadUrl) {
+							var newVer = result.data.latestVersion;
+							if (compareVersion(newVer, curVer) > 0) {
+								var dlUrl = result.data.downloadUrl;
+								// #ifdef APP-PLUS
+								var dt = plus.downloader.createDownload(dlUrl, { filename: '_doc/update/' }, function(dl, status) {
+									if (status === 200) {
+										uni.setStorageSync('pendingWgtPath', dl.filename);
+										uni.setStorageSync('pendingWgtVersion', newVer);
+									} else {
+										console.error('\u66f4\u65b0\u5305\u4e0b\u8f7d\u5931\u8d25, \u72b6\u6001:', status);
+									}
+								});
+								dt.addEventListener('error', function() {
+									console.error('\u66f4\u65b0\u5305\u4e0b\u8f7d\u51fa\u9519');
+								});
+								dt.start();
+								// #endif
 							}
-						}).start();
-						// #endif
+						}
+					} catch(e) {
+						console.error('\u68c0\u67e5\u66f4\u65b0\u89e3\u6790\u5f02\u5e38:', e);
 					}
+				},
+				fail: function(err) {
+					console.error('\u68c0\u67e5\u66f4\u65b0\u8bf7\u6c42\u5931\u8d25:', err);
 				}
 			});
 			// #endif
 		},
 		installPendingWgt() {
 			var wgtPath = uni.getStorageSync('pendingWgtPath');
+			var pendingVer = uni.getStorageSync('pendingWgtVersion');
 			if (!wgtPath || typeof plus === 'undefined') return;
+			var sysInfo = uni.getSystemInfoSync();
+			var curVer = uni.getStorageSync('wgtVersion') || sysInfo.appVersion || '1.0.0';
+			if (pendingVer && compareVersion(pendingVer, curVer) <= 0) {
+				uni.removeStorageSync('pendingWgtPath');
+				uni.removeStorageSync('pendingWgtVersion');
+				return;
+			}
 			plus.io.resolveLocalFileSystemURL(wgtPath, function() {
 				plus.runtime.install(wgtPath, { force: true }, function() {
 					var ver = uni.getStorageSync('pendingWgtVersion') || '';
