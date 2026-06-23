@@ -20,52 +20,48 @@ function connectWebSocket() {
 	if (!userId) return;
 
 	try {
-		wsSocket = uni.connectSocket({
-			url: WS_URL,
-			success: function() {
-				console.log('WebSocket 连接中...');
-			}
-		});
+		// 使用原生 WebSocket API（比 uni.connectSocket 更稳定）
+		wsSocket = new WebSocket(WS_URL);
 
-		wsSocket.onOpen(function() {
+		wsSocket.onopen = function() {
 			wsConnected = true;
-			wsSocket.send({
-				data: JSON.stringify({ type: 'auth', userId: userId })
-			});
-			console.log('WebSocket 已连接');
 			clearTimeout(wsReconnectTimer);
-			// 启动心跳，每30秒发送一次ping
+			wsSocket.send(JSON.stringify({ type: 'auth', userId: userId }));
+			console.log('WebSocket 已连接');
+
+			// 启动心跳（每10秒）
 			clearInterval(wsHeartbeatTimer);
 			wsHeartbeatTimer = setInterval(function() {
-				if (wsConnected && wsSocket) {
-					wsSocket.send({ data: JSON.stringify({ type: 'ping' }) });
+				if (wsConnected && wsSocket && wsSocket.readyState === WebSocket.OPEN) {
+					wsSocket.send(JSON.stringify({ type: 'ping' }));
 				}
-			}, 12000);
-		});
+			}, 10000);
+		};
 
-		wsSocket.onMessage(function(res) {
+		wsSocket.onmessage = function(event) {
 			try {
-				var msg = JSON.parse(res.data);
+				var msg = JSON.parse(event.data);
 				handleWsMessage(msg);
 			} catch(e) {}
-		});
+		};
 
-		wsSocket.onClose(function() {
+		wsSocket.onclose = function() {
 			wsConnected = false;
 			wsSocket = null;
 			clearInterval(wsHeartbeatTimer);
 			console.log('WebSocket 已断开');
+			// 快速重连
 			wsReconnectTimer = setTimeout(function() {
 				if (uni.getStorageSync('isLoggedIn')) {
 					connectWebSocket();
 				}
-			}, 12000);
-		});
+			}, 1000);
+		};
 
-		wsSocket.onError(function() {
+		wsSocket.onerror = function() {
 			wsConnected = false;
 			console.log('WebSocket 连接错误');
-		});
+		};
 	} catch(e) {
 		console.log('WebSocket 创建失败:', e);
 	}
@@ -75,7 +71,7 @@ function disconnectWebSocket() {
 	clearTimeout(wsReconnectTimer);
 	clearInterval(wsHeartbeatTimer);
 	if (wsSocket) {
-		wsSocket.close();
+		try { wsSocket.close(); } catch(e) {}
 		wsSocket = null;
 	}
 	wsConnected = false;
@@ -84,16 +80,13 @@ function disconnectWebSocket() {
 function handleWsMessage(msg) {
 	switch (msg.type) {
 		case 'auth_result':
-			if (msg.success) {
-				console.log('WebSocket 认证成功');
-			}
+			if (msg.success) console.log('WebSocket 认证成功');
 			break;
 		case 'pong':
 			break;
 		case 'ping':
-			// 服务端ping，回复pong
-			if (wsConnected && wsSocket) {
-				wsSocket.send({ data: JSON.stringify({ type: 'pong' }) });
+			if (wsConnected && wsSocket && wsSocket.readyState === WebSocket.OPEN) {
+				wsSocket.send(JSON.stringify({ type: 'pong' }));
 			}
 			break;
 		case 'kick':
@@ -118,12 +111,12 @@ uni.$ws = {
 	connect: connectWebSocket,
 	disconnect: disconnectWebSocket
 };
+
 export default {
 	globalData: {
 		userInfo: null
 	},
 	onLaunch: function() {
-		// 初始化 WebSocket 连接
 		connectWebSocket();
 		var loginPages = [
 			"pages/auth/login",
@@ -180,7 +173,6 @@ export default {
 				return true;
 			}
 		});
-		// 安装待处理的WGT更新
 		this.installPendingWgt();
 		this.silentCheckWgt();
 	},
@@ -201,12 +193,14 @@ export default {
 					if (result?.code === 200 && result.data?.hasUpdate && result.data?.downloadUrl) {
 						var newVer = result.data.latestVersion;
 						var dlUrl = result.data.downloadUrl;
+						// #ifdef APP-PLUS
 						plus.downloader.createDownload(dlUrl, { filename: '_doc/update/' }, function(dl, status) {
 							if (status === 200) {
 								uni.setStorageSync('pendingWgtPath', dl.filename);
 								uni.setStorageSync('pendingWgtVersion', newVer);
 							}
 						}).start();
+						// #endif
 					}
 				}
 			});
@@ -221,9 +215,7 @@ export default {
 					if (ver) uni.setStorageSync('wgtVersion', ver);
 					uni.removeStorageSync('pendingWgtPath');
 					uni.removeStorageSync('pendingWgtVersion');
-					setTimeout(function() {
-						plus.runtime.restart();
-					}, 500);
+					setTimeout(function() { plus.runtime.restart(); }, 500);
 				}, function() {
 					uni.removeStorageSync('pendingWgtPath');
 					uni.removeStorageSync('pendingWgtVersion');
