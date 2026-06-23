@@ -1,6 +1,15 @@
 {
 	"pages": [
 		{
+			"path": "pages/splash/splash",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		},
+		{
 			"path": "pages/auth/login",
 			"style": {
 				"navigationStyle": "custom"
