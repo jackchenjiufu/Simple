@@ -131,7 +131,7 @@ export default {
 			var pages = getCurrentPages();
 			var currentPath = pages.length > 0 ? pages[pages.length - 1].route : '';
 			if (isLoginPage(currentPath)) return;
-			uni.reLaunch({ url: "/pages/auth/login" });
+			uni.reLaunch({ url: "/pages/auth/login", animationDuration: 0 });
 		}
 		var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
 		if (!isLoggedIn) redirectToLogin();
@@ -139,13 +139,13 @@ export default {
 			invoke: function(args) {
 				var url = args.url.split("?")[0];
 				if (isLoginPage(url)) return true;
-				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login" }); return false; }
+				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login", animationDuration: 0 }); return false; }
 				return true;
 			}
 		});
 		uni.addInterceptor("switchTab", {
 			invoke: function(args) {
-				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login" }); return false; }
+				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login", animationDuration: 0 }); return false; }
 				return true;
 			}
 		});
@@ -153,7 +153,7 @@ export default {
 			invoke: function(args) {
 				var url = args.url.split("?")[0];
 				if (isLoginPage(url)) return true;
-				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login" }); return false; }
+				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login", animationDuration: 0 }); return false; }
 				return true;
 			}
 		});
