@@ -9,24 +9,27 @@ import apiConfig from './utils/api.js';
 
 // WebSocket 配置
 var WS_URL = 'ws://139.196.185.197:1884';
-var wsSocket = null;
 var wsReconnectTimer = null;
 var wsConnected = false;
 var wsHeartbeatTimer = null;
+var wsListenersRegistered = false;
 
 function connectWebSocket() {
 	if (wsConnected) return;
 	var userId = uni.getStorageSync('userId');
 	if (!userId) return;
 
-	try {
-		uni.connectSocket({ url: WS_URL });
+	// 只注册一次事件监听
+	if (!wsListenersRegistered) {
+		wsListenersRegistered = true;
 
 		uni.onSocketOpen(function() {
 			wsConnected = true;
 			clearTimeout(wsReconnectTimer);
-			uni.sendSocketMessage({ data: JSON.stringify({ type: 'auth', userId: userId }) });
+			var uid = uni.getStorageSync('userId');
+			uni.sendSocketMessage({ data: JSON.stringify({ type: 'auth', userId: uid }) });
 			console.log('WebSocket 已连接');
+			// 心跳
 			clearInterval(wsHeartbeatTimer);
 			wsHeartbeatTimer = setInterval(function() {
 				if (wsConnected) {
@@ -57,6 +60,11 @@ function connectWebSocket() {
 			wsConnected = false;
 			console.log('WebSocket 连接错误');
 		});
+	}
+
+	// 每次重连只需调用 connectSocket
+	try {
+		uni.connectSocket({ url: WS_URL });
 	} catch(e) {
 		console.log('WebSocket 创建失败:', e);
 	}
@@ -105,9 +113,7 @@ uni.$ws = {
 };
 
 export default {
-	globalData: {
-		userInfo: null
-	},
+	globalData: { userInfo: null },
 	onLaunch: function() {
 		connectWebSocket();
 		var loginPages = [
@@ -128,28 +134,18 @@ export default {
 			uni.reLaunch({ url: "/pages/auth/login" });
 		}
 		var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
-		if (!isLoggedIn) {
-			redirectToLogin();
-		}
+		if (!isLoggedIn) redirectToLogin();
 		uni.addInterceptor("navigateTo", {
 			invoke: function(args) {
 				var url = args.url.split("?")[0];
 				if (isLoginPage(url)) return true;
-				var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
-				if (!isLoggedIn) {
-					uni.reLaunch({ url: "/pages/auth/login" });
-					return false;
-				}
+				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login" }); return false; }
 				return true;
 			}
 		});
 		uni.addInterceptor("switchTab", {
 			invoke: function(args) {
-				var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
-				if (!isLoggedIn) {
-					uni.reLaunch({ url: "/pages/auth/login" });
-					return false;
-				}
+				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login" }); return false; }
 				return true;
 			}
 		});
@@ -157,19 +153,14 @@ export default {
 			invoke: function(args) {
 				var url = args.url.split("?")[0];
 				if (isLoginPage(url)) return true;
-				var isLoggedIn = !!uni.getStorageSync("isLoggedIn");
-				if (!isLoggedIn) {
-					uni.reLaunch({ url: "/pages/auth/login" });
-					return false;
-				}
+				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login" }); return false; }
 				return true;
 			}
 		});
 		this.installPendingWgt();
 		this.silentCheckWgt();
 	},
-	onShow: function() {
-	},
+	onShow: function() {},
 	methods: {
 		silentCheckWgt() {
 			// #ifdef APP-PLUS
@@ -234,13 +225,6 @@ function compareVersion(v1, v2) {
 
 <style>
 @import "./static/css/global.css";
-.app-container {
-	width: 100%;
-	height: 100vh;
-	background-color: var(--bg-light);
-}
-page {
-	width: 100%;
-	height: 100%;
-}
+.app-container { width: 100%; height: 100vh; background-color: var(--bg-light); }
+page { width: 100%; height: 100%; }
 </style>
