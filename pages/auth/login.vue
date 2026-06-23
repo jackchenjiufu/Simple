@@ -190,20 +190,11 @@ export default {
 					const token = responseData.token;
 					uni.setStorageSync('userInfo', userInfo);
 					uni.setStorageSync('token', token);
-					uni.setStorageSync('userId', userInfo.id);
-					uni.setStorageSync('isLoggedIn', true);
-						// 绑定个推CID
-						var cid = uni.getStorageSync('pushCid');
-						if (cid) {
-							uni.request({
-								url: apiConfig.baseUrl + 'push.php',
-								method: 'POST',
-								data: { action: 'bind_cid', user_id: userInfo.id, cid: cid },
-								header: { 'Content-Type': 'application/json' }
-							});
-						}
-						
-					uni.showToast({ title: '登录成功', icon: 'success' });
+						uni.setStorageSync('userId', userInfo.id);
+						uni.setStorageSync('isLoggedIn', true);
+						// 连接 WebSocket 推送
+						if (uni.$ws) uni.$ws.connect();
+						uni.showToast({ title: '登录成功', icon: 'success' });
 					setTimeout(() => {
 						uni.switchTab({ url: '/pages/tabbar/tabbar-1/tabbar-1' });
 					}, 1500);

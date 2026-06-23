@@ -2,8 +2,8 @@
     "name": "Simple Server",
     "appid": "__UNI__F3BE11F",
     "description": "一个禅意构造的APP",
-    "versionName": "1.2.6",
-    "versionCode": 526,
+    "versionName": "1.2.8",
+    "versionCode": 528,
     "transformPx": false,
     "compatConfig": {
         "MODE": 2
@@ -41,15 +41,7 @@
                 "dSYMs": false,
                 "idfa": false
             },
-            "sdkConfigs": {
-                "push": {
-                    "getui": {
-                        "appid": "o4wWFAWuXE7Ln2V0RBt59A",
-                        "appkey": "LEMxKoYP59AnffZpTbmfc3",
-                        "appsecret": "z5NQOgPGJzAG9LS5jIwxJ7"
-                    }
-                }
-            },
+            "sdkConfigs": {},
             "splashscreen": {
                 "androidStyle": "default",
                 "useOriginalMsgbox": false,

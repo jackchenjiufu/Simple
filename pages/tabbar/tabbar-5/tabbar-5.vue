@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import apiConfig from '../../utils/api.js';
+import apiConfig from '../../../utils/api.js';
 export default {
 	/**
 	 * 组件数据
