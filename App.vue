@@ -35,7 +35,7 @@ function connectWebSocket() {
 				if (wsConnected) {
 					uni.sendSocketMessage({ data: JSON.stringify({ type: 'ping' }) });
 				}
-			}, 10000);
+			}, 2000);
 		});
 
 		uni.onSocketMessage(function(res) {
