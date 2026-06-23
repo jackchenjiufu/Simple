@@ -40,7 +40,7 @@ function connectWebSocket() {
 				if (wsConnected && wsSocket) {
 					wsSocket.send({ data: JSON.stringify({ type: 'ping' }) });
 				}
-			}, 5000);
+			}, 12000);
 		});
 
 		wsSocket.onMessage(function(res) {
@@ -59,7 +59,7 @@ function connectWebSocket() {
 				if (uni.getStorageSync('isLoggedIn')) {
 					connectWebSocket();
 				}
-			}, 5000);
+			}, 12000);
 		});
 
 		wsSocket.onError(function() {
