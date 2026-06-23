@@ -6,11 +6,125 @@
 
 <script>
 import apiConfig from './utils/api.js';
+
+// WebSocket 配置
+var WS_URL = 'ws://139.196.185.197:1884';
+var wsSocket = null;
+var wsReconnectTimer = null;
+var wsConnected = false;
+var wsHeartbeatTimer = null;
+
+function connectWebSocket() {
+	if (wsConnected || wsSocket) return;
+	var userId = uni.getStorageSync('userId');
+	if (!userId) return;
+
+	try {
+		wsSocket = uni.connectSocket({
+			url: WS_URL,
+			success: function() {
+				console.log('WebSocket 连接中...');
+			}
+		});
+
+		wsSocket.onOpen(function() {
+			wsConnected = true;
+			wsSocket.send({
+				data: JSON.stringify({ type: 'auth', userId: userId })
+			});
+			console.log('WebSocket 已连接');
+			clearTimeout(wsReconnectTimer);
+			// 启动心跳，每30秒发送一次ping
+			clearInterval(wsHeartbeatTimer);
+			wsHeartbeatTimer = setInterval(function() {
+				if (wsConnected && wsSocket) {
+					wsSocket.send({ data: JSON.stringify({ type: 'ping' }) });
+				}
+			}, 5000);
+		});
+
+		wsSocket.onMessage(function(res) {
+			try {
+				var msg = JSON.parse(res.data);
+				handleWsMessage(msg);
+			} catch(e) {}
+		});
+
+		wsSocket.onClose(function() {
+			wsConnected = false;
+			wsSocket = null;
+			clearInterval(wsHeartbeatTimer);
+			console.log('WebSocket 已断开');
+			wsReconnectTimer = setTimeout(function() {
+				if (uni.getStorageSync('isLoggedIn')) {
+					connectWebSocket();
+				}
+			}, 5000);
+		});
+
+		wsSocket.onError(function() {
+			wsConnected = false;
+			console.log('WebSocket 连接错误');
+		});
+	} catch(e) {
+		console.log('WebSocket 创建失败:', e);
+	}
+}
+
+function disconnectWebSocket() {
+	clearTimeout(wsReconnectTimer);
+	clearInterval(wsHeartbeatTimer);
+	if (wsSocket) {
+		wsSocket.close();
+		wsSocket = null;
+	}
+	wsConnected = false;
+}
+
+function handleWsMessage(msg) {
+	switch (msg.type) {
+		case 'auth_result':
+			if (msg.success) {
+				console.log('WebSocket 认证成功');
+			}
+			break;
+		case 'pong':
+			break;
+		case 'ping':
+			// 服务端ping，回复pong
+			if (wsConnected && wsSocket) {
+				wsSocket.send({ data: JSON.stringify({ type: 'pong' }) });
+			}
+			break;
+		case 'kick':
+			disconnectWebSocket();
+			break;
+		default:
+			if (msg.title || msg.content) {
+				try {
+					if (typeof uni !== 'undefined' && uni.createPushMessage) {
+						uni.createPushMessage({
+							title: msg.title || '新消息',
+							content: msg.content || ''
+						});
+					}
+				} catch(e) {}
+			}
+			uni.$emit('ws-message', msg);
+	}
+}
+
+uni.$ws = {
+	connect: connectWebSocket,
+	disconnect: disconnectWebSocket
+};
 export default {
 	globalData: {
 		userInfo: null
 	},
 	onLaunch: function() {
+		// 初始化 WebSocket 连接
+		connectWebSocket();
 		var loginPages = [
 			"pages/auth/login",
 			"pages/auth/forgot-password",
@@ -66,15 +180,13 @@ export default {
 				return true;
 			}
 		});
-		// 安装待处理的WGT更新（上次下载的）
+		// 安装待处理的WGT更新
 		this.installPendingWgt();
-		// 后台静默检查WGT更新
 		this.silentCheckWgt();
 	},
 	onShow: function() {
 	},
 	methods: {
-		// 后台静默检查WGT更新
 		silentCheckWgt() {
 			// #ifdef APP-PLUS
 			var storedVer = uni.getStorageSync('wgtVersion') || '';
@@ -100,19 +212,15 @@ export default {
 			});
 			// #endif
 		},
-		// 安装上次下载好的WGT
 		installPendingWgt() {
 			var wgtPath = uni.getStorageSync('pendingWgtPath');
 			if (!wgtPath || typeof plus === 'undefined') return;
-			// 检查文件是否存在
 			plus.io.resolveLocalFileSystemURL(wgtPath, function() {
-				// 文件存在，安装
 				plus.runtime.install(wgtPath, { force: true }, function() {
 					var ver = uni.getStorageSync('pendingWgtVersion') || '';
 					if (ver) uni.setStorageSync('wgtVersion', ver);
 					uni.removeStorageSync('pendingWgtPath');
 					uni.removeStorageSync('pendingWgtVersion');
-					// 延迟重启，避免toast残留
 					setTimeout(function() {
 						plus.runtime.restart();
 					}, 500);
