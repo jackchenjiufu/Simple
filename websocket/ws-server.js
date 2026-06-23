@@ -123,7 +123,54 @@ async function handleMessage(ws, msg) {
 }
 
 // 内部推送 API (HTTP)
+const http = require('http');
+const API_PORT = 1885;
 
-console.log(`DOO WebSocket 服务启动 (Node.js 版本)`);
+const apiServer = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+
+    if (req.method !== 'POST') {
+        res.writeHead(405);
+        res.end(JSON.stringify({ code: 405, msg: 'Method not allowed' }));
+        return;
+    }
+
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+        try {
+            const data = JSON.parse(body);
+            const userId = String(data.userId || '');
+            const payload = data.data;
+
+            if (!userId || !payload) {
+                res.writeHead(400);
+                res.end(JSON.stringify({ code: 400, msg: '缺少 userId 或 data' }));
+                return;
+            }
+
+            const ws = userConnections.get(userId);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(payload));
+                console.log(`[推送] 发送给 userId=${userId}`);
+                res.end(JSON.stringify({ code: 200, msg: '已发送', delivered: true }));
+            } else {
+                // 离线缓存
+                if (!pendingMessages.has(userId)) pendingMessages.set(userId, []);
+                pendingMessages.get(userId).push(JSON.stringify(payload));
+                console.log(`[推送] userId=${userId} 离线，已缓存`);
+                res.end(JSON.stringify({ code: 200, msg: '用户离线，已缓存', delivered: false }));
+            }
+        } catch (e) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ code: 400, msg: e.message }));
+        }
+    });
+});
+
+apiServer.listen(API_PORT, '127.0.0.1', () => {
+    console.log(`推送API: http://127.0.0.1:${API_PORT}`);
+});
 console.log(`端口: ${WS_PORT}`);
 console.log(`心跳: ${PING_INTERVAL}ms`);
