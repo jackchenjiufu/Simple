@@ -1,5 +1,5 @@
 <template>
-  <view class="carousel-section" v-if="items.length > 0">
+  <view class="carousel-section" v-if="items.length > 0" :style="{ height: height }">
     <swiper
       class="carousel-swiper"
       :indicator-dots="true"
@@ -60,7 +60,7 @@ export default {
 <style>
 .carousel-section {
   width: 100%;
-  height: 350px !important;
+  height: 350px;
   background-color: #ffffff;
   min-height: 250px;
 }
@@ -109,7 +109,7 @@ export default {
 
 .carousel-loading {
   width: 100%;
-  height: 350px !important;
+  height: 350px;
   background-color: #f9fafb;
   display: flex;
   align-items: center;
