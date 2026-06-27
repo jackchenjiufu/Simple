@@ -42,7 +42,7 @@ export default {
   components: { Skeleton },
   props: {
     items: { type: Array, default: () => [] },
-    height: { type: String, default: '350px' }
+    height: { type: String, default: '300px' }
   },
   data() {
     return { current: 0 };
@@ -60,7 +60,7 @@ export default {
 <style>
 .carousel-section {
   width: 100%;
-  height: 350px;
+  height: 300px;
   background-color: #ffffff;
   min-height: 250px;
 }
@@ -109,7 +109,7 @@ export default {
 
 .carousel-loading {
   width: 100%;
-  height: 350px;
+  height: 300px;
   background-color: #f9fafb;
   display: flex;
   align-items: center;
