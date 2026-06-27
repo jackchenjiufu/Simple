@@ -42,6 +42,6 @@ const list=ref([]),loading=ref(true),showForm=ref(false),saving=ref(false),form=
 const load=async()=>{loading.value=true;try{const r=await api.get('/admin_articles.php');if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
 const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row,status:row.status||'draft'};showForm.value=true}
 const save=async()=>{saving.value=true;try{if(isEdit.value){await api.put('/admin_articles.php',form.value)}else{await api.post('/admin_articles.php',form.value)};ElMessage.success('保存成功');showForm.value=false;load()}catch(e){ElMessage.error('保存失败')};saving.value=false}
-const del=(row)=>{ElMessageBox.confirm('确定删除？').then(async()=>{try{await api.delete('/admin_articles.php',{data:{id:row.id}});ElMessage.success('已删除');load()}catch(e){ElMessage.error('删除失败')}}).catch(()=>{})}
+const del=(row)=>{ElMessageBox.confirm('确定删除？').then(async()=>{try{await api.delete('/admin_articles.php',{params:{id:row.id}});ElMessage.success('已删除');load()}catch(e){ElMessage.error('删除失败')}}).catch(()=>{})}
 onMounted(load)
 </script>

@@ -48,6 +48,6 @@ const total=ref(0)
 const load=async()=>{loading.value=true;try{const r=await api.get('/admin_users.php');if(r.data.code===200){list.value=r.data.data||[];total.value=list.value.length}}catch(e){}loading.value=false}
 const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row};showForm.value=true}
 const save=async()=>{saving.value=true;try{if(isEdit.value){await api.put('/admin_users.php',form.value)}else{await api.post('/admin_users.php',form.value)};ElMessage.success('保存成功');showForm.value=false;load()}catch(e){ElMessage.error('保存失败'+e.message)};saving.value=false}
-const del=(row)=>{ElMessageBox.confirm('确定删除用户 '+row.username+'？').then(async()=>{try{await api.delete('/admin_users.php',{data:{id:row.id}});ElMessage.success('已删除');load()}catch(e){ElMessage.error('删除失败')}}).catch(()=>{})}
+const del=(row)=>{ElMessageBox.confirm('确定删除用户 '+row.username+'？').then(async()=>{try{await api.delete('/admin_users.php',{params:{id:row.id}});ElMessage.success('已删除');load()}catch(e){ElMessage.error('删除失败')}}).catch(()=>{})}
 onMounted(load)
 </script>

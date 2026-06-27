@@ -45,7 +45,7 @@ import {ElMessage,ElMessageBox} from 'element-plus'
 import api from '@/api'
 const list=ref([]),loading=ref(true),showForm=ref(false),saving=ref(false),form=ref({}),isEdit=ref(false)
 const load=async()=>{loading.value=true;try{const r=await api.get('/admin_carousels.php');if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
-const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row};showForm.value=true}
+const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row,sort_order:row.sort_order??0,is_active:row.is_active??1};showForm.value=true}
 const save=async()=>{
   saving.value=true
   try{
@@ -55,6 +55,6 @@ const save=async()=>{
   }catch(e){ElMessage.error('保存失败')}
   saving.value=false
 }
-const del=(row)=>{ElMessageBox.confirm('确定删除？').then(async()=>{try{await api.delete('/admin_carousels.php',{data:{id:row.id}});ElMessage.success('已删除');load()}catch(e){ElMessage.error('删除失败')}}).catch(()=>{})}
+const del=(row)=>{ElMessageBox.confirm('确定删除？').then(async()=>{try{await api.delete('/admin_carousels.php',{params:{id:row.id}});ElMessage.success('已删除');load()}catch(e){ElMessage.error('删除失败')}}).catch(()=>{})}
 onMounted(load)
 </script>
