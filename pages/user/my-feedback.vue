@@ -109,6 +109,8 @@ export default {
 			isLoggedIn: false,
 			submitting: false,
 			showTypePicker: false,
+			tab: 'submit',
+			historyList: [],
 			form: {
 				type: '',
 				content: '',
