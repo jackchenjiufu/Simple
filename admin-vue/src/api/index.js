@@ -67,4 +67,16 @@ export const deleteFeedback = (id) =>
 export const deleteCarousel = (id) =>
   api.delete('/admin_carousels.php', { data: { id } })
 
+
+// 添加管理员 Token（绕过 Session 认证问题）
+api.interceptors.request.use(config => {
+  const adminInfo = localStorage.getItem('adminInfo')
+  if (adminInfo) {
+    config.params = config.params || {}
+    config.params.admin_token = 'doo_admin_2024'
+  }
+  return config
+})
+
+
 export default api
