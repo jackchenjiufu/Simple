@@ -7,6 +7,7 @@
     <el-table :data="list" stripe v-loading="loading" style="width:100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="username" label="用户名" />
+      <el-table-column label="头像" width="60"><template #default="{row}"><el-avatar :src="row.avatar" size="small" v-if="row.avatar" /><span v-else style="color:#ccc">--</span></template></el-table-column>
       <el-table-column prop="nickname" label="昵称" />
       <el-table-column prop="email" label="邮箱" min-width="180" />
       <el-table-column prop="role" label="角色" width="80" />
