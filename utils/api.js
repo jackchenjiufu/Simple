@@ -99,8 +99,14 @@ const apiConfig = {
         if (url.startsWith('http://') || url.startsWith('https://')) {
             return url;
         }
-        // 相对路径
-        if (url.startsWith('/')) return this.baseUrl.replace(/api\/$/, '') + url.substr(1);
+        // 前端本地静态资源，直接返回
+        if (url.startsWith('/static/')) {
+            return url;
+        }
+        // 服务器相对路径
+        if (url.startsWith('/')) {
+            return this.baseUrl.replace(/api\/$/, '') + url.substr(1);
+        }
         return '/static/img/default-cover.png';
     }
 };

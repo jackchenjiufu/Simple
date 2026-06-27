@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const API_BASE = 'http://139.196.185.197:7070/doo/server/api'
 
-const api = axios.create({ baseURL: API_BASE, timeout: 15000, withCredentials: true })
+const api = axios.create({ baseURL: API_BASE, timeout: 15000 })
 
 // 登录
 export const login = (username, password) =>
