@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-BgaNhQyE.js";import{C as t,a as n,d as r,g as i,i as a,v as o}from"./index-UOjVyAQb.js";function s(e,n){return t(),o(`div`,null,[...n[0]||=[i(`h2`,null,`Announcement 管理`,-1),i(`p`,{style:{color:`#909399`,"margin-top":`20px`}},`开发中...`,-1)]])}var c,l;e((()=>{r(),n(),c={},l=a(c,[[`render`,s]])}))();export{l as default};
