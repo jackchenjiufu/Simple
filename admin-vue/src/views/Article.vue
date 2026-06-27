@@ -1,18 +1,47 @@
 <template>
   <div>
-    <h2 style="margin-bottom:16px">文章管理</h2>
+    <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <h2 style="margin:0">文章管理</h2>
+      <el-button type="primary" size="small" @click="openForm({})">写文章</el-button>
+    </div>
     <el-table :data="list" stripe v-loading="loading" style="width:100%">
       <el-table-column prop="id" label="ID" width="60" />
-      <el-table-column prop="title" label="标题" min-width="250" show-overflow-tooltip />
+      <el-table-column prop="title" label="标题" min-width="220" show-overflow-tooltip />
       <el-table-column prop="author" label="作者" width="100" />
       <el-table-column prop="category" label="分类" width="80" />
-      <el-table-column prop="created_at" label="时间" width="170" />
+      <el-table-column label="状态" width="70">
+        <template #default="{row}"><el-tag :type="row.status=='publish'?'success':'info'" size="small">{{row.status}}</el-tag></template>
+      </el-table-column>
+      <el-table-column prop="created_at" label="时间" width="160" />
+      <el-table-column label="操作" width="140" fixed="right">
+        <template #default="{row}">
+          <el-button size="small" @click="openForm(row)">编辑</el-button>
+          <el-button size="small" type="danger" @click="del(row)">删除</el-button>
+        </template>
+      </el-table-column>
     </el-table>
+    <el-dialog v-model="showForm" :title="isEdit?'编辑文章':'写文章'" width="650px">
+      <el-form :model="form" label-width="60px">
+        <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
+        <el-form-item label="作者"><el-input v-model="form.author" /></el-form-item>
+        <el-form-item label="分类"><el-input v-model="form.category" /></el-form-item>
+        <el-form-item label="内容"><el-input v-model="form.content" type="textarea" :rows="6" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showForm=false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script setup>
 import {ref,onMounted} from 'vue'
+import {ElMessage,ElMessageBox} from 'element-plus'
 import api from '@/api'
-const list=ref([]),loading=ref(true)
-onMounted(async()=>{loading.value=true;try{const r=await api.get('/admin_articles.php');if(r.data.code===200)list.value=r.data.data||r.data.data?.articles||[]}catch(e){}loading.value=false})
+const list=ref([]),loading=ref(true),showForm=ref(false),saving=ref(false),form=ref({}),isEdit=ref(false)
+const load=async()=>{loading.value=true;try{const r=await api.get('/admin_articles.php');if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
+const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row,status:row.status||'draft'};showForm.value=true}
+const save=async()=>{saving.value=true;try{if(isEdit.value){await api.put('/admin_articles.php',form.value)}else{await api.post('/admin_articles.php',form.value)};ElMessage.success('保存成功');showForm.value=false;load()}catch(e){ElMessage.error('保存失败')};saving.value=false}
+const del=(row)=>{ElMessageBox.confirm('确定删除？').then(async()=>{try{await api.delete('/admin_articles.php',{data:{id:row.id}});ElMessage.success('已删除');load()}catch(e){ElMessage.error('删除失败')}}).catch(()=>{})}
+onMounted(load)
 </script>
