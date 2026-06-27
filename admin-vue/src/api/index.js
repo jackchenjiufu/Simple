@@ -52,4 +52,19 @@ export const getStats = () =>
 export const getLogs = () =>
   api.get('/admin_logs.php')
 
+
+// 文章管理
+export const getAdminArticles = () =>
+  api.get('/admin_articles.php')
+
+// 反馈管理
+export const updateFeedback = (id, data) =>
+  api.put('/admin_feedback.php', { id, ...data })
+export const deleteFeedback = (id) =>
+  api.delete('/admin_feedback.php', { data: { id } })
+
+// 轮播删除
+export const deleteCarousel = (id) =>
+  api.delete('/admin_carousels.php', { data: { id } })
+
 export default api
