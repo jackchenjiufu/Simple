@@ -10,6 +10,7 @@ const routes = [
       { path: 'dashboard', component: () => import('@/views/Dashboard.vue') },
       { path: 'users', component: () => import('@/views/Users.vue') },
       { path: 'content', component: () => import('@/views/Content.vue') },
+      { path: 'content/edit', component: () => import('@/views/ContentEdit.vue') },
       { path: 'carousel', component: () => import('@/views/Carousel.vue') },
       { path: 'announcement', component: () => import('@/views/Announcement.vue') },
       { path: 'article', component: () => import('@/views/Article.vue') },
