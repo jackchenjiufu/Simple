@@ -26,7 +26,7 @@
       <el-form :model="form" label-width="80px">
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="图片">
-          <el-upload :action="uploadUrl" :headers={"X-Admin-Token":"doo_admin_2024"} :data="{title:form.title||"carousel",author:"admin"}" :on-success="handleUploadSuccess" :on-error="()=>ElMessage.error("上传失败")" :show-file-list="false" accept="image/*">
+          <el-upload :action="uploadUrl" :headers="uploadHeaders" :data="uploadData" :on-success="handleUploadSuccess" :on-error="uploadError" :show-file-list="false" accept="image/*">
             <el-button size="small">上传图片</el-button>
           </el-upload>
           <el-image v-if="form.image_url" :src="form.image_url" style="width:160px;height:100px;margin-top:8px;border-radius:4px" fit="cover" />
@@ -49,6 +49,9 @@ import {ref,onMounted} from 'vue'
 import {ElMessage,ElMessageBox} from 'element-plus'
 import api from '@/api'
 const list=ref([]),loading=ref(true),showForm=ref(false),saving=ref(false),form=ref({}),isEdit=ref(false)
+const uploadError=()=>ElMessage.error('上传失败')
+const uploadHeaders = {'X-Admin-Token':'doo_admin_2024'}
+const uploadData = {title:'carousel',author:'admin'}
 const uploadUrl = "/doo/server/api/upload_image.php?admin_token=doo_admin_2024"
 const handleUploadSuccess=(res)=>{if(res.code===200&&res.data?.image_url)form.value.image_url=res.data.image_url}
 const load=async()=>{loading.value=true;try{const r=await api.get('/admin_carousels.php');if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
