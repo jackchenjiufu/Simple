@@ -4,6 +4,7 @@
     <el-table :data="list" stripe v-loading="loading" style="width:100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="content" label="反馈内容" min-width="350" show-overflow-tooltip />
+      <el-table-column prop="type" label="类型" width="100" />
       <el-table-column prop="contact" label="联系方式" width="180" />
       <el-table-column prop="created_at" label="时间" width="170" />
     </el-table>
