@@ -214,23 +214,17 @@ export default {
 				{ id: 4, title: '关注推荐', author: '好友推荐', image: '/static/img/banner4.jpg' }
 			];
 		},
-		async onRefresh() {
+		onRefresh() {
 			this.refreshing = true;
 			try {
-				await this.loadCarouselData();
+				this.loadCarouselData();
+			} catch(e) {}
+			this.refreshing = false;
+		},
 		clickCarouselItem(item) {
 			uni.navigateTo({ url: '/pages/content/card-detail' });
-		}
-					data: { action: 'click', content_id: card.id, algorithm: card.recommendedBy || 'hybrid' }
-				});
-			} catch (e) { /* silent */ }
-			uni.navigateTo({
-				url: '/pages/content/card-detail',
-				success: (res) => res.eventChannel.emit('setCard', card)
-		});
 		},
-
-			async loadArticles() {
+		async loadArticles() {
 			try {
 				const res = await uni.request({
 					url: API_BASE + 'get_articles.php',
