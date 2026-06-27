@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOO 后台管理 - 登录</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+.login-page {
+  width: 100%; min-height: 100vh;
+  display: flex;
+  background: #ffffff;
+}
+
+/* ===== 左侧面板 ===== */
+.left-panel {
+  display: none;
+  position: relative;
+  width: 50%;
+  background: linear-gradient(135deg, #2c3e7b 0%, #1b44a6 30%, #3071f6 70%, #5b8df9 100%);
+  padding: 48px;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.left-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+.logo-area { display: flex; align-items: center; gap: 12px; }
+.logo-icon { width: 36px; height: 36px; border-radius: 8px; }
+.logo-text { font-size: 18px; font-weight: 600; color: #ffffff; }
+
+/* 角色插画 */
+.character-area {
+  position: relative; width: 280px; height: 340px; align-self: center;
+}
+.char-bg-circle { position: absolute; border-radius: 50%; }
+.char-c1 { width: 160px; height: 160px; background: rgba(255,255,255,0.06); top: 20px; right: -20px; }
+.char-c2 { width: 90px; height: 90px; background: rgba(255,255,255,0.1); bottom: 40px; right: 30px; }
+.char-body {
+  position: absolute; width: 110px; height: 140px;
+  background: rgba(255,255,255,0.12); border-radius: 55px 55px 35px 35px;
+  bottom: 30px; left: 50%; transform: translateX(-50%);
+}
+.char-head {
+  position: absolute; width: 90px; height: 90px;
+  background: rgba(255,215,200,0.25); border-radius: 50%;
+  top: 55px; left: 50%; transform: translateX(-50%);
+}
+.char-eyes { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); font-size: 22px; }
+
+.footer-links { display: flex; gap: 24px; }
+.footer-link { font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; }
+
+.glow { position: absolute; border-radius: 50%; z-index: 1; }
+.glow-1 { width: 400px; height: 400px; background: rgba(255,255,255,0.04); top: -100px; right: -80px; }
+.glow-2 { width: 500px; height: 500px; background: rgba(255,255,255,0.03); bottom: -150px; left: -100px; }
+
+/* ===== 右侧表单 ===== */
+.right-panel {
+  width: 100%; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center; padding: 32px;
+  box-sizing: border-box;
+}
+.form-container { width: 100%; max-width: 400px; }
+
+.mobile-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 48px; }
+.mobile-logo-icon { width: 32px; height: 32px; border-radius: 8px; }
+.mobile-logo-text { font-size: 18px; font-weight: 600; color: #1a1a2e; }
+
+.form-header { text-align: center; margin-bottom: 40px; }
+.form-title { font-size: 28px; font-weight: 700; color: #1a1a2e; display: block; margin-bottom: 8px; }
+.form-subtitle { font-size: 14px; color: #909398; display: block; }
+
+.error-msg {
+  padding: 12px 16px; background: #fef2f2; border: 1px solid #fecaca;
+  border-radius: 10px; margin-bottom: 20px; font-size: 13px; color: #ef4444; display: none;
+}
+.error-msg.show { display: block; }
+
+.form-body { display: flex; flex-direction: column; gap: 22px; }
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field-label { font-size: 14px; font-weight: 500; color: #374151; }
+.field-input-wrap {
+  display: flex; align-items: center;
+  border: 1.5px solid #e5e7eb; border-radius: 12px;
+  padding: 0 14px; transition: all 0.25s ease; background: #ffffff; height: 48px;
+}
+.field-input-wrap.focused { border-color: #3071f6; box-shadow: 0 0 0 3px rgba(48,113,246,0.1); }
+.field-input { flex: 1; height: 100%; font-size: 15px; color: #1a1a2e; border: none; background: transparent; outline: none; }
+.field-input::placeholder { color: #b6bcc8; }
+.toggle-pwd { font-size: 13px; color: #909398; cursor: pointer; user-select: none; padding: 4px 8px; }
+
+.form-options { display: flex; align-items: center; justify-content: space-between; }
+.remember-me { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.checkbox {
+  width: 20px; height: 20px; border: 1.5px solid #d0d0d8; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.checkbox.checked { background: #3071f6; border-color: #3071f6; }
+.check-icon { font-size: 12px; color: #fff; font-weight: 700; }
+.remember-text { font-size: 13px; color: #909398; }
+
+.login-btn {
+  width: 100%; height: 48px; line-height: 48px;
+  background: linear-gradient(135deg, #1b44a6, #3071f6);
+  color: #fff; border-radius: 12px; font-size: 16px; font-weight: 600;
+  border: none; cursor: pointer; letter-spacing: 2px;
+  transition: all 0.25s; margin-top: 4px;
+}
+.login-btn:hover { opacity: 0.9; }
+.login-btn:active { transform: scale(0.98); }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-btn.loading { opacity: 0.7; pointer-events: none; }
+
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: #f56c6c; color: #fff; padding: 10px 24px; border-radius: 8px;
+  font-size: 14px; display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.toast.show { display: block; }
+.toast.success { background: #67c23a; }
+
+@media (min-width: 768px) {
+  .left-panel { display: flex; }
+  .right-panel { width: 50%; }
+}
+</style>
+</head>
+<body>
+<div class="login-page">
+  <div class="left-panel">
+    <div class="left-content">
+      <div class="logo-area">
+        <img class="logo-icon" src="/static/logo.png" alt="logo">
+        <span class="logo-text">DOO 后台管理</span>
+      </div>
+      <div class="character-area">
+        <div class="char-bg-circle char-c1"></div>
+        <div class="char-bg-circle char-c2"></div>
+        <div class="char-body"></div>
+        <div class="char-head"></div>
+        <div class="char-eyes">👀</div>
+      </div>
+      <div class="footer-links">
+        <a class="footer-link" href="#">隐私政策</a>
+        <a class="footer-link" href="#">服务条款</a>
+      </div>
+    </div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+  </div>
+
+  <div class="right-panel">
+    <div class="form-container">
+      <div class="mobile-logo">
+        <img class="mobile-logo-icon" src="/static/logo.png" alt="logo">
+        <span class="mobile-logo-text">DOO 后台管理</span>
+      </div>
+      <div class="form-header">
+        <span class="form-title">管理员登录</span>
+        <span class="form-subtitle">请输入管理员账号和密码</span>
+      </div>
+      <div class="error-msg" id="toast"></div>
+      <div class="form-body">
+        <div class="field-group">
+          <label class="field-label">用户名</label>
+          <div class="field-input-wrap" id="usernameWrap">
+            <input class="field-input" id="username" type="text" placeholder="请输入用户名"
+              onfocus="document.getElementById('usernameWrap').classList.add('focused')"
+              onblur="document.getElementById('usernameWrap').classList.remove('focused')">
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">密码</label>
+          <div class="field-input-wrap" id="passwordWrap">
+            <input class="field-input" id="passwordInput" type="password" placeholder="请输入密码"
+              onfocus="document.getElementById('passwordWrap').classList.add('focused')"
+              onblur="document.getElementById('passwordWrap').classList.remove('focused')">
+            <span class="toggle-pwd" id="togglePwd" onclick="togglePassword()">显示</span>
+          </div>
+        </div>
+        <button class="login-btn" id="loginBtn" onclick="handleLogin()">登 录</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE_URL = 'http://139.196.185.197:7070/doo/server/api';
+
+function togglePassword() {
+  const inp = document.getElementById('passwordInput');
+  const btn = document.getElementById('togglePwd');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '隐藏'; }
+  else { inp.type = 'password'; btn.textContent = '显示'; }
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'error-msg show' + (type === 'success' ? ' success' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function handleLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  const btn = document.getElementById('loginBtn');
+
+  if (!username || !password) {
+    showToast('请输入用户名和密码');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin_login.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const result = await res.json();
+    if (result.code === 200 && result.data) {
+      localStorage.setItem('adminInfo', JSON.stringify(result.data));
+      showToast('登录成功', 'success');
+      setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+    } else {
+      showToast(result.message || '登录失败');
+      btn.disabled = false;
+      btn.textContent = '登 录';
+    }
+  } catch(e) {
+    showToast('网络错误');
+    btn.disabled = false;
+    btn.textContent = '登 录';
+  }
+}
+
+// 回车登录
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') handleLogin();
+});
+</script>
+</body>
+</html>
