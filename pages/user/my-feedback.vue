@@ -56,7 +56,7 @@
 			<!-- 历史反馈 -->
 			<view class="history-section" v-if="tab === 'history'">
 				<view class="history-item" v-for="(item, i) in historyList" :key="i">
-					<view class="history-top">
+					<view class="history-row">
 						<text class="history-type">{{ item.type }}</text>
 						<text class="history-status" :class="'s' + (item.status || 0)">{{ item.status === 2 ? '已解决' : item.status === 1 ? '已读' : '待处理' }}</text>
 					</view>
@@ -111,6 +111,8 @@ export default {
 			showTypePicker: false,
 			tab: 'submit',
 			historyList: [],
+			showDetail: false,
+			historyDetail: {},
 			form: {
 				type: '',
 				content: '',
@@ -468,6 +470,35 @@ export default {
 	from { opacity: 0; }
 	to { opacity: 1; }
 }
+
+/* 反馈详情弹窗 */
+.detail-overlay {
+	position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+	background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+	z-index: 9999; padding: 40upx;
+}
+.detail-card {
+	background: #fff; border-radius: 20upx; padding: 32upx;
+	width: 100%; max-width: 560upx; box-shadow: 0 8upx 40upx rgba(0,0,0,0.15);
+}
+.detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20upx; }
+.detail-label { font-size: 28upx; font-weight: 600; color: #303132; }
+.detail-status { font-size: 22upx; padding: 4upx 16upx; border-radius: 999upx; }
+.detail-status.s0 { background: #fef3c7; color: #d97706; }
+.detail-status.s1 { background: #dbeafe; color: #2563eb; }
+.detail-status.s2 { background: #d1fae5; color: #059669; }
+.detail-content { font-size: 26upx; color: #4b5563; line-height: 1.6; margin-bottom: 16upx; }
+.detail-reply { background: #f0f4ff; padding: 16upx; border-radius: 12upx; margin-bottom: 16upx; }
+.detail-reply-label { font-size: 22upx; color: #1b44a6; font-weight: 500; display: block; margin-bottom: 6upx; }
+.detail-reply-text { font-size: 26upx; color: #374151; }
+.detail-time { font-size: 22upx; color: #c0c4cc; display: block; margin-bottom: 16upx; }
+.detail-close { width: 100%; height: 80upx; line-height: 80upx; background: #f3f4f6; color: #6b7280; font-size: 28upx; border: none; border-radius: 12upx; }
+
+.history-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6upx; }
+.history-item { padding: 16upx 0; border-bottom: 1px solid #f5f5f5; }
+.history-item:active { background: #f9fafb; }
+.history-time { font-size: 20upx; color: #d1d5db; }
+.empty-sub { font-size: 24upx; color: #3071f6; text-align: center; display: block; margin-top: 12upx; }
 
 /* 隐藏滚动条 */
 ::-webkit-scrollbar {
