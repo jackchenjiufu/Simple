@@ -214,10 +214,10 @@ export default {
 				{ id: 4, title: '关注推荐', author: '好友推荐', image: '/static/img/banner4.jpg' }
 			];
 		},
-		onRefresh() {
+		async onRefresh() {
 			this.refreshing = true;
 			try {
-				this.loadCarouselData();
+				await this.loadCarouselData();
 			} catch(e) {}
 			this.refreshing = false;
 		},
