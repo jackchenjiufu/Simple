@@ -9,8 +9,12 @@
 			<view class="nav-placeholder"></view>
 		</view>
 
+		<view class="tab-bar" v-if="isLoggedIn">
+			<view class="tab-item" :class="{ active: tab === 'submit' }" @click="tab='submit'">提交反馈</view>
+			<view class="tab-item" :class="{ active: tab === 'history' }" @click="tab='history';loadHistory()">历史反馈</view>
+		</view>
 		<scroll-view class="body" scroll-y="true" v-if="isLoggedIn" show-scrollbar="false">
-			<view class="form-section">
+			<view class="form-section" v-if="tab === 'submit'">
 				<!-- 反馈类型 -->
 				<view class="form-group">
 					<text class="form-label">反馈类型</text>
@@ -48,6 +52,20 @@
 				<button class="submit-btn" @click="handleSubmit" :loading="submitting" :disabled="submitting">
 					{{ submitting ? '提交中...' : '提交反馈' }}
 				</button>
+			</view>
+			<!-- 历史反馈 -->
+			<view class="history-section" v-if="tab === 'history'">
+				<view class="history-item" v-for="(item, i) in historyList" :key="i">
+					<view class="history-top">
+						<text class="history-type">{{ item.type }}</text>
+						<text class="history-status" :class="'s' + (item.status || 0)">{{ item.status === 2 ? '已解决' : item.status === 1 ? '已读' : '待处理' }}</text>
+					</view>
+					<text class="history-content">{{ item.content }}</text>
+					<text class="history-time">{{ formatTime(item.created_at) }}</text>
+				</view>
+				<view class="history-empty" v-if="!historyList.length">
+					<text class="empty-text">暂无反馈记录</text>
+				</view>
 			</view>
 		</scroll-view>
 
