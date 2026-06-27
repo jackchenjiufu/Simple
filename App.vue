@@ -174,24 +174,43 @@ export default {
 				success: function(res) {
 					try {
 						var result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
-						if (result && result.code === 200 && result.data && result.data.hasUpdate && result.data.downloadUrl) {
+						if (result && result.code === 200 && result.data && result.data.hasUpdate) {
 							var newVer = result.data.latestVersion;
 							if (compareVersion(newVer, curVer) > 0) {
 								var dlUrl = result.data.downloadUrl;
+								var apkUrl = result.data.apkDownloadUrl;
 								// #ifdef APP-PLUS
-								var dt = plus.downloader.createDownload(dlUrl, { filename: '_doc/update/' }, function(dl, status) {
-									if (status === 200) {
-										uni.setStorageSync('pendingWgtPath', dl.filename);
-										uni.setStorageSync('pendingWgtVersion', newVer);
-									} else {
-										console.error('\u66f4\u65b0\u5305\u4e0b\u8f7d\u5931\u8d25, \u72b6\u6001:', status);
-									}
-								});
-								dt.addEventListener('error', function() {
-									console.error('\u66f4\u65b0\u5305\u4e0b\u8f7d\u51fa\u9519');
-								});
-								dt.start();
+								if (dlUrl) {
+									var dt = plus.downloader.createDownload(dlUrl, { filename: "_doc/update/" }, function(dl, status) {
+										if (status === 200) {
+											uni.setStorageSync("pendingWgtPath", dl.filename);
+											uni.setStorageSync("pendingWgtVersion", newVer);
+										} else {
+											console.error("更新包下载失败, 状态:", status);
+										}
+									});
+									dt.addEventListener("error", function() {
+										console.error("更新包下载出错");
+									});
+									dt.start();
+								} else if (apkUrl) {
+									// #ifdef APP-ANDROID
+									var dt = plus.downloader.createDownload(apkUrl, { filename: "_doc/update/" }, function(dl, status) {
+										if (status === 200) {
+											uni.setStorageSync("pendingApkPath", dl.filename);
+											uni.setStorageSync("pendingWgtVersion", newVer);
+										} else {
+											console.error("APK下载失败, 状态:", status);
+										}
+									});
+									dt.addEventListener("error", function() {
+										console.error("APK下载出错");
+									});
+									dt.start();
+									// #endif
+								}
 								// #endif
+
 							}
 						}
 					} catch(e) {
@@ -205,32 +224,53 @@ export default {
 			// #endif
 		},
 		installPendingWgt() {
-			var wgtPath = uni.getStorageSync('pendingWgtPath');
-			var pendingVer = uni.getStorageSync('pendingWgtVersion');
-			if (!wgtPath || typeof plus === 'undefined') return;
+			var wgtPath = uni.getStorageSync("pendingWgtPath");
+			var apkPath = uni.getStorageSync("pendingApkPath");
+			var pendingVer = uni.getStorageSync("pendingWgtVersion");
+			if ((!wgtPath && !apkPath) || typeof plus === "undefined") return;
 			var sysInfo = uni.getSystemInfoSync();
-			var curVer = uni.getStorageSync('wgtVersion') || sysInfo.appVersion || '1.0.0';
+			var curVer = uni.getStorageSync("wgtVersion") || sysInfo.appVersion || "1.0.0";
 			if (pendingVer && compareVersion(pendingVer, curVer) <= 0) {
-				uni.removeStorageSync('pendingWgtPath');
-				uni.removeStorageSync('pendingWgtVersion');
+				uni.removeStorageSync("pendingWgtPath");
+				uni.removeStorageSync("pendingApkPath");
+				uni.removeStorageSync("pendingWgtVersion");
 				return;
 			}
-			plus.io.resolveLocalFileSystemURL(wgtPath, function() {
-				plus.runtime.install(wgtPath, { force: true }, function() {
-					var ver = uni.getStorageSync('pendingWgtVersion') || '';
-					if (ver) uni.setStorageSync('wgtVersion', ver);
-					uni.removeStorageSync('pendingWgtPath');
-					uni.removeStorageSync('pendingWgtVersion');
-					setTimeout(function() { plus.runtime.restart(); }, 500);
+			// 优先安装 WGT 热更新
+			if (wgtPath) {
+				plus.io.resolveLocalFileSystemURL(wgtPath, function() {
+					plus.runtime.install(wgtPath, { force: true }, function() {
+						var ver = uni.getStorageSync("pendingWgtVersion") || "";
+						if (ver) uni.setStorageSync("wgtVersion", ver);
+						uni.removeStorageSync("pendingWgtPath");
+						uni.removeStorageSync("pendingWgtVersion");
+						setTimeout(function() { plus.runtime.restart(); }, 500);
 				}, function() {
-					uni.removeStorageSync('pendingWgtPath');
-					uni.removeStorageSync('pendingWgtVersion');
+					uni.removeStorageSync("pendingWgtPath");
+					uni.removeStorageSync("pendingWgtVersion");
 				});
 			}, function() {
-				uni.removeStorageSync('pendingWgtPath');
+				uni.removeStorageSync("pendingWgtPath");
 			});
-		}
-	}
+			return;
+			}
+			// APK 全量更新 (仅 Android)
+			if (apkPath) {
+				// #ifdef APP-ANDROID
+				plus.io.resolveLocalFileSystemURL(apkPath, function() {
+					plus.runtime.install(apkPath, { force: true }, function() {
+						uni.removeStorageSync("pendingApkPath");
+						uni.removeStorageSync("pendingWgtVersion");
+				}, function() {
+					uni.removeStorageSync("pendingApkPath");
+					uni.removeStorageSync("pendingWgtVersion");
+				});
+			}, function() {
+				uni.removeStorageSync("pendingApkPath");
+			});
+				// #endif
+			}
+		}	}
 };
 
 function compareVersion(v1, v2) {

@@ -25,7 +25,6 @@
 			:refresher-enabled="true"
 			:refresher-triggered="refreshing"
 					@refresherrefresh="onRefresh"
-					@scrolltolower="loadMoreCards"
 					:lower-threshold="50"
 				>
 					<view class="tab-content">
@@ -33,13 +32,7 @@
 							:items="carouselList"
 							@click="clickCarouselItem"
 						></carousel>
-						<recommend-card
-							:cards="cardList"
-							:loading="loadingRecommend"
-							:loadingMore="loadingMore"
-							:currentRecommendId="currentRecommendId"
-							@click="clickCard"
-						></recommend-card>
+
 					</view>
 				</scroll-view>
 			</swiper-item>
@@ -131,29 +124,27 @@ import apiConfig from '../../../utils/api.js';
 import request from '../../../utils/request.js';
 import NavBar from '../../../components/modules/nav-bar/nav-bar.vue';
 import Carousel from '../../../components/modules/carousel/carousel.vue';
-import RecommendCard from '../../../components/modules/recommend-card/recommend-card.vue';
-
 
 const API_BASE = apiConfig.baseUrl;
 
 export default {
-	components: { NavBar, Carousel, RecommendCard },
+	components: { NavBar, Carousel },
 	data() {
 		return {
 			activeTab: 'recommend',
 			activeTabIndex: 0,
 			statusBarHeight: 0,
 			carouselList: [],
-			cardList: [],
-			currentRecommendId: '',
+			
+			
 			refreshing: false,
-			loadingRecommend: false,
-			loadingMore: false,
+			
+			
 			currentPage: 1,
 			pageSize: 4,
 			articleList: [],
 			articlesRefreshing: false,
-			hasMoreCards: true,
+			
 			agentInput: '',
 			agentMsgs: [],
 			agentLoading: false,
@@ -178,7 +169,6 @@ export default {
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
 		this.loadCarouselData();
-			this.generateRecommendations();
 		// 监听键盘高度变化
 		uni.onKeyboardHeightChange(res => {
 			this.kbHeight = res.height || 0;
@@ -228,19 +218,9 @@ export default {
 			this.refreshing = true;
 			try {
 				await this.loadCarouselData();
-				await this.generateRecommendations();
-			} catch (e) { /* silent */ }
-			this.refreshing = false;
-		},
 		clickCarouselItem(item) {
 			uni.navigateTo({ url: '/pages/content/card-detail' });
-		},
-		async clickCard(card) {
-			try {
-				await uni.request({
-					url: API_BASE + 'recommend.php',
-					method: 'POST',
-					header: { 'Content-Type': 'application/json' },
+		}
 					data: { action: 'click', content_id: card.id, algorithm: card.recommendedBy || 'hybrid' }
 				});
 			} catch (e) { /* silent */ }
@@ -249,79 +229,8 @@ export default {
 				success: (res) => res.eventChannel.emit('setCard', card)
 		});
 		},
-		async generateRecommendations() {
-			this.loadingRecommend = true;
-			try {
-				const res = await uni.request({
-					url: API_BASE + 'user_profile.php?action=recommendations',
-					method: 'GET',
-					data: { limit: 10, offset: 0 }
-				});
-				const result = res.data;
-				if (result.code === 200 && result.data) {
-					const recommendations = result.data.recommendations || [];
-					this.currentRecommendId = `rec_${Date.now()}`;
-					if (recommendations.length > 0) {
-						this.cardList = recommendations.map(item => ({
-							id: item.id,
-							title: item.title || '无标题',
-							author: item.username || '未知用户',
-							cover: item.image_url || '/static/img/logo.png',
-							type: 'image',
-							recommendedBy: 'personalized'
-						}));
-					} else {
-						this.useDefaultRecommendations();
-					}
-				} else {
-					this.useDefaultRecommendations();
-				}
-			} catch (e) {
-				this.useDefaultRecommendations();
-			}
-			this.loadingRecommend = false;
-		},
-		useDefaultRecommendations() {
-			this.cardList = [
-				{ id: 1, title: '美丽的自然风光', author: '推荐系统', cover: '/static/img/banner1.jpg', type: 'image', recommendedBy: 'default' },
-				{ id: 2, title: '城市夜景', author: '推荐系统', cover: '/static/img/banner2.jpg', type: 'image', recommendedBy: 'default' },
-				{ id: 3, title: '精选内容', author: '推荐系统', cover: '/static/img/banner3.jpg', type: 'image', recommendedBy: 'default' },
-				{ id: 4, title: '关注推荐', author: '推荐系统', cover: '/static/img/banner4.jpg', type: 'image', recommendedBy: 'default' }
-			];
-		},
-		loadMoreCards() {
-			if (this.loadingMore || !this.hasMoreCards) return;
-			this.loadingMore = true;
-			uni.request({
-				url: API_BASE + 'content.php',
-				method: 'GET',
-				data: { limit: this.pageSize, offset: (this.currentPage - 1) * this.pageSize, status: 'published' },
-				success: (res) => {
-					try {
-						const result = res.data;
-						if (result.code === 200) {
-							const contents = (result.data.contents || []).filter(item => item.image_url);
-							if (contents.length > 0) {
-								const moreCards = contents.map(item => ({
-									id: item.id,
-									title: item.title,
-									author: item.author || (item.user_id ? `用户${item.user_id}` : '未知用户'),
-									cover: item.image_url,
-									type: 'image',
-									recommendedBy: 'content'
-								}));
-								this.cardList = [...this.cardList, ...moreCards];
-								this.currentPage++;
-							} else {
-								this.hasMoreCards = false;
-							}
-						}
-					} catch (e) { /* silent */ }
-				},
-				complete: () => { this.loadingMore = false; }
-			});
-		},
-		async loadArticles() {
+
+			async loadArticles() {
 			try {
 				const res = await uni.request({
 					url: API_BASE + 'get_articles.php',
