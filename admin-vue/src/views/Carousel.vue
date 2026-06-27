@@ -44,7 +44,7 @@ import {ref,onMounted} from 'vue'
 import {ElMessage,ElMessageBox} from 'element-plus'
 import api from '@/api'
 const list=ref([]),loading=ref(true),showForm=ref(false),saving=ref(false),form=ref({}),isEdit=ref(false)
-const load=async()=>{loading.value=true;try{const r=await api.post('/admin_carousels.php',{action:'get_carousels'});if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
+const load=async()=>{loading.value=true;try{const r=await api.get('/admin_carousels.php');if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
 const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row};showForm.value=true}
 const save=async()=>{
   saving.value=true
