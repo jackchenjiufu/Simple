@@ -51,9 +51,10 @@
 <script setup>
 import {ref,onMounted} from 'vue'
 import api from '@/api'
-const statItems=ref([]),recentLogs=ref([])
+const statItems=ref([]),recentLogs=ref([]),onlineCount=ref("--")
 onMounted(async()=>{
-  try{const rs=await api.get('/admin_stats.php');if(rs.data.code===200&&rs.data.data){const d=rs.data.data;statItems.value=[{value:d.total_users||'--',label:'用户数'},{value:d.total_content||'--',label:'内容数'},{value:d.today_users??'--',label:'今日新增'},{value:d.total_messages??'--',label:'消息数'}]}}catch(e){}
-  try{const rl=await api.get('/admin_logs.php?limit=10');if(rl.data.code===200)recentLogs.value=rl.data.data||[]}catch(e){}
+  try{const rs=await api.get('/admin_stats.php');if(rs.data.code===200&&rs.data.data){const d=rs.data.data;statItems.value=[{value:d.total_users||'--',label:'用户数'},{value:d.total_content||'--',label:'内容数'},{value:d.today_users??'--',label:'今日新增'},{value:onlineCount,label:'在线人数'}]}}catch(e){}
+  try{const r=await api.get("/online_count.php");if(r.data.code===200)onlineCount.value=r.data.online??"--"}catch(e){}
+    try{const rl=await api.get('/admin_logs.php?limit=10');if(rl.data.code===200)recentLogs.value=rl.data.data||[]}catch(e){}
 })
 </script>
