@@ -9,9 +9,9 @@
 			<view class="nav-placeholder"></view>
 		</view>
 
-		<view class="tab-bar" v-if="isLoggedIn">
-			<view class="tab-item" :class="{ active: tab === 'submit' }" @click="tab='submit'">提交反馈</view>
-			<view class="tab-item" :class="{ active: tab === 'history' }" @click="tab='history';loadHistory()">历史反馈</view>
+		<view class="feedback-tab-bar" v-if="isLoggedIn">
+			<view class="feedback-tab-item" :class="{ active: tab === 'submit' }" @click="tab='submit'">提交反馈</view>
+			<view class="feedback-tab-item" :class="{ active: tab === 'history' }" @click="tab='history';loadHistory()">历史反馈</view>
 		</view>
 		<scroll-view class="body" scroll-y="true" v-if="isLoggedIn" show-scrollbar="false">
 			<view class="form-section" v-if="tab === 'submit'">
@@ -499,6 +499,12 @@ export default {
 .history-item:active { background: #f9fafb; }
 .history-time { font-size: 20upx; color: #d1d5db; }
 .empty-sub { font-size: 24upx; color: #3071f6; text-align: center; display: block; margin-top: 12upx; }
+
+/* 顶部标签栏 */
+.feedback-tab-bar { display: flex; background: #ffffff; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+.feedback-tab-item { flex: 1; text-align: center; padding: 24upx 0 20upx; font-size: 28upx; color: #909398; position: relative; }
+.feedback-tab-item.active { color: #1b44a6; font-weight: 600; }
+.feedback-tab-item.active::after { content: ""; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40upx; height: 4upx; background: #1b44a6; border-radius: 2upx; }
 
 /* 隐藏滚动条 */
 ::-webkit-scrollbar {
