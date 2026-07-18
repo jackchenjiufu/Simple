@@ -32,6 +32,12 @@
 					</view>
 					<text class="item-arrow">›</text>
 				</view>
+				<view class="settings-item" @click="handleSystemPermissions">
+					<view class="item-left">
+						<text class="item-text">系统权限</text>
+					</view>
+					<text class="item-arrow">›</text>
+				</view>
 			</view>
 
 			<view class="settings-section">
@@ -71,7 +77,7 @@
 			</view>
 
 			<!-- 退出登录弹窗 -->
-				<view class="modal-overlay" v-if="showLogoutModal" @click.self="showLogoutModal = false">
+				<view class="modal-overlay" v-if="showLogoutModal" @click="showLogoutModal=false">
 					<view class="modal-content" @click.stop>
 						<text class="modal-title">退出登录</text>
 						<text class="modal-desc">退出后需要重新登录才能使用完整功能</text>
@@ -84,7 +90,7 @@
 				</view>
 
 				<!-- 清理缓存弹窗 -->
-				<view class="modal-overlay" v-if="showClearCacheModal" @click.self="showClearCacheModal = false">
+				<view class="modal-overlay" v-if="showClearCacheModal" @click="showClearCacheModal=false">
 					<view class="modal-content" @click.stop>
 						<text class="modal-title">清理缓存</text>
 						<text class="modal-desc">当前缓存 {{ cacheSize }}，清理后将释放存储空间。</text>
@@ -129,6 +135,9 @@ export default {
 		handleLogout() {
 			if (!this.isLoggedIn) { uni.showToast({ title: '请先登录', icon: 'none' }); return; }
 			this.showLogoutModal = true;
+		},
+		handleSystemPermissions() {
+			uni.navigateTo({ url: '/pages/info/system-permissions' });
 		},
 		confirmLogout() {
 			uni.removeStorageSync('userInfo'); uni.removeStorageSync('isLoggedIn');

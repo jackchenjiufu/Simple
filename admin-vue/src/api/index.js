@@ -28,7 +28,7 @@ export const getAnnouncements = () =>
 export const saveAnnouncement = (data) =>
   api.post('/announcements.php', data)
 export const deleteAnnouncement = (id) =>
-  api.post('/announcements.php', { action: 'delete_announcement', id, token: 'doo_admin_2024' })
+  api.post('/announcements.php', { action: 'delete_announcement', id, token: localStorage.getItem('admin_token') || '' })
 
 // 文章
 export const getArticles = () =>
@@ -81,7 +81,7 @@ api.interceptors.request.use(config => {
   const adminInfo = localStorage.getItem('adminInfo')
   if (adminInfo) {
     config.params = config.params || {}
-    config.params.admin_token = 'doo_admin_2024'
+    // Token handled by admin_auth.php session
   }
   return config
 })

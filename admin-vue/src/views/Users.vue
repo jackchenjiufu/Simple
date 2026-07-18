@@ -158,7 +158,7 @@ const uploadAvatar = async (row) => {
     fd.append('title', 'avatar')
     fd.append('author', 'admin')
     try {
-      const r = await fetch('/doo/server/api/upload_image.php?admin_token=doo_admin_2024', { method: 'POST', body: fd })
+      const r = await fetch('/doo/server/api/upload_image.php', { method: 'POST', body: fd })
       const res = await r.json()
       if (res.code === 200 && res.data?.image_url) {
         await api.put('/admin_users.php', { id: row.id, avatar: res.data.image_url })

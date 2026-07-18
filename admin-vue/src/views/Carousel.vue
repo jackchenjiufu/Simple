@@ -50,9 +50,9 @@ import {ElMessage,ElMessageBox} from 'element-plus'
 import api from '@/api'
 const list=ref([]),loading=ref(true),showForm=ref(false),saving=ref(false),form=ref({}),isEdit=ref(false)
 const uploadError=()=>ElMessage.error('上传失败')
-const uploadHeaders = {'X-Admin-Token':'doo_admin_2024'}
+const uploadHeaders = {'X-Admin-Token': localStorage.getItem('admin_token') || ''}
 const uploadData = {title:'carousel',author:'admin'}
-const uploadUrl = "/doo/server/api/upload_image.php?admin_token=doo_admin_2024"
+const uploadUrl = "/doo/server/api/upload_image.php"
 const handleUploadSuccess=(res)=>{if(res.code===200&&res.data?.image_url)form.value.image_url=res.data.image_url}
 const load=async()=>{loading.value=true;try{const r=await api.get('/admin_carousels.php');if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
 const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row,sort_order:row.sort_order??0,is_active:row.is_active??1};showForm.value=true}
