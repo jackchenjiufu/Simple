@@ -119,7 +119,7 @@ const loadSysInfo = async () => {
 const runMigration = async () => {
   migrating.value = true
   try {
-    const r = await api.get('/migrate_feedback.php', { params: { token: 'doo_admin_2024' } })
+    const r = await api.get('/migrate_feedback.php', { params: { token: localStorage.getItem('admin_token') || '' } })
     if (r.data.code === 200) ElMessage.success(r.data.message + '：' + (r.data.data?.actions?.join('；') || ''))
     else ElMessage.error(r.data.message || '迁移失败')
   } catch (e) { ElMessage.error('迁移请求失败') }
@@ -130,7 +130,7 @@ const runMigration = async () => {
 const runCrawler = async () => {
   crawling.value = true
   try {
-    const r = await api.get('/crawl_hotsearch.php', { params: { token: 'doo_admin_2024' } }).catch(() => null)
+    const r = await api.get('/crawl_hotsearch.php', { params: { token: localStorage.getItem('admin_token') || '' } }).catch(() => null)
     if (r && r.data) ElMessage.success('爬虫已触发')
     else ElMessage.success('爬虫请求已发送')
   } catch (e) { ElMessage.error('触发失败') }

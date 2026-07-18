@@ -79,13 +79,9 @@
 		</view>
 
 		<!-- 类型选择弹窗 -->
-		<view class="modal-overlay" v-if="showTypePicker" @click.self="showTypePicker = false" :class="{ show: showTypePicker }">
+		<view class="modal-overlay" v-if="showTypePicker" @click="showTypePicker = false">
 			<view class="modal-content" @click.stop>
-				<view class="modal-handle"></view>
-				<view class="modal-header">
-					<text class="modal-icon">📋</text>
-					<text class="modal-title">选择反馈类型</text>
-				</view>
+				<text class="modal-title">选择反馈类型</text>
 				<view class="type-list">
 					<view
 						class="type-item"
@@ -397,47 +393,26 @@ export default {
 
 /* 弹窗 */
 .modal-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background-color: rgba(0, 0, 0, 0.4);
-	display: flex;
-	align-items: flex-end;
-	justify-content: center;
-	z-index: 9999;
+	position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+	background: rgba(0, 0, 0, 0.45);
+	display: flex; align-items: center; justify-content: center;
+	z-index: 9999; padding: 40upx;
 	animation: fadeIn 0.2s ease;
 }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
 .modal-content {
-	background-color: #ffffff;
-	border-radius: 24upx 24upx 0 0;
-	width: 100%;
-	padding: 16upx 28upx 40upx;
-	padding-bottom: calc(40upx + env(safe-area-inset-bottom));
-	box-shadow: 0 -4upx 20upx rgba(0, 0, 0, 0.08);
-	animation: slideUp 0.3s ease;
+	background: #fff;
+	border-radius: 28upx;
+	padding: 36upx 32upx 28upx;
+	width: 86%;
+	max-width: 560upx;
+	box-shadow: 0 16upx 48upx rgba(0, 0, 0, 0.15);
+	animation: slideUp 0.25s ease;
+	max-height: 78vh;
+	overflow-y: auto;
 }
-
-.modal-handle {
-	width: 64upx;
-	height: 6upx;
-	background: #e5e7eb;
-	border-radius: 3upx;
-	margin: 0 auto 20upx;
-}
-
-.modal-header {
-	text-align: center;
-	margin-bottom: 28upx;
-}
-
-.modal-title {
-	font-size: 30upx;
-	font-weight: 600;
-	color: #303132;
-}
+@keyframes slideUp { from{transform:translateY(30upx);opacity:0} to{transform:translateY(0);opacity:1} }
 
 .type-list {
 	margin-bottom: 24upx;

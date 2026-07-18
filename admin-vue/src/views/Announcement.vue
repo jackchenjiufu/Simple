@@ -38,7 +38,7 @@ const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row};showDialog.valu
 const save=async()=>{
   saving.value=true
   try{
-    await saveAnnouncement({action:'create_announcement',token:'doo_admin_2024',...form.value})
+    await saveAnnouncement({action:'create_announcement',token: localStorage.getItem('admin_token') || '',...form.value})
     ElMessage.success('保存成功');showDialog.value=false;load()
   }catch(e){ElMessage.error('保存失败')}
   saving.value=false

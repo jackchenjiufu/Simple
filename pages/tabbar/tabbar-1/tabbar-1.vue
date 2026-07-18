@@ -46,9 +46,9 @@
 									<view class="lm-right"><text class="lm-amt" :class="item.type">{{ item.type==='income'?'+':'-' }}¥{{ parseFloat(item.amount).toFixed(2) }}</text><text class="lm-dt">{{ item.record_date.slice(5) }}</text></view>
 								</view>
 							</view>
-							<view class="lm-add" @click="lmShowAdd=true">+</view>
+							<view class="lm-add" @click="llAddNew">+</view>
 						</view>
-						<view class="modal-overlay" v-if="lmShowAdd" @click="lmShowAdd=false;editingId=null">
+						<view class="modal-overlay" v-if="lmShowAdd" @click="llCancel">
 							<view class="modal-content" @click.stop>
 								<view class="modal-handle"></view>
 								<text class="modal-title">{{ editingId ? '编辑' : '记一笔' }}</text>
@@ -64,7 +64,10 @@
 									</scroll-view>
 								</view>
 								<view class="fg"><text class="fl">备注</text><input class="fi" v-model="lmForm.note" type="text" placeholder="选填" /></view>
+								<view class="modal-btns">
+								<button v-if="editingId" class="lm-del-btn" @click="handleLmDelete">删除</button>
 								<button class="lm-save-btn" @click="handleLmAdd" :disabled="lmAdding">{{ lmAdding ? '保存中...' : (editingId ? '更新' : '保存') }}</button>
+							</view>
 							</view>
 						</view>
 					</view>
@@ -157,6 +160,45 @@
 				</view>
 			</swiper-item>
 		</swiper>
+
+		<!-- 删除确认弹窗 -->
+		<view class="modal-overlay" v-if="showDeleteConfirm" @click="showDeleteConfirm=false;deleteTargetId=null">
+			<view class="modal-content confirm-modal" @click.stop>
+				<view class="confirm-icon-wrap danger-icon">
+					<text class="confirm-icon-text">!</text>
+				</view>
+				<text class="confirm-title">确认删除</text>
+				<text class="confirm-desc">确定要删除这条记录吗？</text>
+				<text class="confirm-warn">删除后无法恢复</text>
+				<view class="confirm-divider"></view>
+				<view class="confirm-actions">
+					<button class="btn-cancel" @click="showDeleteConfirm=false;deleteTargetId=null">取消</button>
+					<button class="btn-danger" @click="doDelete">删除</button>
+				</view>
+			</view>
+		</view>
+
+		<!-- 版本更新弹窗 -->
+		<view class="modal-overlay" v-if="showUpdateModal" @click="showUpdateModal=false">
+			<view class="modal-content update-modal" @click.stop>
+				<view class="update-graphic">
+					<text class="update-icon">↑</text>
+				</view>
+				<text class="update-modal-title">发现新版本</text>
+				<view class="update-versions">
+					<view class="uv-item"><text class="uv-label">当前版本</text><text class="uv-num old">{{ currentVersion }}</text></view>
+					<text class="uv-arrow">→</text>
+					<view class="uv-item"><text class="uv-label">最新版本</text><text class="uv-num new">{{ updateInfo.latestVersion }}</text></view>
+				</view>
+				<text class="update-modal-desc">{{ updateInfo.description || '新版本已准备就绪，建议立即更新' }}</text>
+				<view class="confirm-divider"></view>
+				<view class="confirm-actions">
+					<button class="btn-cancel" @click="showUpdateModal=false">稍后再说</button>
+					<button class="btn-primary" @click="goUpdate">立即更新</button>
+				</view>
+			</view>
+		</view>
+
 	</view>
 </template>
 
@@ -204,8 +246,13 @@ export default {
 			lmAdding: false,
 			lmForm: { type:'expense', amount:'', category:'', note:'' },
 				editingId: null,
+			showDeleteConfirm: false,
+			deleteTargetId: null,
+			showUpdateModal: false,
+			updateInfo: { latestVersion:'', downloadUrl:'', apkDownloadUrl:'', description:'' },
 			catOpts: ['餐饮','购物','交通','娱乐','住房','日用','服饰','医疗','教育','通讯','人情','工资','奖金','收入','其他'],
-			kbHeight: 0
+			kbHeight: 0,
+			currentVersion: '1.0.0'
 		};
 	},
 	computed: {
@@ -228,8 +275,15 @@ export default {
 			this.generateRecommendations();
 		// 监听键盘高度变化
 		uni.onKeyboardHeightChange(res => {
-			this.kbHeight = res.height || 0;
+			if (res.height > 0) {
+				this.$nextTick(() => { this.agentScrl = 'agent-bottom'; });
+			}
 		});
+		// 检查版本更新
+		const apkVer = systemInfo.appVersion || '1.0.0';
+		const wgtVer = uni.getStorageSync('wgtVersion') || '';
+		this.currentVersion = wgtVer && this.compareVersion(wgtVer, apkVer) > 0 ? wgtVer : apkVer;
+		this.checkAppUpdate();
 	},
 	onShow() {
 		// 键盘监听在 onLoad 已注册，无需重复
@@ -244,8 +298,8 @@ export default {
 		onSwiperChange(event) {
 			const index = event.detail.current;
 			this.activeTabIndex = index;
-			const tabs = ['recommend', 'articles', 'agent'];
-			this.activeTab = tabs[index] || 'ledger';
+			const tabs = ['ledger', 'articles', 'agent'];
+				this.activeTab = tabs[index] || 'ledger';
 			if (this.activeTab === 'articles') this.loadArticles();
 				},
 		async loadCarouselData() {
@@ -453,21 +507,42 @@ export default {
 			if (m<1){m=12;y--;} if(m>12){m=1;y++;}
 			this.lmYear=y; this.lmMonth=String(m).padStart(2,'0'); this.loadLedger();
 		},
+		llAddNew() {
+			this.lmForm = { type:'expense', amount:'', category:'', note:'' };
+			this.editingId = null;
+			this.lmShowAdd = true;
+		},
+		llCancel() {
+			this.lmForm = { type:'expense', amount:'', category:'', note:'' };
+			this.editingId = null;
+			this.lmShowAdd = false;
+		},
 		editItem(item) {
 			this.lmForm = { type: item.type, amount: String(parseFloat(item.amount)), category: item.category, note: item.note||'' };
 			this.editingId = item.id;
 			this.lmShowAdd = true;
 		},
 		deleteItem(id) {
+			this.deleteTargetId = id;
+			this.showDeleteConfirm = true;
+		},
+		doDelete() {
+			if (!this.deleteTargetId) return;
 			const ui = uni.getStorageSync('userInfo');
 			if (!ui) return;
-			uni.showModal({ title:'确认删除', content:'确定要删除这条记录吗？', success:(r)=>{
-				if (r.confirm) {
-					uni.request({ url: apiConfig.baseUrl + 'ledger.php?id='+id+'&user_id='+ui.id, method:'DELETE', success:(res)=>{
-						if(res.data.code===200){uni.showToast({title:'已删除',icon:'success'});this.loadLedger();}
-					}});
-				}
+			const id = this.deleteTargetId;
+			this.showDeleteConfirm = false;
+			this.deleteTargetId = null;
+			uni.request({ url: apiConfig.baseUrl + 'ledger.php?id='+id+'&user_id='+ui.id, method:'DELETE', success:(res)=>{
+				if(res.data.code===200){uni.showToast({title:'已删除',icon:'success'});this.loadLedger();}
 			}});
+		},
+		handleLmDelete() {
+			if (!this.editingId) return;
+			this.deleteItem(this.editingId);
+			this.lmForm = { type:'expense', amount:'', category:'', note:'' };
+			this.lmShowAdd = false;
+			this.editingId = null;
 		},
 		handleLmAdd() {
 			const ui = uni.getStorageSync('userInfo');
@@ -484,9 +559,45 @@ export default {
 			uni.request({ url, method, data, success:(res)=>{
 				if(res.data.code===200){
 					uni.showToast({title:this.editingId?'已更新':'已保存',icon:'success'});
+					this.lmForm = { type:'expense', amount:'', category:'', note:'' };
 					this.lmShowAdd=false; this.editingId=null; this.loadLedger();
 				}else{uni.showToast({title:res.data.message||'失败',icon:'none'});}
 			}, complete:()=>{this.lmAdding=false;} });
+		},
+		checkAppUpdate() {
+			uni.request({
+				url: apiConfig.baseUrl + 'check_update.php',
+				method: 'POST',
+				data: { currentVersion: this.currentVersion },
+				header: { 'Content-Type': 'application/json' },
+				success: (res) => {
+					const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+					if (result?.code === 200 && result.data?.hasUpdate) {
+						this.updateInfo = {
+							latestVersion: result.data.latestVersion,
+							downloadUrl: result.data.downloadUrl || '',
+							apkDownloadUrl: result.data.apkDownloadUrl || '',
+							description: result.data.description || ''
+						};
+						this.showUpdateModal = true;
+					}
+				},
+				fail: () => {}
+			});
+		},
+		goUpdate() {
+			this.showUpdateModal = false;
+			uni.navigateTo({ url: '/pages/info/check-update' });
+		},
+		compareVersion(v1, v2) {
+			const a1 = String(v1).split('.').map(Number);
+			const a2 = String(v2).split('.').map(Number);
+			for (let i = 0; i < Math.max(a1.length, a2.length); i++) {
+				const n1 = a1[i] || 0, n2 = a2[i] || 0;
+				if (n1 > n2) return 1;
+				if (n1 < n2) return -1;
+			}
+			return 0;
 		},
 		viewArticle(article) {
 			uni.navigateTo({
@@ -533,22 +644,55 @@ export default {
 .lm-dt { font-size:16upx; color:#d1d5db; }
 .lm-del { font-size:18upx; color:#ef4444; padding:8upx 4upx; display:inline-block; }
 .lm-add { position:fixed; right:32upx; bottom:40upx; width:90upx; height:90upx; background:#3071f6; color:#fff; font-size:44upx; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 6upx 20upx rgba(48,113,246,0.3); }
-.lm-save-btn { width:100%; height:72upx; line-height:72upx; background:#3071f6; color:#fff; font-size:26upx; font-weight:600; border-radius:14upx; border:none; margin-top:12upx; }
-.fg { margin-bottom:14upx; }
-.fl { font-size:22upx; color:#6b7280; display:block; margin-bottom:4upx; }
-.fi { height:64upx; padding:0 14upx; background:#f8f9fb; border-radius:10upx; font-size:24upx; color:#303132; width:100%; box-sizing:border-box; }
-.amt-i { font-size:34upx; font-weight:700; text-align:center; height:80upx; }
+.lm-save-btn { flex:1; height:76upx; line-height:76upx; background:#1b44a6; color:#fff; font-size:26upx; font-weight:600; border-radius:12upx; border:none; margin-top:16upx; }
+.lm-del-btn { height:76upx; line-height:76upx; background:#fff; color:#ef4444; font-size:26upx; font-weight:500; border-radius:12upx; border:1px solid #ef4444; margin-top:16upx; flex:1; }
+.modal-btns { display:flex; gap:14upx; }
+.fg { margin-bottom:18upx; }
+.fl { font-size:24upx; color:#6b7280; display:block; margin-bottom:6upx; font-weight:500; }
+.fi { height:64upx; padding:0 16upx; background:#f5f6f8; border-radius:10upx; font-size:24upx; color:#303132; width:100%; box-sizing:border-box; }
+.amt-i { font-size:36upx; font-weight:700; text-align:center; height:80upx; background:#fafafa; }
 .cp { white-space:nowrap; }
-.co { display:inline-block; font-size:20upx; color:#6b7280; background:#f3f4f6; padding:6upx 18upx; border-radius:9999upx; margin-right:8upx; }
+.co { display:inline-block; font-size:22upx; color:#6b7280; background:#f3f4f6; padding:8upx 20upx; border-radius:9999upx; margin-right:8upx; }
 .co.act { color:#fff; background:#1b44a6; }
 
-.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:flex-end; z-index:9999; }
-.modal-content { background:#fff; border-radius:24upx 24upx 0 0; width:100%; padding:16upx 28upx calc(40upx + env(safe-area-inset-bottom)); max-height:80vh; overflow-y:auto; }
-.modal-handle { width:64upx; height:6upx; background:#e5e7eb; border-radius:3upx; margin:0 auto 16upx; }
-.modal-title { font-size:28upx; font-weight:600; color:#303132; text-align:center; display:block; margin-bottom:20upx; }
-.type-switch { display:flex; background:#f3f4f6; border-radius:12upx; padding:4upx; margin-bottom:20upx; }
-.type-btn { flex:1; text-align:center; padding:14upx 0; font-size:26upx; color:#6b7280; border-radius:10upx; }
-.type-btn.act { background:#fff; color:#303132; font-weight:600; box-shadow:0 2upx 8upx rgba(0,0,0,0.06); }
+/* 确认弹窗 */
+.confirm-modal { text-align:center; padding:40upx 36upx 32upx; }
+.confirm-icon-wrap { width:80upx; height:80upx; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20upx; }
+.confirm-icon-wrap.danger-icon { background:linear-gradient(135deg,#fef2f2,#fecaca); box-shadow:0 4upx 16upx rgba(239,68,68,0.25); }
+.confirm-icon-text { font-size:36upx; font-weight:700; }
+.danger-icon .confirm-icon-text { color:#ef4444; }
+.confirm-title { display:block; font-size:30upx; font-weight:700; color:#1f2937; margin-bottom:10upx; }
+.confirm-desc { display:block; font-size:26upx; color:#6b7280; line-height:1.6; margin-bottom:4upx; }
+.confirm-warn { display:block; font-size:24upx; color:#ef4444; padding:8upx 12upx; background:#fef2f2; border-radius:10upx; margin-top:8upx; }
+.confirm-divider { height:1px; background:#f3f4f6; margin:22upx 0 18upx; }
+.confirm-actions { display:flex; gap:16upx; }
+.confirm-actions .btn-cancel { flex:1; height:80upx; line-height:80upx; background:#f3f4f6; color:#374151; font-size:28upx; font-weight:500; border-radius:14upx; border:none; text-align:center; }
+.confirm-actions .btn-danger { flex:1; height:80upx; line-height:80upx; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; font-size:28upx; font-weight:600; border-radius:14upx; border:none; text-align:center; box-shadow:0 4upx 12upx rgba(239,68,68,0.3); }
+
+/* 版本更新弹窗 */
+.update-modal { text-align:center; padding:40upx 36upx 32upx; }
+.update-graphic { width:88upx; height:88upx; border-radius:50%; background:linear-gradient(135deg,#eff6ff,#dbeafe); display:flex; align-items:center; justify-content:center; margin:0 auto 20upx; box-shadow:0 4upx 16upx rgba(48,113,246,0.25); }
+.update-icon { font-size:40upx; color:#3071f6; font-weight:700; }
+.update-modal-title { display:block; font-size:30upx; font-weight:700; color:#1f2937; margin-bottom:20upx; }
+.update-versions { display:flex; align-items:center; justify-content:center; gap:20upx; margin-bottom:20upx; }
+.uv-item { display:flex; flex-direction:column; align-items:center; }
+.uv-label { font-size:20upx; color:#9ca3af; margin-bottom:4upx; }
+.uv-num { font-size:28upx; font-weight:600; }
+.uv-num.old { color:#909398; text-decoration:line-through; }
+.uv-num.new { color:#3071f6; }
+.uv-arrow { font-size:24upx; color:#c0c4cc; }
+.update-modal-desc { display:block; font-size:24upx; color:#6b7280; line-height:1.6; margin-bottom:8upx; }
+.confirm-actions .btn-primary { flex:1; height:80upx; line-height:80upx; background:linear-gradient(135deg,#3071f6,#1b44a6); color:#fff; font-size:28upx; font-weight:600; border-radius:14upx; border:none; text-align:center; box-shadow:0 4upx 12upx rgba(48,113,246,0.3); }
+
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:9999; padding:40upx; animation:lmFadeIn 0.2s ease; }
+@keyframes lmFadeIn { from{opacity:0} to{opacity:1} }
+.modal-content { background:#fff; border-radius:28upx; padding:36upx 32upx 28upx; width:86%; max-width:560upx; box-shadow:0 16upx 48upx rgba(0,0,0,0.15); animation:lmSlideUp 0.25s ease; max-height:78vh; overflow-y:auto; }
+@keyframes lmSlideUp { from{transform:translateY(30upx);opacity:0} to{transform:translateY(0);opacity:1} }
+.modal-handle { display:none; }
+.modal-title { font-size:30upx; font-weight:700; color:#1f2937; text-align:center; display:block; margin-bottom:24upx; }
+.type-switch { display:flex; background:#f3f4f6; border-radius:12upx; padding:3upx; margin-bottom:22upx; }
+.type-btn { flex:1; text-align:center; padding:14upx 0; font-size:26upx; color:#9ca3af; border-radius:10upx; transition:all 0.2s; }
+.type-btn.act { background:#fff; color:#1b44a6; font-weight:600; box-shadow:0 2upx 6upx rgba(0,0,0,0.08); }
 
 .content {
 	width: 100%;
@@ -773,8 +917,8 @@ export default {
 /* 隐藏滚动条 */
 /* 智能体 */
 .agent-page{display:flex;flex-direction:column;height:100%}
-	.agent-scroll{flex:1;min-height:0;padding:24upx 20upx;background:#f5f6f8}
-	.agent-empty{text-align:center;padding:200upx 0}
+.agent-scroll{flex:1;min-height:0;padding:24upx 20upx;background:#f5f6f8}
+.agent-empty{text-align:center;padding:200upx 0}
 .agent-logo{width:88upx;height:88upx;border-radius:24upx;background:linear-gradient(135deg,#1b44a6,#3071f6);display:flex;align-items:center;justify-content:center;margin:0 auto 20upx;box-shadow:0 8upx 30upx rgba(48,113,246,.3)}
 .agent-logo-icon{font-size:48upx;color:#fff}
 .agent-logo-name{font-size:36upx;font-weight:700;color:#1f2937;display:block;margin-bottom:6upx}
@@ -792,7 +936,7 @@ export default {
 .agent-msg-wrap.ai .agent-bubble-t{color:#303132}
 .agent-bubble.wait{background:#e5e7eb}
 .agent-bubble.wait .agent-bubble-t{color:#909398}
-.agent-foot{background:#fff;padding:16upx 20upx;border-top:1px solid #f0f0f0;transition:padding-bottom .25s}
+.agent-foot{background:#fff;padding:16upx 20upx;padding-bottom:calc(16upx + env(safe-area-inset-bottom));border-top:1px solid #f0f0f0;transition:padding-bottom .3s}
 .agent-input-wrap{display:flex;align-items:center;background:#f3f4f6;border-radius:40upx;padding:8upx 12upx 8upx 24upx}
 .agent-input{flex:1;height:60upx;font-size:28upx;color:#303132;border:none;background:transparent}
 .agent-send{width:60upx;height:60upx;border-radius:50%;background:#3071f6;display:flex;align-items:center;justify-content:center;flex-shrink:0}

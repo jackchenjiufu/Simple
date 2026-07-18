@@ -242,7 +242,7 @@
 			</scroll-view>
 
 		<!-- 自定义日期选择弹窗 -->
-		<view class="modal-overlay" v-if="showDatePicker" @click.self="showDatePicker = false">
+		<view class="modal-overlay" v-if="showDatePicker" @click="showDatePicker = false">
 			<view class="date-picker-modal" @click.stop>
 				<view class="date-picker-header">
 					<text class="dp-nav" @click="changeMonth(-1)">‹</text>
@@ -264,14 +264,18 @@
 			</view>
 		</view>
 
-		<!-- 删除确认 - 底部弹出 -->
-		<view class="action-sheet-overlay" v-if="showDeleteModal" @click.self="showDeleteModal = false">
+		<!-- 删除确认 - 居中弹出 -->
+		<view class="action-sheet-overlay" v-if="showDeleteModal" @click="showDeleteModal = false">
 			<view class="action-sheet" @click.stop>
-				<view class="action-sheet-handle"></view>
-				<text class="action-sheet-title">确定要删除这条记录吗？</text>
-				<text class="action-sheet-hint">删除后无法恢复</text>
-				<button class="action-sheet-btn danger" @click="doDelete">删除</button>
-				<button class="action-sheet-btn cancel" @click="showDeleteModal = false">取消</button>
+				<view class="confirm-icon-wrap danger-icon">
+					<text class="confirm-icon-text">!</text>
+				</view>
+				<text class="action-sheet-title">确认删除</text>
+				<text class="action-sheet-hint">确定要删除这条记录吗？</text>
+				<view class="confirm-actions">
+					<button class="action-sheet-btn cancel" @click="showDeleteModal = false">取消</button>
+					<button class="action-sheet-btn danger" @click="doDelete">删除</button>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -756,13 +760,17 @@ export default {
 /* 自定义日历弹窗 */
 .modal-overlay {
 	position:fixed; top:0; left:0; right:0; bottom:0;
-	background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center;
+	background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center;
 	z-index:9999; padding:40upx;
+	animation:lmFadeIn 0.2s ease;
 }
+@keyframes lmFadeIn { from{opacity:0} to{opacity:1} }
 .date-picker-modal {
-	background:#fff; border-radius:24upx; padding:32upx 28upx;
-	width:620upx; max-width:90%; box-shadow:0 16upx 48upx rgba(0,0,0,0.15);
+	background:#fff; border-radius:28upx; padding:32upx 28upx;
+	width:86%; max-width:600upx; box-shadow:0 16upx 48upx rgba(0,0,0,0.15);
+	animation:lmSlideUp 0.25s ease;
 }
+@keyframes lmSlideUp { from{transform:translateY(30upx);opacity:0} to{transform:translateY(0);opacity:1} }
 .date-picker-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24upx; }
 .dp-nav { font-size:40upx; color:#3071f6; font-weight:600; padding:8upx 20upx; cursor:pointer; }
 .dp-month { font-size:30upx; font-weight:600; color:#303132; }
@@ -787,24 +795,26 @@ export default {
 /* 底部弹出菜单 */
 .action-sheet-overlay {
 	position:fixed; top:0; left:0; right:0; bottom:0;
-	background:rgba(0,0,0,0.4); display:flex; align-items:flex-end;
-	z-index:9999;
+	background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center;
+	z-index:9999; padding:40upx; animation:lmFadeIn 0.2s ease;
 }
 .action-sheet {
-	background:#fff; border-radius:24upx 24upx 0 0; padding:16upx 24upx 48upx;
-	width:100%; animation:slideUp 0.25s ease;
+	background:#fff; border-radius:28upx; padding:40upx 36upx 32upx;
+	width:86%; max-width:560upx; box-shadow:0 16upx 48upx rgba(0,0,0,0.15);
+	animation:lmSlideUp 0.25s ease; text-align:center;
 }
-@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
-.action-sheet-handle {
-	width:64upx; height:6upx; background:#e5e7eb; border-radius:3upx;
-	margin:0 auto 24upx;
-}
-.action-sheet-title { display:block; text-align:center; font-size:30upx; font-weight:600; color:#303132; margin-bottom:6upx; }
-.action-sheet-hint { display:block; text-align:center; font-size:24upx; color:#9ca3af; margin-bottom:28upx; }
+.action-sheet-handle { display:none; }
+.action-sheet-title { display:block; font-size:30upx; font-weight:700; color:#1f2937; margin-bottom:10upx; }
+.action-sheet-hint { display:block; font-size:24upx; color:#ef4444; padding:8upx 12upx; background:#fef2f2; border-radius:10upx; margin:12upx 0 22upx; }
 .action-sheet-btn {
-	width:100%; height:96upx; line-height:96upx; font-size:30upx; font-weight:500;
-	border-radius:16upx; border:none; margin-bottom:12upx;
+	flex:1; height:80upx; line-height:80upx; font-size:28upx; font-weight:500;
+	border-radius:14upx; border:none; margin-bottom:0;
 }
-.action-sheet-btn.danger { background:#fef2f2; color:#ef4444; font-weight:600; }
-.action-sheet-btn.cancel { background:#ffffff; color:#303132; border:1px solid #e5e7eb; }
+.action-sheet-btn.danger { flex:1; height:80upx; line-height:80upx; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; font-size:28upx; font-weight:600; border-radius:14upx; border:none; text-align:center; box-shadow:0 4upx 12upx rgba(239,68,68,0.3); }
+.action-sheet-btn.cancel { flex:1; height:80upx; line-height:80upx; background:#f3f4f6; color:#374151; font-size:28upx; font-weight:500; border-radius:14upx; border:none; text-align:center; }
+.confirm-icon-wrap { width:80upx; height:80upx; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20upx; }
+.confirm-icon-wrap.danger-icon { background:linear-gradient(135deg,#fef2f2,#fecaca); box-shadow:0 4upx 16upx rgba(239,68,68,0.25); }
+.confirm-icon-text { font-size:36upx; font-weight:700; }
+.danger-icon .confirm-icon-text { color:#ef4444; }
+.confirm-actions { display:flex; gap:16upx; }
 </style>

@@ -43,9 +43,8 @@
 		</scroll-view>
 
 		<!-- 头像选择 -->
-		<view class="modal-overlay" v-if="showUploadModal" @click.self="showUploadModal = false">
+		<view class="modal-overlay" v-if="showUploadModal" @click="showUploadModal = false">
 			<view class="action-sheet" @click.stop>
-				<view class="action-sheet-handle"></view>
 				<text class="action-sheet-title">更换头像</text>
 				<button class="action-btn" @click="chooseFromAlbum">从相册选择</button>
 				<button class="action-btn" @click="takePhoto">拍照</button>
@@ -188,10 +187,11 @@ export default {
 .login-text { font-size: 28upx; color: #909398; }
 .login-btn { width: 300upx; height: 80upx; line-height: 80upx; background: #3071f6; color: #fff; font-size: 28upx; border-radius: 16upx; border: none; }
 .info-input { flex:1; height:56upx; font-size:28upx; color:#303132; text-align:right; border:none; background:transparent; }
-.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:flex-end; z-index:9999; }
-.action-sheet { background:#fff; border-radius:24upx 24upx 0 0; padding:16upx 24upx 48upx; width:100%; }
-.action-sheet-handle { width:64upx; height:6upx; background:#e5e7eb; border-radius:3upx; margin:0 auto 24upx; }
-.action-sheet-title { display:block; text-align:center; font-size:30upx; font-weight:600; color:#303132; margin-bottom:24upx; }
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:9999; padding:40upx; animation:fadeIn 0.2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.action-sheet { background:#fff; border-radius:28upx; padding:36upx 32upx 28upx; width:86%; max-width:560upx; box-shadow:0 16upx 48upx rgba(0,0,0,0.15); animation:slideUp 0.25s ease; }
+@keyframes slideUp { from{transform:translateY(30upx);opacity:0} to{transform:translateY(0);opacity:1} }
+.action-sheet-title { display:block; text-align:center; font-size:28upx; font-weight:700; color:#1f2937; margin-bottom:20upx; }
 .action-btn { width:100%; height:88upx; line-height:88upx; font-size:28upx; font-weight:500; border-radius:16upx; border:1px solid #e5e7eb; margin-bottom:12upx; background:#fff; color:#303132; }
 .action-btn.cancel { background:#f3f4f6; border:none; color:#909398; }
 </style>
