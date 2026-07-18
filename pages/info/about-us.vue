@@ -89,13 +89,15 @@ export default {
 	methods: {
 		goBack() { uni.navigateBack(); },
 		async loadVersion() {
-			try {
-				const info = uni.getSystemInfoSync();
-				const ver = info.appVersion || '1.0.0';
-				const res = await uni.request({
-					url: apiConfig.baseUrl + 'check_update.php',
-					method: 'POST',
-					data: { currentVersion: ver },
+				try {
+					const info = uni.getSystemInfoSync();
+					var apkVer = info.appVersion || '1.0.0';
+					var wgtVer = uni.getStorageSync('wgtVersion') || '';
+					const ver = wgtVer && compareVersion(wgtVer, apkVer) > 0 ? wgtVer : apkVer;
+					const res = await uni.request({
+						url: apiConfig.baseUrl + 'check_update.php',
+						method: 'POST',
+						data: { currentVersion: ver },
 					header: { 'Content-Type': 'application/json' }
 				});
 				if (res.statusCode === 200) {
@@ -109,6 +111,18 @@ export default {
 		}
 	}
 };
+
+function compareVersion(v1, v2) {
+	var a1 = v1.split('.').map(Number);
+	var a2 = v2.split('.').map(Number);
+	for (var i = 0; i < Math.max(a1.length, a2.length); i++) {
+		var n1 = a1[i] || 0;
+		var n2 = a2[i] || 0;
+		if (n1 > n2) return 1;
+		if (n1 < n2) return -1;
+	}
+	return 0;
+}
 </script>
 
 <style>

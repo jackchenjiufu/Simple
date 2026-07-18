@@ -7,115 +7,9 @@
 <script>
 import apiConfig from './utils/api.js';
 
-// WebSocket 配置
-var WS_URL = 'ws://139.196.185.197:1884';
-var wsReconnectTimer = null;
-var wsConnected = false;
-var wsHeartbeatTimer = null;
-var wsListenersRegistered = false;
-
-function connectWebSocket() {
-	if (wsConnected) return;
-	var userId = uni.getStorageSync('userId');
-	if (!userId) return;
-
-	// 只注册一次事件监听
-	if (!wsListenersRegistered) {
-		wsListenersRegistered = true;
-
-		uni.onSocketOpen(function() {
-			wsConnected = true;
-			clearTimeout(wsReconnectTimer);
-			var uid = uni.getStorageSync('userId');
-			uni.sendSocketMessage({ data: JSON.stringify({ type: 'auth', userId: uid }) });
-			console.log('WebSocket 已连接');
-			// 心跳
-			clearInterval(wsHeartbeatTimer);
-			wsHeartbeatTimer = setInterval(function() {
-				if (wsConnected) {
-					uni.sendSocketMessage({ data: JSON.stringify({ type: 'ping' }) });
-				}
-			}, 2000);
-		});
-
-		uni.onSocketMessage(function(res) {
-			try {
-				var msg = JSON.parse(res.data);
-				handleWsMessage(msg);
-			} catch(e) {}
-		});
-
-		uni.onSocketClose(function() {
-			wsConnected = false;
-			clearInterval(wsHeartbeatTimer);
-			console.log('WebSocket 已断开');
-			wsReconnectTimer = setTimeout(function() {
-				if (uni.getStorageSync('isLoggedIn')) {
-					connectWebSocket();
-				}
-			}, 1000);
-		});
-
-		uni.onSocketError(function() {
-			wsConnected = false;
-			console.log('WebSocket 连接错误');
-		});
-	}
-
-	// 每次重连只需调用 connectSocket
-	try {
-		uni.connectSocket({ url: WS_URL });
-	} catch(e) {
-		console.log('WebSocket 创建失败:', e);
-	}
-}
-
-function disconnectWebSocket() {
-	clearTimeout(wsReconnectTimer);
-	clearInterval(wsHeartbeatTimer);
-	wsConnected = false;
-	try { uni.closeSocket(); } catch(e) {}
-}
-
-function handleWsMessage(msg) {
-	switch (msg.type) {
-		case 'auth_result':
-			if (msg.success) console.log('WebSocket 认证成功');
-			break;
-		case 'pong':
-			break;
-		case 'ping':
-			if (wsConnected) {
-				uni.sendSocketMessage({ data: JSON.stringify({ type: 'pong' }) });
-			}
-			break;
-		case 'kick':
-			disconnectWebSocket();
-			break;
-		default:
-			if (msg.title || msg.content) {
-				try {
-					if (typeof uni !== 'undefined' && uni.createPushMessage) {
-						uni.createPushMessage({
-							title: msg.title || '新消息',
-							content: msg.content || ''
-						});
-					}
-				} catch(e) {}
-			}
-			uni.$emit('ws-message', msg);
-	}
-}
-
-uni.$ws = {
-	connect: connectWebSocket,
-	disconnect: disconnectWebSocket
-};
-
 export default {
 	globalData: { userInfo: null },
 	onLaunch: function() {
-		connectWebSocket();
 		var loginPages = [
 			"pages/auth/login",
 			"pages/auth/forgot-password",
@@ -160,13 +54,18 @@ export default {
 		this.installPendingWgt();
 		this.silentCheckWgt();
 	},
-	onShow: function() {},
+	onShow: function() {
+		this.installPendingWgt();
+		this.silentCheckWgt();
+	},
 	methods: {
 		silentCheckWgt() {
 			// #ifdef APP-PLUS
 			var storedVer = uni.getStorageSync('wgtVersion') || '';
 			var sysInfo = uni.getSystemInfoSync();
 			var curVer = storedVer || sysInfo.appVersion || '1.0.0';
+			if (this._lastCheckVer === curVer) return;
+			this._lastCheckVer = curVer;
 			uni.request({
 				url: apiConfig.baseUrl + 'check_update.php',
 				method: 'POST',
@@ -177,48 +76,49 @@ export default {
 						if (result && result.code === 200 && result.data && result.data.hasUpdate) {
 							var newVer = result.data.latestVersion;
 							if (compareVersion(newVer, curVer) > 0) {
-								var dlUrl = result.data.downloadUrl;
-								var apkUrl = result.data.apkDownloadUrl;
-								// #ifdef APP-PLUS
-								if (dlUrl) {
-									var dt = plus.downloader.createDownload(dlUrl, { filename: "_doc/update/" }, function(dl, status) {
+								var apkUrl = result.data.downloadUrl || '';
+								var wgtUrl = result.data.apkDownloadUrl || '';
+								var targetUrl = '';
+								var isWgt = false;
+								// 优先 APK 全量包，WGT 热更新作为备选
+								if (apkUrl && apkUrl.indexOf('.apk') > 0) {
+									targetUrl = apkUrl;
+								} else if (wgtUrl && wgtUrl.indexOf('.wgt') > 0) {
+									targetUrl = wgtUrl;
+									isWgt = true;
+								}
+								if (targetUrl) {
+									// #ifdef APP-PLUS
+									var dt = plus.downloader.createDownload(targetUrl, { filename: "_doc/update/" }, function(dl, status) {
 										if (status === 200) {
-											uni.setStorageSync("pendingWgtPath", dl.filename);
-											uni.setStorageSync("pendingWgtVersion", newVer);
+											if (isWgt) {
+												plus.runtime.install(dl.filename, { force: true }, function() {
+													uni.setStorageSync("wgtVersion", newVer);
+													setTimeout(function() { plus.runtime.restart(); }, 500);
+												}, function(e) {
+													console.error("WGT安装失败:", e);
+													uni.setStorageSync("pendingWgtPath", dl.filename);
+													uni.setStorageSync("pendingWgtVersion", newVer);
+												});
+											} else {
+												uni.setStorageSync("pendingApkPath", dl.filename);
+												uni.setStorageSync("pendingWgtVersion", newVer);
+											}
 										} else {
 											console.error("更新包下载失败, 状态:", status);
 										}
 									});
-									dt.addEventListener("error", function() {
-										console.error("更新包下载出错");
-									});
-									dt.start();
-								} else if (apkUrl) {
-									// #ifdef APP-ANDROID
-									var dt = plus.downloader.createDownload(apkUrl, { filename: "_doc/update/" }, function(dl, status) {
-										if (status === 200) {
-											uni.setStorageSync("pendingApkPath", dl.filename);
-											uni.setStorageSync("pendingWgtVersion", newVer);
-										} else {
-											console.error("APK下载失败, 状态:", status);
-										}
-									});
-									dt.addEventListener("error", function() {
-										console.error("APK下载出错");
-									});
 									dt.start();
 									// #endif
 								}
-								// #endif
-
 							}
 						}
 					} catch(e) {
-						console.error('\u68c0\u67e5\u66f4\u65b0\u89e3\u6790\u5f02\u5e38:', e);
+						console.error('检查更新解析异常:', e);
 					}
 				},
 				fail: function(err) {
-					console.error('\u68c0\u67e5\u66f4\u65b0\u8bf7\u6c42\u5931\u8d25:', err);
+					console.error('检查更新请求失败:', err);
 				}
 			});
 			// #endif
@@ -236,7 +136,6 @@ export default {
 				uni.removeStorageSync("pendingWgtVersion");
 				return;
 			}
-			// 优先安装 WGT 热更新
 			if (wgtPath) {
 				plus.io.resolveLocalFileSystemURL(wgtPath, function() {
 					plus.runtime.install(wgtPath, { force: true }, function() {
@@ -245,32 +144,32 @@ export default {
 						uni.removeStorageSync("pendingWgtPath");
 						uni.removeStorageSync("pendingWgtVersion");
 						setTimeout(function() { plus.runtime.restart(); }, 500);
+					}, function() {
+						uni.removeStorageSync("pendingWgtPath");
+						uni.removeStorageSync("pendingWgtVersion");
+					});
 				}, function() {
 					uni.removeStorageSync("pendingWgtPath");
-					uni.removeStorageSync("pendingWgtVersion");
 				});
-			}, function() {
-				uni.removeStorageSync("pendingWgtPath");
-			});
-			return;
+				return;
 			}
-			// APK 全量更新 (仅 Android)
 			if (apkPath) {
 				// #ifdef APP-ANDROID
 				plus.io.resolveLocalFileSystemURL(apkPath, function() {
 					plus.runtime.install(apkPath, { force: true }, function() {
 						uni.removeStorageSync("pendingApkPath");
 						uni.removeStorageSync("pendingWgtVersion");
+					}, function() {
+						uni.removeStorageSync("pendingApkPath");
+						uni.removeStorageSync("pendingWgtVersion");
+					});
 				}, function() {
 					uni.removeStorageSync("pendingApkPath");
-					uni.removeStorageSync("pendingWgtVersion");
 				});
-			}, function() {
-				uni.removeStorageSync("pendingApkPath");
-			});
 				// #endif
 			}
-		}	}
+		}
+	}
 };
 
 function compareVersion(v1, v2) {

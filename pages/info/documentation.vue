@@ -12,7 +12,7 @@
 		<scroll-view class="body" scroll-y="true">
 			<view class="card">
 				<text class="card-title">项目简介</text>
-				<text class="card-text">Origin 是一个内容分享与社交平台，提供个性化推荐、用户互动、内容发布等功能。</text>
+				<text class="card-text">Origin 是一个内容分享与社交平台，提供内容浏览、用户互动、AI 助手对话等功能。</text>
 			</view>
 
 			<view class="card">
@@ -59,10 +59,10 @@ export default {
 	data() {
 		return {
 			statusBarHeight: 0,
-			features: ['个性化推荐', '用户管理', '内容发布', '社交互动', '数据统计', '文件管理'],
+			features: ['内容浏览', '用户管理', '内容发布', '社交互动', '数据统计', '文件管理'],
 			apiDocs: [
 				{ title: '用户', items: [
-					{ method: 'GET', url: '/api/user_profile.php?action=recommendations', desc: '获取个性化推荐' },
+					{ method: 'GET', url: '/api/user_profile.php?action=profile', desc: '获取内容浏览' },
 					{ method: 'POST', url: '/api/login.php', desc: '用户登录' },
 					{ method: 'POST', url: '/api/register.php', desc: '用户注册' },
 				]},

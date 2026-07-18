@@ -2,11 +2,11 @@
   <view class="nav-bar">
     <view
       class="nav-item"
-      :class="{ active: activeTab === 'recommend' }"
-      @click="switchTab('recommend')"
+      :class="{ active: activeTab === 'ledger' }"
+      @click="switchTab('ledger')"
     >
-      <text class="nav-label">推荐</text>
-      <view class="nav-indicator" v-if="activeTab === 'recommend'"></view>
+      <text class="nav-label">记账</text>
+      <view class="nav-indicator" v-if="activeTab === 'ledger'"></view>
     </view>
     <view
       class="nav-item"
@@ -33,7 +33,7 @@ export default {
   props: {
     activeTab: {
       type: String,
-      default: 'recommend'
+      default: 'ledger'
     }
   },
   methods: {

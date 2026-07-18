@@ -42,8 +42,6 @@ const apiConfig = {
         chatHistory: 'get_chat_history.php',
         // 消息列表API - 获取消息列表
         messages: 'messages.php',
-        // 个性化推荐API - 获取个性化推荐内容
-        recommendations: 'user_profile.php?action=recommendations',
         // 内容相似度分析API - 分析内容相似度
         contentSimilarity: 'user_profile.php?action=content_similarity',
         // 用户画像API - 获取用户画像信息
@@ -56,8 +54,6 @@ const apiConfig = {
         filesPreview: 'files_preview.php',
         // 用户行为API - 记录用户行为数据
         userBehavior: 'user_behavior.php',
-        // 推荐API - 获取推荐内容
-        recommend: 'recommend.php',
         // 内容API - 获取内容列表
         content: 'content.php',
         // 获取文章API - 获取文章列表
