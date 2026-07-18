@@ -12,3 +12,10 @@ vendor/
 server/api/check_update_patched.php
 server/
 admin-web/
+
+# 构建产物
+admin-vue-dist/
+*.apk
+
+# 临时脚本
+cleanup_final.py
