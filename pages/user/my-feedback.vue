@@ -58,9 +58,13 @@
 				<view class="history-item" v-for="(item, i) in historyList" :key="i">
 					<view class="history-row">
 						<text class="history-type">{{ item.type }}</text>
-						<text class="history-status" :class="'s' + (item.status || 0)">{{ item.status === 2 ? '已解决' : item.status === 1 ? '已读' : '待处理' }}</text>
+						<text class="history-status" :class="'s' + (item.status || 0)">{{ item.status === 2 ? '已回复' : item.status === 1 ? '已读' : '待处理' }}</text>
 					</view>
 					<text class="history-content">{{ item.content }}</text>
+					<view class="history-reply" v-if="item.reply">
+						<text class="history-reply-label">回复：</text>
+						<text class="history-reply-text">{{ item.reply }}</text>
+					</view>
 					<text class="history-time">{{ formatTime(item.created_at) }}</text>
 				</view>
 				<view class="history-empty" v-if="!historyList.length">
@@ -111,8 +115,6 @@ export default {
 			showTypePicker: false,
 			tab: 'submit',
 			historyList: [],
-			showDetail: false,
-			historyDetail: {},
 			form: {
 				type: '',
 				content: '',
@@ -137,6 +139,41 @@ export default {
 		selectType(type) {
 			this.form.type = type;
 			this.showTypePicker = false;
+		},
+		loadHistory() {
+			const userInfo = uni.getStorageSync('userInfo');
+			if (!userInfo || !userInfo.id) return;
+			uni.request({
+				url: apiConfig.baseUrl + 'feedback.php',
+				method: 'GET',
+				data: { user_id: userInfo.id },
+				success: (res) => {
+					try {
+						const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+						if (result && result.code === 200) {
+							this.historyList = result.data || [];
+						} else {
+							this.historyList = [];
+						}
+					} catch (e) {
+						this.historyList = [];
+					}
+				},
+				fail: () => {
+					this.historyList = [];
+				}
+			});
+		},
+		formatTime(t) {
+			if (!t) return '';
+			try {
+				const d = new Date(String(t).replace(/-/g, '/'));
+				if (isNaN(d.getTime())) return t;
+				const pad = (n) => (n < 10 ? '0' + n : '' + n);
+				return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+			} catch (e) {
+				return t;
+			}
 		},
 		handleSubmit() {
 			if (!this.form.content.trim()) {
@@ -471,40 +508,22 @@ export default {
 	to { opacity: 1; }
 }
 
-/* 反馈详情弹窗 */
-.detail-overlay {
-	position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-	background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
-	z-index: 9999; padding: 40upx;
-}
-.detail-card {
-	background: #fff; border-radius: 20upx; padding: 32upx;
-	width: 100%; max-width: 560upx; box-shadow: 0 8upx 40upx rgba(0,0,0,0.15);
-}
-.detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20upx; }
-.detail-label { font-size: 28upx; font-weight: 600; color: #303132; }
-.detail-status { font-size: 22upx; padding: 4upx 16upx; border-radius: 999upx; }
-.detail-status.s0 { background: #fef3c7; color: #d97706; }
-.detail-status.s1 { background: #dbeafe; color: #2563eb; }
-.detail-status.s2 { background: #d1fae5; color: #059669; }
-.detail-content { font-size: 26upx; color: #4b5563; line-height: 1.6; margin-bottom: 16upx; }
-.detail-reply { background: #f0f4ff; padding: 16upx; border-radius: 12upx; margin-bottom: 16upx; }
-.detail-reply-label { font-size: 22upx; color: #1b44a6; font-weight: 500; display: block; margin-bottom: 6upx; }
-.detail-reply-text { font-size: 26upx; color: #374151; }
-.detail-time { font-size: 22upx; color: #c0c4cc; display: block; margin-bottom: 16upx; }
-.detail-close { width: 100%; height: 80upx; line-height: 80upx; background: #f3f4f6; color: #6b7280; font-size: 28upx; border: none; border-radius: 12upx; }
 
+.history-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6upx; }
 .history-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6upx; }
 .history-item { padding: 16upx 0; border-bottom: 1px solid #f5f5f5; }
 .history-item:active { background: #f9fafb; }
 .history-time { font-size: 20upx; color: #d1d5db; }
-.empty-sub { font-size: 24upx; color: #3071f6; text-align: center; display: block; margin-top: 12upx; }
 
 /* 顶部标签栏 */
 .feedback-tab-bar { display: flex; background: #ffffff; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
 .feedback-tab-item { flex: 1; text-align: center; padding: 24upx 0 20upx; font-size: 28upx; color: #909398; position: relative; }
 .feedback-tab-item.active { color: #1b44a6; font-weight: 600; }
 .feedback-tab-item.active::after { content: ""; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40upx; height: 4upx; background: #1b44a6; border-radius: 2upx; }
+
+.history-reply { background: #f8f9fb; border-radius: 8upx; padding: 12upx; margin: 8upx 0; border-left: 3upx solid #3071f6; }
+.history-reply-label { font-size: 22upx; color: #3071f6; font-weight: 500; display: block; margin-bottom: 4upx; }
+.history-reply-text { font-size: 24upx; color: #303132; line-height: 1.5; }
 
 /* 隐藏滚动条 */
 ::-webkit-scrollbar {

@@ -192,9 +192,6 @@ export default {
 					uni.setStorageSync('token', token);
 						uni.setStorageSync('userId', userInfo.id);
 						uni.setStorageSync('isLoggedIn', true);
-						// 连接 WebSocket 推送
-						if (uni.$ws) uni.$ws.connect();
-						uni.showToast({ title: '登录成功', icon: 'success' });
 					setTimeout(() => {
 						uni.switchTab({ url: '/pages/tabbar/tabbar-1/tabbar-1' });
 					}, 1500);

@@ -25,8 +25,7 @@
 
 				<text class="doc-section-title">4. 信息使用</text>
 				<text class="doc-text">4.1 提供服务：我们使用您的个人信息为您提供注册登录、内容浏览与发布、即时通讯、AI 助手对话、工资管理等核心功能。</text>
-				<text class="doc-text">4.2 个性化推荐：我们会根据您的浏览和互动记录为您推荐感兴趣的内容。</text>
-				<text class="doc-text">4.3 优化服务：我们会分析用户的使用数据以改进应用性能、修复问题和开发新功能。</text>
+				<text class="doc-text">4.2 优化服务：我们会分析用户的使用数据以改进应用性能、修复问题和开发新功能。</text>
 				<text class="doc-text">4.4 安全保障：我们使用您的设备信息和登录记录来检测异常行为，保障账号安全。</text>
 
 				<text class="doc-section-title">5. 信息存储与保护</text>

@@ -2,8 +2,8 @@
     "name" : "Simple Server",
     "appid" : "__UNI__F3BE11F",
     "description" : "一个禅意构造的APP",
-    "versionName" : "2.0.0",
-    "versionCode" : 530,
+    "versionName" : "2.2.1",
+    "versionCode" : 534,
     "transformPx" : false,
     "compatConfig" : {
         "MODE" : 2
@@ -13,7 +13,7 @@
         "compilerVersion" : 3,
         "modules" : {
             "Camera" : {},
-            "VideoPlayer" : {}
+            "SQLite" : {}
         },
         "distribute" : {
             "android" : {
@@ -35,7 +35,8 @@
                     "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>",
                     "<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>",
                     "<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>"
-                ]
+                ],
+                "packagename" : "com.simple.doo"
             },
             "ios" : {
                 "dSYMs" : false,
@@ -102,5 +103,10 @@
     },
     "vueVersion" : "3",
     "locale" : "auto",
-    "fallbackLocale" : "zh-Hans"
+    "fallbackLocale" : "zh-Hans",
+    "uniStatistics" : {
+        "version" : "2",
+        "type" : "private",
+        "enable" : false
+    }
 }

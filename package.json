@@ -102,5 +102,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@dcloudio/uni-uts-v1": "^3.0.0-alpha-5010220260604001",
+    "vite": "^5.2.8"
+  }
 }

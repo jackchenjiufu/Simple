@@ -63,6 +63,14 @@ export const updateFeedback = (id, data) =>
 export const deleteFeedback = (id) =>
   api.delete('/admin_feedback.php', { data: { id } })
 
+// 版本管理
+export const getVersions = () =>
+  api.get('/get_versions.php')
+export const uploadVersion = (formData) =>
+  api.post('/upload_version.php', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const deleteVersion = (id) =>
+  api.post('/delete_version.php', { id })
+
 // 轮播删除
 export const deleteCarousel = (id) =>
   api.delete('/admin_carousels.php', { data: { id } })

@@ -12,14 +12,18 @@
       >
         <el-menu-item index="/dashboard"><el-icon><Menu /></el-icon><span>控制台</span></el-menu-item>
         <el-menu-item index="/users"><el-icon><User /></el-icon><span>用户管理</span></el-menu-item>
-        <el-menu-item index="/content"><el-icon><Document /></el-icon><span>内容管理</span></el-menu-item>
         <el-menu-item index="/carousel"><el-icon><Picture /></el-icon><span>轮播管理</span></el-menu-item>
         <el-menu-item index="/announcement"><el-icon><Bell /></el-icon><span>公告管理</span></el-menu-item>
         <el-menu-item index="/article"><el-icon><Reading /></el-icon><span>文章管理</span></el-menu-item>
         <el-menu-item index="/feedback"><el-icon><ChatDotSquare /></el-icon><span>反馈管理</span></el-menu-item>
+        <el-menu-item index="/version"><el-icon><Connection /></el-icon><span>版本管理</span></el-menu-item>
         <el-menu-item index="/splash"><el-icon><Monitor /></el-icon><span>启动页管理</span></el-menu-item>
         <el-menu-item index="/stats"><el-icon><DataAnalysis /></el-icon><span>数据统计</span></el-menu-item>
         <el-menu-item index="/logs"><el-icon><DocumentCopy /></el-icon><span>系统日志</span></el-menu-item>
+        <el-menu-item index="/permissions"><el-icon><Setting /></el-icon><span>权限管理</span></el-menu-item>
+        <el-menu-item index="/overtime"><el-icon><Timer /></el-icon><span>加班管理</span></el-menu-item>
+        <el-menu-item index="/apis"><el-icon><Connection /></el-icon><span>API 管理</span></el-menu-item>
+        <el-menu-item index="/system"><el-icon><Tools /></el-icon><span>系统维护</span></el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -46,8 +50,8 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import {
-  Menu, User, Document, Picture, Bell, Reading, ChatDotSquare,
-  Monitor, DataAnalysis, DocumentCopy, Expand, Fold, ArrowDown
+  Menu, User, Picture, Bell, Reading, ChatDotSquare, Connection,
+  Monitor, DataAnalysis, DocumentCopy, Setting, Tools, Timer, Expand, Fold, ArrowDown
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

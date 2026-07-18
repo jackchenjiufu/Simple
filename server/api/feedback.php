@@ -5,16 +5,7 @@
  * POST: 提交新的问题反馈
  */
 session_start();
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-
-// 预检请求直接返回
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
+require_once __DIR__ . "/cors_headers.php";
 
 include_once __DIR__ . '/../config/Database.php';
 
@@ -26,7 +17,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 // GET 请求：获取用户的反馈列表
 if ($method === 'GET') {
     // 获取用户ID（支持 Session 和 URL 参数）
-    $user_id = intval($input['user_id'] ?? $_SESSION['user_id'] ?? 0);
+    $user_id = intval($_GET['user_id'] ?? $_SESSION['user_id'] ?? 0);
 
     if (empty($user_id)) {
         http_response_code(400);
@@ -35,8 +26,20 @@ if ($method === 'GET') {
     }
 
     try {
-        // 查询用户的反馈列表，包含回复内容
-        $query = "SELECT id, type, content, contact, status, reply, created_at, updated_at
+        // 检测 feedback 表是否有 reply 和 updated_at 列
+        // 自适应查询避免因缺少迁移列导致崩溃
+        $columns = [];
+        $colStmt = $db->prepare("SHOW COLUMNS FROM feedback");
+        $colStmt->execute();
+        while ($col = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+            $columns[] = $col['Field'];
+        }
+
+        $selectCols = ['id', 'type', 'content', 'contact', 'status', 'created_at'];
+        if (in_array('reply', $columns)) $selectCols[] = 'reply';
+        if (in_array('updated_at', $columns)) $selectCols[] = 'updated_at';
+
+        $query = "SELECT " . implode(', ', $selectCols) . "
                   FROM feedback
                   WHERE user_id = :user_id
                   ORDER BY created_at DESC";
@@ -56,10 +59,11 @@ if ($method === 'GET') {
         // 格式化输出
         foreach ($feedbackList as &$item) {
             $item['status_text'] = $statusMap[$item['status']] ?? '未知';
-            $item['has_reply'] = !empty($item['reply']);
-            // 格式化时间
-            $item['created_at_formatted'] = date('Y-m-d H:i', strtotime($item['created_at']));
-            if ($item['updated_at']) {
+            $item['has_reply'] = isset($item['reply']) && !empty($item['reply']);
+            if (isset($item['created_at'])) {
+                $item['created_at_formatted'] = date('Y-m-d H:i', strtotime($item['created_at']));
+            }
+            if (isset($item['updated_at']) && $item['updated_at']) {
                 $item['updated_at_formatted'] = date('Y-m-d H:i', strtotime($item['updated_at']));
             }
         }
@@ -73,7 +77,7 @@ if ($method === 'GET') {
         ), JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {
         http_response_code(500);
-        echo json_encode(array("message" => "服务器错误：" . $e->getMessage(), "code" => 500));
+        echo json_encode(array("message" => "服务器错误，请稍后重试", "code" => 500));
     }
     exit;
 }
@@ -84,9 +88,21 @@ if ($method === 'POST') {
     $input = json_decode(file_get_contents("php://input"), true);
 
     $user_id = intval($input['user_id'] ?? $_SESSION['user_id'] ?? 0);
+    // If user is logged in via session, enforce the user_id matches
+    if (isset($_SESSION['user_id']) && $user_id !== $_SESSION['user_id']) {
+        http_response_code(403);
+        echo json_encode(array("message" => "用户ID不匹配", "code" => 403));
+        exit;
+    }
     $type = isset($input['type']) ? trim($input['type']) : '';
     $content = isset($input['content']) ? trim($input['content']) : '';
     $contact = isset($input['contact']) ? trim($input['contact']) : '';
+    $allowedTypes = ['功能建议', '界面反馈', '性能问题', '内容错误', '账号问题', '其他'];
+    if (!in_array($type, $allowedTypes)) {
+        http_response_code(400);
+        echo json_encode(array("message" => "无效的反馈类型", "code" => 400));
+        exit;
+    }
 
     // 验证必填字段
     if (empty($user_id) || empty($type) || empty($content)) {
