@@ -9,7 +9,7 @@
               <el-switch v-model="form.enabled" :active-value="1" :inactive-value="0" />
             </el-form-item>
             <el-form-item label="应用名称">
-              <el-input v-model="form.title" placeholder="Simple Server" />
+              <el-input v-model="form.title" placeholder="Simple" />
             </el-form-item>
             <el-form-item label="底部文字">
               <el-input v-model="form.subtitle" placeholder="加载中..." />
@@ -34,7 +34,7 @@
           <template #header>预览</template>
           <div class="preview-box" :style="{ background: form.bg_color }">
             <div class="preview-logo">🖼</div>
-            <div class="preview-title">{{ form.title || 'Simple Server' }}</div>
+            <div class="preview-title">{{ form.title || 'Simple' }}</div>
             <div class="preview-sub">{{ form.subtitle || '加载中...' }}</div>
           </div>
         </el-card>
@@ -50,7 +50,7 @@ import { getSplashConfig, saveSplashConfig } from '@/api'
 
 const saving = ref(false)
 const form = reactive({
-  enabled: 1, title: 'Simple Server', subtitle: '加载中...',
+  enabled: 1, title: 'Simple', subtitle: '加载中...',
   logo_url: '', delay_ms: 300, bg_color: '#ffffff'
 })
 

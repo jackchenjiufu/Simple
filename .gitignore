@@ -23,3 +23,5 @@ yarn.lock
 # 临时脚本
 cleanup_final.py
 *.hermes-tmp.*
+keystore/
+*.bak*

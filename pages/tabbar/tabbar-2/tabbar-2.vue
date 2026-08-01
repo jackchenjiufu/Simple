@@ -46,6 +46,10 @@
 						<text class="stat-sub-value">¥{{ salary.bonus }}</text>
 					</view>
 					<view class="stat-item">
+						<text class="stat-sub-label">岗位津贴</text>
+						<text class="stat-sub-value">¥{{ salary.position_salary || 0 }}</text>
+					</view>
+					<view class="stat-item">
 						<text class="stat-sub-label">绩效</text>
 						<text class="stat-sub-value">¥{{ salary.performance_pay }}</text>
 					</view>
@@ -164,6 +168,10 @@
 				<view class="form-row">
 					<text class="form-label">奖金</text>
 					<input class="form-input right" v-model="salaryForm.bonus" type="digit" placeholder="0" />
+				</view>
+				<view class="form-row">
+					<text class="form-label">岗位津贴</text>
+					<input class="form-input right" v-model="salaryForm.position_salary" type="digit" placeholder="0" />
 				</view>
 				<view class="form-row">
 					<text class="form-label">绩效分</text>
@@ -296,7 +304,7 @@ export default {
 			formHours: '1.0', formNote: '', formType: 'overtime',
 			records: [], salary: null,
 			stats: { totalDays: 0, totalHours: '0.0', totalOvertimeSalary: '0' },
-			salaryForm: { base_salary: '0', bonus: '0', performance_score: '0', performance_rate: '1.0' },
+			salaryForm: { base_salary: '0', bonus: '0', position_salary: '0', performance_score: '0', performance_rate: '1.0' },
 			rateConfig: { normal: 1.5, weekend: 2.0, holiday: 3.0 },
 
 			showDatePicker: false, dpYear: now.getFullYear(), dpMonth: now.getMonth() + 1,
@@ -523,6 +531,7 @@ export default {
 						this.salaryForm = {
 							base_salary: String(d.salary_config.base_salary || 0),
 							bonus: String(d.salary_config.bonus || 0),
+							position_salary: String(d.salary_config.position_salary || 0),
 							performance_score: String(d.salary_config.performance_score || 0),
 							performance_rate: String(d.salary_config.performance_rate || 1.0),
 							social_insurance: !!d.salary_config.social_insurance,
@@ -533,7 +542,7 @@ export default {
 						};
 					} else {
 						this.salary = null;
-						this.salaryForm = { base_salary: '0', bonus: '0', performance_score: '0', performance_rate: '1.0',
+						this.salaryForm = { base_salary: '0', bonus: '0', position_salary: '0', performance_score: '0', performance_rate: '1.0',
 							social_insurance: false, si_pension: '8', si_medical: '2', si_unemployment: '0.5', si_housing: '8' };
 					}
 					if (d.rate_config) this.rateConfig = d.rate_config;
@@ -594,6 +603,7 @@ export default {
 					data: { action:'save_salary', user_id: this.userInfo.id, month: `${this.viewYear}-${String(this.viewMonth).padStart(2,'0')}`,
 						base_salary: parseFloat(this.salaryForm.base_salary)||0,
 						bonus: parseFloat(this.salaryForm.bonus)||0,
+						position_salary: parseFloat(this.salaryForm.position_salary)||0,
 						performance_score: parseFloat(this.salaryForm.performance_score)||0,
 						performance_rate: parseFloat(this.salaryForm.performance_rate)||1.0,
 						overtime_rate: rate, social_insurance: this.salaryForm.social_insurance ? 1 : 0,

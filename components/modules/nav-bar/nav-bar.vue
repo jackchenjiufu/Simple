@@ -2,14 +2,6 @@
   <view class="nav-bar">
     <view
       class="nav-item"
-      :class="{ active: activeTab === 'ledger' }"
-      @click="switchTab('ledger')"
-    >
-      <text class="nav-label">记账</text>
-      <view class="nav-indicator" v-if="activeTab === 'ledger'"></view>
-    </view>
-    <view
-      class="nav-item"
       :class="{ active: activeTab === 'articles' }"
       @click="switchTab('articles')"
     >
@@ -33,7 +25,7 @@ export default {
   props: {
     activeTab: {
       type: String,
-      default: 'ledger'
+      default: 'articles'
     }
   },
   methods: {

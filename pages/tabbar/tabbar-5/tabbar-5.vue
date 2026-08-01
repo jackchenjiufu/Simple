@@ -370,6 +370,12 @@ export default {
 		async updateUserInfo(data) {
 			try {
 				
+				// 从本地存储获取token，用于App原生环境认证
+				const token = uni.getStorageSync('token');
+				if (token) {
+					data.auth_token = token;
+				}
+				
 				// 发送请求更新用户信息
 				const res = await uni.request({
 					url: this.apiBase + 'update_user.php',

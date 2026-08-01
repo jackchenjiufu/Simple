@@ -31,6 +31,15 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  // App 内鉴权通过后携带 token 进入（?admin_token=xxx），免二次登录
+  const tk = to.query.admin_token
+  if (tk) {
+    localStorage.setItem('admin_token', tk)
+    const name = to.query.admin_name || '管理员'
+    localStorage.setItem('adminInfo', JSON.stringify({ username: name, role: 'admin', token_login: true }))
+    next({ path: '/', replace: true })
+    return
+  }
   const admin = localStorage.getItem('adminInfo')
   if (to.path !== '/login' && !admin) {
     next('/login')

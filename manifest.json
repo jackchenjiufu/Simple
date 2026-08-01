@@ -1,9 +1,9 @@
 {
-	"name": "Simple Server",
+	"name": "Simple",
 	"appid": "__UNI__F3BE11F",
 	"description": "一个禅意构造的APP",
-	"versionName": "2.3.0",
-	"versionCode": 535,
+	"versionName": "2.4.3",
+	"versionCode": 540,
 	"transformPx": false,
 	"compatConfig": {
 		"MODE": 2
@@ -36,22 +36,13 @@
 					"<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>",
 					"<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>"
 				],
-				"packagename": "com.simple.doo"
+				"packagename": "com.simple.app"
 			},
 			"ios": {
 				"dSYMs": false,
 				"idfa": false
 			},
 			"sdkConfigs": {},
-			"splashscreen": {
-				"androidStyle": "default",
-				"useOriginalMsgbox": false,
-				"autoclose": true,
-				"delay": 1500,
-				"android": {
-					"xxhdpi": "F:/chenj/Pictures/Sc.png"
-				}
-			},
 			"icons": {
 				"android": {
 					"hdpi": "unpackage/res/icons/72x72.png",
@@ -85,15 +76,15 @@
 				}
 			}
 		},
-		"splashscreen": {
-			"waiting": false,
-			"alwaysShowBeforeRender": false,
-			"autoclose": true,
-			"delay": 1500
-		},
 		"nvueCompiler": "uni-app",
 		"softinput": {
 			"mode": "adjustResize"
+		},
+		"splashscreen": {
+			"alwaysShowBeforeRender": false,
+			"autoclose": true,
+			"delay": 0,
+			"waiting": false
 		}
 	},
 	"quickapp": {},

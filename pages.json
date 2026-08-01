@@ -10,13 +10,13 @@
 			}
 		},
 		{
-			"path": "pages/auth/login",
+			"path": "pages/tabbar/tabbar-1/tabbar-1",
 			"style": {
 				"navigationStyle": "custom"
 			}
 		},
 		{
-			"path": "pages/tabbar/tabbar-1/tabbar-1",
+			"path": "pages/auth/login",
 			"style": {
 				"navigationStyle": "custom"
 			}
@@ -95,6 +95,90 @@
 		},
 		{
 			"path": "pages/info/system-settings",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/info/admin-webview",
+			"style": {
+				"navigationBarTitleText": "后台管理"
+			}
+		},
+		{
+			"path": "pages/admin/index",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/dashboard",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/users",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/articles",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/feedback",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/carousel",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/announcement",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/version",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/overtime",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/permissions",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/logs",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/hotsearch",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/stats",
 			"style": {
 				"navigationStyle": "custom"
 			}
