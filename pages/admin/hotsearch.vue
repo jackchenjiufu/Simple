@@ -30,6 +30,16 @@
 						{{ runningDouyin ? '抓取中...' : '手动执行' }}
 					</button>
 				</view>
+
+				<view class="tool-item">
+					<view class="tool-info">
+						<text class="tool-name">头条热榜</text>
+						<text class="tool-desc">抓取当天头条热榜数据并发布为文章</text>
+					</view>
+					<button class="tool-btn" :class="{ 'btn-disabled': runningToutiao }" @click="runCrawl('toutiao')">
+						{{ runningToutiao ? '抓取中...' : '手动执行' }}
+					</button>
+				</view>
 			</view>
 
 			<!-- 执行结果 -->
@@ -52,6 +62,7 @@ export default {
 			statusBarHeight: 0,
 			runningWeibo: false,
 			runningDouyin: false,
+			runningToutiao: false,
 			resultText: '',
 		};
 	},
@@ -61,15 +72,19 @@ export default {
 	methods: {
 		goBack() { uni.navigateBack(); },
 		runCrawl(type) {
-			if (this.runningWeibo || this.runningDouyin) return;
+			if (this.runningWeibo || this.runningDouyin || this.runningToutiao) return;
 			const isWeibo = type === 'weibo';
-			if (isWeibo) this.runningWeibo = true; else this.runningDouyin = true;
+			const isToutiao = type === 'toutiao';
+			if (isWeibo) this.runningWeibo = true;
+			else if (isToutiao) this.runningToutiao = true;
+			else this.runningDouyin = true;
 			this.resultText = '';
 			uni.showLoading({ title: '正在抓取...', mask: true });
-			const req = isWeibo ? adminApi.crawlWeiboHot() : adminApi.crawlDouyinHot();
+			const req = isWeibo ? adminApi.crawlWeiboHot() : (isToutiao ? adminApi.crawlToutiaoHot() : adminApi.crawlDouyinHot());
+			const name = isWeibo ? '微博热搜' : (isToutiao ? '头条热榜' : '抖音热榜');
 			req.then((r) => {
 				if (r && r.code === 200) {
-					this.resultText = `${isWeibo ? '微博热搜' : '抖音热榜'}抓取完成：${r.message || '成功'}`;
+					this.resultText = `${name}抓取完成：${r.message || '成功'}`;
 					uni.showToast({ title: '抓取完成', icon: 'success' });
 				} else {
 					this.resultText = `抓取失败：${(r && r.message) || '未知错误'}`;
@@ -82,6 +97,7 @@ export default {
 				uni.hideLoading();
 				this.runningWeibo = false;
 				this.runningDouyin = false;
+				this.runningToutiao = false;
 			});
 		},
 	},

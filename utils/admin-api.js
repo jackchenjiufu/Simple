@@ -105,6 +105,7 @@ const adminApi = {
   // ===== 热搜抓取（手动触发）=====
   crawlWeiboHot: () => request('crawl_hotsearch.php', { method: 'GET', timeout: 120000 }),
   crawlDouyinHot: () => request('crawl_douyin_hotsearch.php', { method: 'GET', timeout: 120000 }),
+  crawlToutiaoHot: () => request('crawl_toutiao_hotsearch.php', { method: 'GET', timeout: 120000 }),
 
   // ===== 系统日志 =====
   getLogs: (page = 1, limit = 20) =>
