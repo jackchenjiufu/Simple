@@ -96,9 +96,15 @@ export default {
 				header: { 'Content-Type': 'application/json' },
 				success: (res) => {
 					uni.hideLoading();
-					uni.clearStorageSync();
-					uni.showToast({ title: '账号已注销', icon: 'success' });
-					setTimeout(() => uni.redirectTo({ url: '/pages/auth/login' }), 2000);
+					const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+					if (result.code === 200) {
+						uni.clearStorageSync();
+						uni.showToast({ title: '账号已注销', icon: 'success' });
+						setTimeout(() => uni.redirectTo({ url: '/pages/auth/login' }), 2000);
+					} else {
+						this.loading = false;
+						uni.showToast({ title: result.message || '注销失败', icon: 'none' });
+					}
 				},
 				fail: () => {
 					uni.hideLoading();

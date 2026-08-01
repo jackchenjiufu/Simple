@@ -89,26 +89,51 @@ export default {
 								}
 								if (targetUrl) {
 									// #ifdef APP-PLUS
-									var dt = plus.downloader.createDownload(targetUrl, { filename: "_doc/update/" }, function(dl, status) {
-										if (status === 200) {
-											if (isWgt) {
-												plus.runtime.install(dl.filename, { force: true }, function() {
-													uni.setStorageSync("wgtVersion", newVer);
-													setTimeout(function() { plus.runtime.restart(); }, 500);
-												}, function(e) {
-													console.error("WGT安装失败:", e);
-													uni.setStorageSync("pendingWgtPath", dl.filename);
-													uni.setStorageSync("pendingWgtVersion", newVer);
-												});
-											} else {
-												uni.setStorageSync("pendingApkPath", dl.filename);
-												uni.setStorageSync("pendingWgtVersion", newVer);
-											}
-										} else {
-											console.error("更新包下载失败, 状态:", status);
+									// 弹窗提示用户，确认后下载安装
+									uni.showModal({
+										title: '发现新版本 v' + newVer,
+										content: (result.data.description || '新版本已发布') + (isWgt ? '' : '\n\n更新包约十几 MB，请在网络良好时更新'),
+										confirmText: '立即更新',
+										cancelText: '稍后再说',
+										success: function(confirm) {
+											if (!confirm.confirm) return;
+											uni.showLoading({ title: '正在下载更新...', mask: true });
+											var dt = plus.downloader.createDownload(targetUrl, { filename: "_doc/update/" }, function(dl, status) {
+												uni.hideLoading();
+												if (status === 200) {
+													if (isWgt) {
+														plus.runtime.install(dl.filename, { force: true }, function() {
+															uni.setStorageSync("wgtVersion", newVer);
+															uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
+															setTimeout(function() { plus.runtime.restart(); }, 800);
+														}, function(e) {
+															console.error("WGT安装失败:", e);
+															uni.setStorageSync("pendingWgtPath", dl.filename);
+															uni.setStorageSync("pendingWgtVersion", newVer);
+															uni.showToast({ title: '安装失败，重启后自动重试', icon: 'none' });
+														});
+													} else {
+														uni.setStorageSync("pendingApkPath", dl.filename);
+														uni.setStorageSync("pendingWgtVersion", newVer);
+														uni.showToast({ title: '下载完成，请确认安装', icon: 'none' });
+														// 立即尝试安装（Android 会拉起系统安装确认）
+														plus.runtime.install(dl.filename, { force: true }, function() {
+															uni.setStorageSync("wgtVersion", newVer);
+															uni.removeStorageSync("pendingApkPath");
+															uni.removeStorageSync("pendingWgtVersion");
+															uni.showToast({ title: '更新成功', icon: 'none' });
+														}, function(e) {
+															console.error("APK安装失败:", e);
+															// 等待下次启动 installPendingWgt 重试
+														});
+													}
+												} else {
+													uni.showToast({ title: '下载失败，请稍后重试', icon: 'none' });
+												}
+											});
+											dt.start();
 										}
 									});
-									dt.start();
 									// #endif
 								}
 							}

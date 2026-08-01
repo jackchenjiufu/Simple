@@ -109,7 +109,7 @@ export default {
 	},
 	computed: {
 		sanitizedContent() {
-			return this.enhanceContent(this.sanitizeHtml(this.article.content));
+			return this.enhanceContent(this.sanitizeHtml(this.mdToHtml(this.article.content)));
 		},
 		avatarUrl() {
 			return apiConfig.getImageUrl(this.article.author_avatar);
@@ -171,6 +171,54 @@ export default {
 				});
 			});
 		},
+		// Markdown → HTML（轻量转换：标题/链接/图片/加粗/斜体/行内代码/列表/引用）
+		mdToHtml(md) {
+			if (!md) return '';
+			// 兼容字面 \n（数据以 JSON 转义形式存储）
+			md = String(md).replace(/\\n/g, '\n');
+			const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			const inline = (s) => {
+				// 图片 ![alt](url)（URL 允许空格）
+				s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, u) => `<img src="${esc(u.trim())}" alt="${esc(alt)}" />`);
+				// 链接 [text](url)（URL 允许空格）
+				s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, t, u) => `<a href="${esc(u.trim())}">${t}</a>`);
+				// 行内代码 `code`
+				s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+				// 加粗 **text**
+				s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+				// 斜体 *text*
+				s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+				return s;
+			};
+			const lines = md.split(/\r?\n/);
+			const out = [];
+			let inList = null; // 'ul' | 'ol'
+			const closeList = () => { if (inList) { out.push('</' + inList + '>'); inList = null; } };
+			for (let line of lines) {
+				const t = line.trim();
+				if (!t) { closeList(); continue; }
+				let m;
+				if ((m = t.match(/^(#{1,4})\s+(.*)/))) {
+					closeList();
+					const lv = m[1].length;
+					out.push(`<h${lv}>${inline(m[2])}</h${lv}>`);
+				} else if (/^[-*]\s+/.test(t)) {
+					if (inList !== 'ul') { closeList(); out.push('<ul>'); inList = 'ul'; }
+					out.push(`<li>${inline(t.replace(/^[-*]\s+/, ''))}</li>`);
+				} else if (/^\d+[.、]\s+/.test(t)) {
+					if (inList !== 'ol') { closeList(); out.push('<ol>'); inList = 'ol'; }
+					out.push(`<li>${inline(t.replace(/^\d+[.、]\s+/, ''))}</li>`);
+				} else if (/^>\s?/.test(t)) {
+					closeList();
+					out.push(`<blockquote>${inline(t.replace(/^>\s?/, ''))}</blockquote>`);
+				} else {
+					closeList();
+					out.push(`<p>${inline(t)}</p>`);
+				}
+			}
+			closeList();
+			return out.join('');
+		},
 		sanitizeHtml(html) {
 			if (!html) return '';
 			return html
@@ -190,6 +238,7 @@ export default {
 				.replace(/<h1>/gi, '<h1 class="content-h1">')
 				.replace(/<h2>/gi, '<h2 class="content-h2">')
 				.replace(/<h3>/gi, '<h3 class="content-h3">')
+				.replace(/<h4>/gi, '<h4 class="content-h4">')
 				.replace(/<p>/gi, '<p class="content-p">')
 				.replace(/<ul>/gi, '<ul class="content-ul">')
 				.replace(/<ol>/gi, '<ol class="content-ol">');
@@ -352,6 +401,12 @@ export default {
 	font-weight: 600;
 	color: #2d3748;
 	margin: 32upx 0 12upx;
+}
+.section-text >>> .content-h4 {
+	font-size: 28upx;
+	font-weight: 600;
+	color: #2d3748;
+	margin: 24upx 0 10upx;
 }
 .section-text >>> .content-image {
 	width: 100%;

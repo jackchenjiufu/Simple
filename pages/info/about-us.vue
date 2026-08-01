@@ -13,7 +13,7 @@
 			</view>
 			<view class="header-content">
 				<view class="header-left">
-					<text class="header-greeting">Simple Server</text>
+					<text class="header-greeting">Simple</text>
 					<text class="header-title">关于我们</text>
 					<text class="header-subtitle">了解应用更多信息</text>
 				</view>
@@ -38,7 +38,7 @@
 				<view class="app-logo-wrap">
 					<image class="app-logo" src="/static/logo.png" mode="aspectFit"></image>
 				</view>
-				<text class="app-name">Simple Server</text>
+				<text class="app-name">Simple</text>
 				<text class="app-desc">一个禅意构造的APP</text>
 			</view>
 

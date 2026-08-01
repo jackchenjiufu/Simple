@@ -11,6 +11,12 @@
 
 		<scroll-view class="content-area" scroll-y="true">
 			<view class="settings-section">
+				<view class="settings-item" v-if="isAdmin" @click="goAdmin">
+					<view class="item-left">
+						<text class="item-text">后台管理</text>
+					</view>
+					<text class="item-arrow">›</text>
+				</view>
 				<view class="settings-item" @click="checkUpdate">
 					<view class="item-left">
 						<text class="item-text">检查更新</text>
@@ -102,6 +108,7 @@
 						</view>
 					</view>
 				</view>
+
 		</scroll-view>
 	</view>
 </template>
@@ -116,13 +123,18 @@ export default {
 		showLogoutModal: false,
 		showClearCacheModal: false,
 		cacheSize: '计算中...',
+		isAdmin: false,
 	};
 	},
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
 		this.isLoggedIn = !!uni.getStorageSync('isLoggedIn');
-			this.getCacheSize();
+		this.getCacheSize();
+		// 管理员才有后台管理入口（登录时写入 isAdmin，兼容旧数据再读一次 userInfo.role）
+		this.isAdmin = uni.getStorageSync('isAdmin') === true;
+		const ui = uni.getStorageSync('userInfo');
+		if (!this.isAdmin && ui && ui.role === 'admin') this.isAdmin = true;
 	},
 	methods: {
 		checkUpdate() { uni.navigateTo({ url: '/pages/info/check-update' }); },
@@ -138,6 +150,10 @@ export default {
 		},
 		handleSystemPermissions() {
 			uni.navigateTo({ url: '/pages/info/system-permissions' });
+		},
+		goAdmin() {
+			// 登录时已鉴权并保存 token，直达原生后台管理
+			uni.navigateTo({ url: '/pages/admin/index' });
 		},
 		confirmLogout() {
 			uni.removeStorageSync('userInfo'); uni.removeStorageSync('isLoggedIn');
@@ -355,6 +371,7 @@ export default {
 	opacity: 0.9;
 	transform: scale(0.97);
 }
+
 
 ::-webkit-scrollbar { width: 0; height: 0; display: none; }
 </style>

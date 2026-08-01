@@ -182,8 +182,16 @@ export default {
 			if (typeof plus === 'undefined') return;
 			var self = this;
 
+			// 按文件类型分流：.apk → 全量包（系统安装器，不自动重启）；.wgt → 热更新
+			var isWgt = url && url.indexOf('.wgt') > 0;
+			var isApk = url && url.indexOf('.apk') > 0;
+			if (isApk) {
+				self._downloadAndInstallApk(url);
+				return;
+			}
+
 			// === WGT更新：下载 → 安装 → 重启 ===
-			if (url) {
+			if (isWgt) {
 				uni.showToast({ title: '正在下载更新包...', icon: 'loading', duration: 15000 });
 				var dtask = plus.downloader.createDownload(url, { filename: '_doc/update/' }, function(d, status) {
 					uni.hideToast();

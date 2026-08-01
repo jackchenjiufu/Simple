@@ -75,6 +75,7 @@ const handleLogin = async () => {
     const res = await login(form.username, form.password)
     if (res.data.code === 200 && res.data.data) {
       localStorage.setItem('adminInfo', JSON.stringify(res.data.data))
+      if (res.data.data.token) localStorage.setItem('admin_token', res.data.data.token)
       ElMessage.success('登录成功')
       router.push('/')
     } else {

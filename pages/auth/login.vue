@@ -155,10 +155,12 @@ export default {
 		async register() {
 			this.loading = true;
 			try {
+				const data = { username: this.username, password: this.password };
+				if (this.email) data.email = this.email;
 				const res = await uni.request({
 					url: apiConfig.baseUrl + 'register.php',
 					method: 'POST',
-					data: { username: this.username, password: this.password },
+					data,
 					header: { 'Content-Type': 'application/json' }
 				});
 				this.loading = false;
@@ -192,6 +194,11 @@ export default {
 					uni.setStorageSync('token', token);
 						uni.setStorageSync('userId', userInfo.id);
 						uni.setStorageSync('isLoggedIn', true);
+					// 管理员身份标记（有权限才显示后台管理入口）
+					uni.setStorageSync('isAdmin', userInfo.role === 'admin');
+					if (userInfo.role === 'admin' && responseData.admin_token) {
+						uni.setStorageSync('adminToken', responseData.admin_token);
+					}
 					setTimeout(() => {
 						uni.switchTab({ url: '/pages/tabbar/tabbar-1/tabbar-1' });
 					}, 1500);
