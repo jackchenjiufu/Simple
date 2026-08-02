@@ -9,7 +9,7 @@
 			<view class="nav-placeholder"></view>
 		</view>
 
-		<scroll-view class="body" scroll-y="true" show-scrollbar="false">
+		<scroll-view class="body" scroll-y="true" show-scrollbar="false" style="height: calc(100vh - 88px);">
 			<!-- 角色列表（点击进入权限分配） -->
 			<view class="section-title">角色列表</view>
 			<view class="panel">
@@ -45,7 +45,7 @@
 					<text class="sheet-title">分配权限 · {{ currentRole.name }}</text>
 					<text class="sheet-close" @click="showAssign = false">✕</text>
 				</view>
-				<scroll-view class="assign-body" scroll-y="true">
+				<scroll-view class="assign-body" scroll-y="true" style="height: 50vh;">
 					<view class="assign-item" v-for="p in permissions" :key="p.id" @click="togglePerm(p.id)">
 						<view class="perm-check" :class="{ checked: assignedPerms.includes(p.id) }">
 							<text v-if="assignedPerms.includes(p.id)">✓</text>
