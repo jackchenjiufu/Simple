@@ -56,9 +56,9 @@ export default {
 			statusBarHeight: 0,
 			stats: [
 				{ label: '用户总数', value: '-', color: 1 },
-				{ label: '关注关系', value: '-', color: 2 },
-				{ label: '内容总数', value: '-', color: 3 },
-				{ label: '私信总数', value: '-', color: 4 },
+				{ label: '文章总数', value: '-', color: 2 },
+				{ label: '今日新增', value: '-', color: 3 },
+				{ label: '待处理反馈', value: '-', color: 4 },
 			],
 			contentTypes: [],
 			activeUsers: [],
@@ -76,9 +76,9 @@ export default {
 				if (res.code === 200 && res.data) {
 					const d = res.data;
 					this.stats[0].value = d.total_users ?? '-';
-					this.stats[1].value = d.total_follows ?? '-';
-					this.stats[2].value = d.total_content ?? '-';
-					this.stats[3].value = d.total_messages ?? '-';
+					this.stats[1].value = d.total_articles ?? d.total_content ?? '-';
+					this.stats[2].value = d.today_users ?? '-';
+					this.stats[3].value = d.total_pending_feedback ?? '-';
 				}
 			}).catch(() => {});
 
