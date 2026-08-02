@@ -59,7 +59,24 @@
 					<button class="btn-warn" v-if="detail.status == 1" @click="handleUnban(detail)">解封</button>
 					<button class="btn-warn" v-if="detail.status != 2" @click="handleMute(detail)">禁言</button>
 					<button class="btn-warn" v-if="detail.status == 2" @click="handleUnmute(detail)">解除禁言</button>
+					<button class="btn-role" @click="openRoleAssign(detail)">权限管理</button>
 					<button class="btn-danger" @click="handleDelete(detail)">删除用户</button>
+				</view>
+			</view>
+		</view>
+
+		<!-- 角色分配弹层 -->
+		<view class="mask" v-if="showRoleAssign" @click="showRoleAssign = false">
+			<view class="sheet" @click.stop>
+				<view class="sheet-header">
+					<text class="sheet-title">分配角色 · {{ roleUser.username }}</text>
+					<text class="sheet-close" @click="showRoleAssign = false">✕</text>
+				</view>
+				<view class="role-list">
+					<view class="role-opt" v-for="r in roleOptions" :key="r.id" @click="assignRole(r)">
+						<text class="role-opt-name">{{ r.name }}</text>
+						<text class="role-opt-desc">{{ r.description || '' }}</text>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -105,6 +122,9 @@ export default {
 			detail: null,
 			showCreate: false,
 			createForm: { username: '', password: '', nickname: '' },
+			showRoleAssign: false,
+			roleUser: null,
+			roleOptions: [],
 		};
 	},
 	onLoad() {
@@ -181,6 +201,21 @@ export default {
 		handleUnban(u) { this.setUserStatus(u, 0, '解封'); },
 		handleMute(u) { this.showDurationPicker(u, 'mute'); },
 		handleUnmute(u) { this.setUserStatus(u, 0, '解除禁言'); },
+		openRoleAssign(u) {
+			this.roleUser = u;
+			this.showRoleAssign = true;
+			adminApi.getRoles().then(res => {
+				if (res.code === 200) this.roleOptions = res.data || [];
+			}).catch(() => {});
+		},
+		assignRole(r) {
+			uni.showLoading({ title: '分配中...' });
+			adminApi.assignUserRole(this.roleUser.id, r.id).then(() => {
+				uni.hideLoading();
+				uni.showToast({ title: '已分配 ' + r.name, icon: 'success' });
+				this.showRoleAssign = false;
+			}).catch(() => { uni.hideLoading(); });
+		},
 		handleDelete(u) {
 			uni.showModal({
 				title: '删除用户',
@@ -276,7 +311,19 @@ export default {
 .dl { width: 80px; color: #909399; font-size: 14px; }
 .dv { flex: 1; color: #333; font-size: 14px; }
 .sheet-actions { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+.role-list { max-height: 50vh; overflow-y: auto; }
+.role-opt {
+	display: flex; align-items: center; justify-content: space-between;
+	padding: 14px 8px; border-bottom: 1px solid #f5f5f5;
+}
+.role-opt:last-child { border-bottom: none; }
+.role-opt-name { font-size: 15px; font-weight: 500; color: #1a1a2e; }
+.role-opt-desc { font-size: 12px; color: #999; }
 .sheet-actions button { flex: 1; min-width: 100px; margin: 0; }
+.btn-role {
+	background: #fff; color: #3071f6; border: 1px solid #3071f6; border-radius: 12px;
+	font-size: 14px; height: 44px; line-height: 44px;
+}
 .btn-warn {
 	background: #fff; color: #f59e0b; border: 1px solid #f59e0b; border-radius: 12px;
 	font-size: 14px; height: 44px; line-height: 44px;
