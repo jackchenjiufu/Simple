@@ -1,6 +1,21 @@
 <template>
 	<view class="app-container">
 		<slot />
+
+		<!-- 更新提示弹窗（左右按钮布局） -->
+		<view class="update-overlay" v-if="showUpdateModal" @click="cancelUpdate">
+			<view class="update-modal" @click.stop>
+				<view class="update-icon-wrap">
+					<text class="update-icon-text">↑</text>
+				</view>
+				<text class="update-modal-title">{{ updateModalTitle }}</text>
+				<text class="update-modal-desc">{{ updateModalDesc }}</text>
+				<view class="update-modal-actions">
+					<button class="update-btn cancel" @click="cancelUpdate">稍后再说</button>
+					<button class="update-btn confirm" @click="confirmUpdate">立即更新</button>
+				</view>
+			</view>
+		</view>
 	</view>
 </template>
 
@@ -9,6 +24,14 @@ import apiConfig from './utils/api.js';
 
 export default {
 	globalData: { userInfo: null },
+	data() {
+		return {
+			showUpdateModal: false,
+			updateModalTitle: '',
+			updateModalDesc: '',
+			_updateInfo: null,
+		};
+	},
 	onLaunch: function() {
 		var loginPages = [
 			"pages/auth/login",
@@ -59,8 +82,66 @@ export default {
 		this.silentCheckWgt();
 	},
 	methods: {
+		cancelUpdate() {
+			this.showUpdateModal = false;
+			this._updateInfo = null;
+		},
+		confirmUpdate() {
+			this.showUpdateModal = false;
+			var info = this._updateInfo;
+			this._updateInfo = null;
+			if (!info) return;
+			this._downloadUpdate(info.targetUrl, info.isWgt, info.newVer);
+		},
+		_downloadUpdate(targetUrl, isWgt, newVer) {
+			// #ifdef APP-PLUS
+			uni.showLoading({ title: '正在下载更新...', mask: true });
+			// 确保下载目录存在
+			var dir = '_doc/update/';
+			try {
+				plus.io.resolveLocalFileSystemURL('_doc/', function(entry) {
+					entry.getDirectory('update', { create: true }, function() {}, function() {});
+				}, function() {});
+			} catch(e) {}
+			var dt = plus.downloader.createDownload(targetUrl, { filename: dir }, function(dl, status) {
+				uni.hideLoading();
+				if (status === 200) {
+					if (isWgt) {
+						plus.runtime.install(dl.filename, { force: true }, function() {
+							uni.setStorageSync("wgtVersion", newVer);
+							uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
+							setTimeout(function() { plus.runtime.restart(); }, 800);
+						}, function(e) {
+							console.error("WGT安装失败:", e);
+							uni.setStorageSync("pendingWgtPath", dl.filename);
+							uni.setStorageSync("pendingWgtVersion", newVer);
+							uni.showToast({ title: '安装失败，重启后自动重试', icon: 'none' });
+						});
+					} else {
+						uni.setStorageSync("pendingApkPath", dl.filename);
+						uni.setStorageSync("pendingWgtVersion", newVer);
+						uni.showToast({ title: '下载完成，请确认安装', icon: 'none' });
+						// 立即尝试安装（Android 会拉起系统安装确认）
+						plus.runtime.install(dl.filename, { force: true }, function() {
+							uni.setStorageSync("wgtVersion", newVer);
+							uni.removeStorageSync("pendingApkPath");
+							uni.removeStorageSync("pendingWgtVersion");
+							uni.showToast({ title: '更新成功', icon: 'none' });
+						}, function(e) {
+							console.error("APK安装失败:", e);
+							// 等待下次启动 installPendingWgt 重试
+						});
+					}
+				} else {
+					uni.showToast({ title: '下载失败，请稍后重试', icon: 'none' });
+				}
+			});
+			dt.start();
+			// #endif
+		},
 		silentCheckWgt() {
 			// #ifdef APP-PLUS
+			var that = this;
 			var storedVer = uni.getStorageSync('wgtVersion') || '';
 			var sysInfo = uni.getSystemInfoSync();
 			var curVer = storedVer || sysInfo.appVersion || '1.0.0';
@@ -89,51 +170,12 @@ export default {
 								}
 								if (targetUrl) {
 									// #ifdef APP-PLUS
-									// 弹窗提示用户，确认后下载安装
-									uni.showModal({
-										title: '发现新版本 v' + newVer,
-										content: (result.data.description || '新版本已发布') + (isWgt ? '' : '\n\n更新包约十几 MB，请在网络良好时更新'),
-										confirmText: '立即更新',
-										cancelText: '稍后再说',
-										success: function(confirm) {
-											if (!confirm.confirm) return;
-											uni.showLoading({ title: '正在下载更新...', mask: true });
-											var dt = plus.downloader.createDownload(targetUrl, { filename: "_doc/update/" }, function(dl, status) {
-												uni.hideLoading();
-												if (status === 200) {
-													if (isWgt) {
-														plus.runtime.install(dl.filename, { force: true }, function() {
-															uni.setStorageSync("wgtVersion", newVer);
-															uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
-															setTimeout(function() { plus.runtime.restart(); }, 800);
-														}, function(e) {
-															console.error("WGT安装失败:", e);
-															uni.setStorageSync("pendingWgtPath", dl.filename);
-															uni.setStorageSync("pendingWgtVersion", newVer);
-															uni.showToast({ title: '安装失败，重启后自动重试', icon: 'none' });
-														});
-													} else {
-														uni.setStorageSync("pendingApkPath", dl.filename);
-														uni.setStorageSync("pendingWgtVersion", newVer);
-														uni.showToast({ title: '下载完成，请确认安装', icon: 'none' });
-														// 立即尝试安装（Android 会拉起系统安装确认）
-														plus.runtime.install(dl.filename, { force: true }, function() {
-															uni.setStorageSync("wgtVersion", newVer);
-															uni.removeStorageSync("pendingApkPath");
-															uni.removeStorageSync("pendingWgtVersion");
-															uni.showToast({ title: '更新成功', icon: 'none' });
-														}, function(e) {
-															console.error("APK安装失败:", e);
-															// 等待下次启动 installPendingWgt 重试
-														});
-													}
-												} else {
-													uni.showToast({ title: '下载失败，请稍后重试', icon: 'none' });
-												}
-											});
-											dt.start();
-										}
-									});
+									// 自定义弹窗（左右按钮布局）
+									var self = that;
+									self.updateModalTitle = '发现新版本 v' + newVer;
+									self.updateModalDesc = (result.data.description || '新版本已发布') + (isWgt ? '' : '\n\n更新包约十几 MB，请在网络良好时更新');
+									self._updateInfo = { targetUrl: targetUrl, isWgt: isWgt, newVer: newVer };
+									self.showUpdateModal = true;
 									// #endif
 								}
 							}
@@ -214,4 +256,41 @@ function compareVersion(v1, v2) {
 @import "./static/css/global.css";
 .app-container { width: 100%; height: 100vh; background-color: var(--bg-light); }
 page { width: 100%; height: 100%; }
+
+/* 更新提示弹窗（左右按钮） */
+.update-overlay {
+	position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+	background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center;
+	z-index: 99999; padding: 40upx;
+}
+.update-modal {
+	background: #fff; border-radius: 28upx; padding: 40upx 36upx 32upx;
+	width: 86%; max-width: 560upx; box-shadow: 0 16upx 48upx rgba(0,0,0,0.15);
+	text-align: center;
+}
+.update-icon-wrap {
+	width: 80upx; height: 80upx; border-radius: 50%;
+	background: linear-gradient(135deg, #eff6ff, #dbeafe);
+	display: flex; align-items: center; justify-content: center;
+	margin: 0 auto 20upx; box-shadow: 0 4upx 16upx rgba(48, 113, 246, 0.25);
+}
+.update-icon-text { font-size: 40upx; color: #3071f6; font-weight: 700; }
+.update-modal-title {
+	display: block; font-size: 30upx; font-weight: 700; color: #1f2937; margin-bottom: 16upx;
+}
+.update-modal-desc {
+	display: block; font-size: 24upx; color: #6b7280; line-height: 1.6; margin-bottom: 28upx;
+}
+.update-modal-actions { display: flex; gap: 16upx; }
+.update-btn {
+	flex: 1; height: 80upx; line-height: 80upx; font-size: 28upx;
+	border-radius: 14upx; border: none; padding: 0; margin: 0;
+}
+.update-btn.cancel {
+	background: #f3f4f6; color: #374151; font-weight: 500;
+}
+.update-btn.confirm {
+	background: linear-gradient(135deg, #3071f6, #1b44a6); color: #fff; font-weight: 600;
+	box-shadow: 0 4upx 12upx rgba(48, 113, 246, 0.3);
+}
 </style>
