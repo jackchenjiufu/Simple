@@ -51,6 +51,8 @@
 				<view class="detail-row"><text class="dl">昵称</text><text class="dv">{{ detail.nickname || '-' }}</text></view>
 				<view class="detail-row"><text class="dl">角色</text><text class="dv">{{ detail.role === 'admin' ? '管理员' : '普通用户' }}</text></view>
 				<view class="detail-row"><text class="dl">状态</text><text class="dv" :style="detail.status == 1 ? 'color:#ef4444' : detail.status == 2 ? 'color:#f59e0b' : ''">{{ detail.status == 1 ? '已封禁' : detail.status == 2 ? '已禁言' : '正常' }}</text></view>
+				<view class="detail-row" v-if="detail.status == 1"><text class="dl">解封时间</text><text class="dv">{{ detail.ban_expire ? detail.ban_expire.replace('T', ' ') : '永久' }}</text></view>
+				<view class="detail-row" v-if="detail.status == 2"><text class="dl">禁言到期</text><text class="dv">{{ detail.mute_expire ? detail.mute_expire.replace('T', ' ') : '永久' }}</text></view>
 				<view class="detail-row"><text class="dl">注册时间</text><text class="dv">{{ detail.created_at }}</text></view>
 				<view class="sheet-actions">
 					<button class="btn-warn" v-if="detail.status != 1" @click="handleBan(detail)">封禁</button>
@@ -129,6 +131,36 @@ export default {
 			if (this.users.length < this.total) this.loadUsers(false);
 		},
 		openDetail(u) { this.detail = u; },
+		// 封禁/禁言带时长选择
+		showDurationPicker(u, type) {
+			const isBan = type === 'ban';
+			const items = ['1天', '3天', '7天', '30天', '永久'];
+			uni.showActionSheet({
+				title: isBan ? `封禁用户「${u.username}」` : `禁言用户「${u.username}」`,
+				itemList: items,
+				success: (res) => {
+					const days = [1, 3, 7, 30, -1][res.tapIndex]; // -1 = 永久
+					this.applyStatus(u, isBan ? 1 : 2, days, isBan ? 'ban_expire' : 'mute_expire', isBan ? '封禁' : '禁言');
+				},
+			});
+		},
+		applyStatus(u, status, days, expireField, tip) {
+			const data = { status };
+			if (days === -1) {
+				// 永久：expire = null
+				data[expireField] = null;
+			} else {
+				// 计算过期时间
+				const expire = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+				const pad = (n) => (n < 10 ? '0' + n : '' + n);
+				data[expireField] = `${expire.getFullYear()}-${pad(expire.getMonth()+1)}-${pad(expire.getDate())} ${pad(expire.getHours())}:${pad(expire.getMinutes())}:${pad(expire.getSeconds())}`;
+			}
+			adminApi.updateUser(u.id, data).then(() => {
+				uni.showToast({ title: `${tip}成功`, icon: 'success' });
+				this.detail = null;
+				this.loadUsers(true);
+			}).catch(() => {});
+		},
 		setUserStatus(u, status, tip) {
 			uni.showModal({
 				title: tip,
@@ -145,9 +177,9 @@ export default {
 				},
 			});
 		},
-		handleBan(u) { this.setUserStatus(u, 1, '封禁'); },
+		handleBan(u) { this.showDurationPicker(u, 'ban'); },
 		handleUnban(u) { this.setUserStatus(u, 0, '解封'); },
-		handleMute(u) { this.setUserStatus(u, 2, '禁言'); },
+		handleMute(u) { this.showDurationPicker(u, 'mute'); },
 		handleUnmute(u) { this.setUserStatus(u, 0, '解除禁言'); },
 		handleDelete(u) {
 			uni.showModal({
