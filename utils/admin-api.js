@@ -120,6 +120,7 @@ const adminApi = {
   getRoles: () => request('admin_permissions.php', { query: { type: 'roles' } }),
   getPermissions: () => request('admin_permissions.php', { query: { type: 'permissions' } }),
   getUserRoles: (userId) => request('admin_permissions.php', { query: { type: 'user', user_id: userId } }),
+  updateRole: (roleId, data) => request('admin_permissions.php', { method: 'PUT', data: { role_id: roleId, ...data } }),
 
   // ===== 加班管理 =====
   getOvertime: (type = 'list') => request('admin_overtime.php', { query: { type } }),
