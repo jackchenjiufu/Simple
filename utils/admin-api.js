@@ -71,7 +71,8 @@ const adminApi = {
   deleteUser: (id) => request('admin_users.php', { method: 'DELETE', query: { id } }),
 
   // ===== 文章管理 =====
-  getAdminArticles: () => request('admin_articles.php'),
+  getAdminArticles: (page = 1, limit = 20) =>
+    request('admin_articles.php', { query: { page, limit } }),
   createArticle: (data) => request('admin_articles.php', { method: 'POST', data }),
   updateArticle: (id, data) => request('admin_articles.php', { method: 'PUT', data: { id, ...data } }),
   deleteArticle: (id) => request('delete_article.php', { method: 'DELETE', data: { id } }),
@@ -94,7 +95,7 @@ const adminApi = {
 
   // ===== 公告管理 =====
   getAnnouncements: () => request('announcements.php', { method: 'POST', data: { action: 'get_announcements' } }),
-  saveAnnouncement: (data) => request('announcements.php', { method: 'POST', data }),
+  saveAnnouncement: (data) => request('announcements.php', { method: 'POST', data: { action: 'create_announcement', token: getAdminToken() || 'doo_admin_2024', ...data } }),
   deleteAnnouncement: (id) =>
     request('announcements.php', { method: 'POST', data: { action: 'delete_announcement', id } }),
 

@@ -9,7 +9,8 @@
 			<view class="nav-action" @click="showCreate = true">＋发布</view>
 		</view>
 
-		<scroll-view class="body" scroll-y="true" show-scrollbar="false">
+		<scroll-view class="body" scroll-y="true" show-scrollbar="false" @scrolltolower="loadMore">
+			<view class="count-tip" v-if="total > 0">共 {{ total }} 篇 · 已加载 {{ articles.length }} 篇</view>
 			<view class="article-item" v-for="a in articles" :key="a.id">
 				<view class="article-body" @click="openDetail(a)">
 					<view class="title-row">
@@ -30,6 +31,7 @@
 
 			<view class="loading-tip" v-if="loading">加载中...</view>
 			<view class="loading-tip" v-if="!loading && !articles.length">暂无文章</view>
+			<view class="loading-tip" v-if="!loading && articles.length && !hasMore">— 已全部加载 —</view>
 		</scroll-view>
 
 		<!-- 文章详情弹层 -->
@@ -81,6 +83,11 @@ export default {
 			statusBarHeight: 0,
 			articles: [],
 			loading: false,
+			loadingMore: false,
+			page: 1,
+			pageSize: 20,
+			total: 0,
+			hasMore: true,
 			detail: null,
 			showCreate: false,
 			createForm: { title: '', author: '', content: '' },
@@ -94,11 +101,29 @@ export default {
 		goBack() { uni.navigateBack(); },
 		loadArticles() {
 			this.loading = true;
-			adminApi.getAdminArticles().then(res => {
+			this.page = 1;
+			adminApi.getAdminArticles(1, this.pageSize).then(res => {
 				if (res.code === 200) {
 					this.articles = (res.data || []).slice().sort((a, b) => (b.id || 0) - (a.id || 0));
+					this.total = res.total || this.articles.length;
+					this.hasMore = this.articles.length < this.total;
 				}
 			}).catch(() => {}).finally(() => { this.loading = false; });
+		},
+		loadMore() {
+			if (this.loading || this.loadingMore || !this.hasMore) return;
+			this.loadingMore = true;
+			const nextPage = this.page + 1;
+			adminApi.getAdminArticles(nextPage, this.pageSize).then(res => {
+				if (res.code === 200 && res.data && res.data.length) {
+					const more = (res.data || []).filter(a => !this.articles.some(x => x.id === a.id));
+					this.articles = this.articles.concat(more);
+					this.page = nextPage;
+					this.hasMore = this.articles.length < (res.total || this.total);
+				} else {
+					this.hasMore = false;
+				}
+			}).catch(() => { this.hasMore = false; }).finally(() => { this.loadingMore = false; });
 		},
 		openDetail(a) { this.detail = a; },
 		togglePublish(a) {
@@ -170,6 +195,7 @@ export default {
 .nav-placeholder { width: 36px; }
 
 .body { flex: 1; min-height: 0; overflow: hidden; padding: 12px 16px; box-sizing: border-box; }
+.count-tip { font-size: 12px; color: #909399; text-align: center; padding: 4px 0 10px; }
 .article-item {
 	background: #fff; border-radius: 12px; padding: 14px;
 	margin-bottom: 10px; display: flex;

@@ -98,7 +98,7 @@ export default {
 				if (res.code === 200 && res.data) {
 					const d = res.data;
 					this.stats[0].value = d.total_users ?? '-';
-					this.stats[1].value = d.total_content ?? d.total_articles ?? '-';
+					this.stats[1].value = d.total_articles ?? d.total_content ?? '-';
 					this.stats[2].value = d.total_pending_feedback ?? '-';
 					this.stats[3].value = d.today_users ?? '-';
 				}
