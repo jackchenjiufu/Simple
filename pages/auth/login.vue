@@ -195,8 +195,9 @@ export default {
 						uni.setStorageSync('userId', userInfo.id);
 						uni.setStorageSync('isLoggedIn', true);
 					// 管理员身份标记（有权限才显示后台管理入口）
-					uni.setStorageSync('isAdmin', userInfo.role === 'admin');
-					if (userInfo.role === 'admin' && responseData.admin_token) {
+					const isAdminRole = userInfo.role === 'admin' || userInfo.role === 'super_admin' || userInfo.role === 'editor';
+					uni.setStorageSync('isAdmin', isAdminRole);
+					if (isAdminRole && responseData.admin_token) {
 						uni.setStorageSync('adminToken', responseData.admin_token);
 					}
 					setTimeout(() => {

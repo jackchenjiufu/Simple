@@ -134,7 +134,7 @@ export default {
 		// 管理员才有后台管理入口（登录时写入 isAdmin，兼容旧数据再读一次 userInfo.role）
 		this.isAdmin = uni.getStorageSync('isAdmin') === true;
 		const ui = uni.getStorageSync('userInfo');
-		if (!this.isAdmin && ui && ui.role === 'admin') this.isAdmin = true;
+		if (!this.isAdmin && ui && (ui.role === 'admin' || ui.role === 'super_admin' || ui.role === 'editor')) this.isAdmin = true;
 	},
 	methods: {
 		checkUpdate() { uni.navigateTo({ url: '/pages/info/check-update' }); },

@@ -49,7 +49,7 @@
 				</view>
 				<view class="detail-row"><text class="dl">用户名</text><text class="dv">{{ detail.username }}</text></view>
 				<view class="detail-row"><text class="dl">昵称</text><text class="dv">{{ detail.nickname || '-' }}</text></view>
-				<view class="detail-row"><text class="dl">角色</text><text class="dv">{{ detail.role === 'admin' ? '管理员' : '普通用户' }}</text></view>
+				<view class="detail-row"><text class="dl">角色</text><text class="dv">{{ roleName(detail.role) }}</text></view>
 				<view class="detail-row"><text class="dl">状态</text><text class="dv" :style="detail.status == 1 ? 'color:#ef4444' : detail.status == 2 ? 'color:#f59e0b' : ''">{{ detail.status == 1 ? '已封禁' : detail.status == 2 ? '已禁言' : '正常' }}</text></view>
 				<view class="detail-row" v-if="detail.status == 1"><text class="dl">解封时间</text><text class="dv">{{ detail.ban_expire ? detail.ban_expire.replace('T', ' ') : '永久' }}</text></view>
 				<view class="detail-row" v-if="detail.status == 2"><text class="dl">禁言到期</text><text class="dv">{{ detail.mute_expire ? detail.mute_expire.replace('T', ' ') : '永久' }}</text></view>
@@ -133,6 +133,10 @@ export default {
 	},
 	methods: {
 		goBack() { uni.navigateBack(); },
+		roleName(role) {
+			const map = { super_admin: '超级管理员', admin: '管理员', editor: '编辑', user: '普通用户' };
+			return map[role] || role || '普通用户';
+		},
 		searchUsers() { this.loadUsers(true); },
 		loadUsers(reset) {
 			if (this.loading) return;
