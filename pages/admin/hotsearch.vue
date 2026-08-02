@@ -40,6 +40,36 @@
 						{{ runningToutiao ? '抓取中...' : '手动执行' }}
 					</button>
 				</view>
+
+				<view class="tool-item">
+					<view class="tool-info">
+						<text class="tool-name">知乎热榜</text>
+						<text class="tool-desc">抓取当天知乎热榜数据并发布为文章</text>
+					</view>
+					<button class="tool-btn" :class="{ 'btn-disabled': runningZhihu }" @click="runCrawl('zhihu')">
+						{{ runningZhihu ? '抓取中...' : '手动执行' }}
+					</button>
+				</view>
+
+				<view class="tool-item">
+					<view class="tool-info">
+						<text class="tool-name">小红书热榜</text>
+						<text class="tool-desc">抓取当天小红书热榜数据并发布为文章</text>
+					</view>
+					<button class="tool-btn" :class="{ 'btn-disabled': runningRednote }" @click="runCrawl('rednote')">
+						{{ runningRednote ? '抓取中...' : '手动执行' }}
+					</button>
+				</view>
+
+				<view class="tool-item">
+					<view class="tool-info">
+						<text class="tool-name">HackerNews</text>
+						<text class="tool-desc">抓取全球技术热榜（英文）并发布为文章</text>
+					</view>
+					<button class="tool-btn" :class="{ 'btn-disabled': runningHN }" @click="runCrawl('hn')">
+						{{ runningHN ? '抓取中...' : '手动执行' }}
+					</button>
+				</view>
 			</view>
 
 			<!-- 执行结果 -->
@@ -63,6 +93,9 @@ export default {
 			runningWeibo: false,
 			runningDouyin: false,
 			runningToutiao: false,
+			runningZhihu: false,
+			runningRednote: false,
+			runningHN: false,
 			resultText: '',
 		};
 	},
@@ -72,16 +105,16 @@ export default {
 	methods: {
 		goBack() { uni.navigateBack(); },
 		runCrawl(type) {
-			if (this.runningWeibo || this.runningDouyin || this.runningToutiao) return;
-			const isWeibo = type === 'weibo';
-			const isToutiao = type === 'toutiao';
-			if (isWeibo) this.runningWeibo = true;
-			else if (isToutiao) this.runningToutiao = true;
-			else this.runningDouyin = true;
+			if (this.runningWeibo || this.runningDouyin || this.runningToutiao || this.runningZhihu || this.runningRednote || this.runningHN) return;
+			// 设置对应运行状态
+			const flagMap = { weibo: 'runningWeibo', douyin: 'runningDouyin', toutiao: 'runningToutiao', zhihu: 'runningZhihu', rednote: 'runningRednote', hn: 'runningHN' };
+			this[flagMap[type]] = true;
+			const nameMap = { weibo: '微博热搜', douyin: '抖音热榜', toutiao: '头条热榜', zhihu: '知乎热榜', rednote: '小红书热榜', hn: 'HackerNews' };
+			const apiMap = { weibo: 'crawlWeiboHot', douyin: 'crawlDouyinHot', toutiao: 'crawlToutiaoHot', zhihu: 'crawlZhihuHot', rednote: 'crawlRednoteHot', hn: 'crawlHNHot' };
+			const name = nameMap[type];
 			this.resultText = '';
 			uni.showLoading({ title: '正在抓取...', mask: true });
-			const req = isWeibo ? adminApi.crawlWeiboHot() : (isToutiao ? adminApi.crawlToutiaoHot() : adminApi.crawlDouyinHot());
-			const name = isWeibo ? '微博热搜' : (isToutiao ? '头条热榜' : '抖音热榜');
+			const req = adminApi[apiMap[type]]();
 			req.then((r) => {
 				if (r && r.code === 200) {
 					this.resultText = `${name}抓取完成：${r.message || '成功'}`;
@@ -98,6 +131,9 @@ export default {
 				this.runningWeibo = false;
 				this.runningDouyin = false;
 				this.runningToutiao = false;
+				this.runningZhihu = false;
+				this.runningRednote = false;
+				this.runningHN = false;
 			});
 		},
 	},
