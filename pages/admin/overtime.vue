@@ -107,9 +107,15 @@ export default {
 		goBack() { uni.navigateBack(); },
 		loadData() {
 			this.loading = true;
-			adminApi.getOvertime().then(res => {
+			// 列表模式：后端返回 data 是记录数组
+			adminApi.getOvertime('list').then(res => {
 				if (res.code === 200) {
-					this.records = res.data?.records || [];
+					this.records = Array.isArray(res.data) ? res.data : (res.data?.records || []);
+				}
+			}).catch(() => {});
+			// 汇总模式：type=chart 返回 monthly + ranking
+			adminApi.getOvertime('chart').then(res => {
+				if (res.code === 200) {
 					this.monthly = res.data?.monthly || [];
 				}
 			}).catch(() => {}).finally(() => { this.loading = false; });
