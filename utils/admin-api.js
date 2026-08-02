@@ -113,8 +113,8 @@ const adminApi = {
   crawlIntlNews: () => request('crawl_intl_news.php', { method: 'GET', timeout: 120000 }),
 
   // ===== 系统日志 =====
-  getLogs: (page = 1, limit = 20) =>
-    request('admin_logs.php', { query: { page, limit } }),
+  getLogs: (page = 1, limit = 20, type = '') =>
+    request('admin_logs.php', { query: { page, limit, ...(type ? { type } : {}) } }),
 
   // ===== 权限管理 =====
   getRoles: () => request('admin_permissions.php', { query: { type: 'roles' } }),
