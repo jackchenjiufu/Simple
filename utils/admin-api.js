@@ -106,6 +106,9 @@ const adminApi = {
   crawlWeiboHot: () => request('crawl_hotsearch.php', { method: 'GET', timeout: 120000 }),
   crawlDouyinHot: () => request('crawl_douyin_hotsearch.php', { method: 'GET', timeout: 120000 }),
   crawlToutiaoHot: () => request('crawl_toutiao_hotsearch.php', { method: 'GET', timeout: 120000 }),
+  crawlZhihuHot: () => request('crawl_zhihu_hotsearch.php', { method: 'GET', timeout: 120000 }),
+  crawlRednoteHot: () => request('crawl_rednote_hotsearch.php', { method: 'GET', timeout: 120000 }),
+  crawlHNHot: () => request('crawl_hackernews_hotsearch.php', { method: 'GET', timeout: 120000 }),
 
   // ===== 系统日志 =====
   getLogs: (page = 1, limit = 20) =>
