@@ -109,6 +109,7 @@ const adminApi = {
   crawlZhihuHot: () => request('crawl_zhihu_hotsearch.php', { method: 'GET', timeout: 120000 }),
   crawlRednoteHot: () => request('crawl_rednote_hotsearch.php', { method: 'GET', timeout: 120000 }),
   crawlHNHot: () => request('crawl_hackernews_hotsearch.php', { method: 'GET', timeout: 120000 }),
+  crawlIntlNews: () => request('crawl_intl_news.php', { method: 'GET', timeout: 120000 }),
 
   // ===== 系统日志 =====
   getLogs: (page = 1, limit = 20) =>
