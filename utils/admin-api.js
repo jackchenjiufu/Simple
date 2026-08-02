@@ -120,6 +120,7 @@ const adminApi = {
   getRoles: () => request('admin_permissions.php', { query: { type: 'roles' } }),
   getPermissions: () => request('admin_permissions.php', { query: { type: 'permissions' } }),
   getUserRoles: (userId) => request('admin_permissions.php', { query: { type: 'user', user_id: userId } }),
+  assignUserRole: (userId, roleId) => request('admin_permissions.php', { method: 'POST', data: { user_id: userId, role_id: roleId } }),
   updateRole: (roleId, data) => request('admin_permissions.php', { method: 'PUT', data: { role_id: roleId, ...data } }),
 
   // ===== 加班管理 =====
