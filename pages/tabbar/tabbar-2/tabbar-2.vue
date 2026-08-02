@@ -272,20 +272,6 @@
 			</view>
 		</view>
 
-		<!-- 删除确认 - 居中弹出 -->
-		<view class="action-sheet-overlay" v-if="showDeleteModal" @click="showDeleteModal = false">
-			<view class="action-sheet" @click.stop>
-				<view class="confirm-icon-wrap danger-icon">
-					<text class="confirm-icon-text">!</text>
-				</view>
-				<text class="action-sheet-title">确认删除</text>
-				<text class="action-sheet-hint">确定要删除这条记录吗？</text>
-				<view class="confirm-actions">
-					<button class="action-sheet-btn cancel" @click="showDeleteModal = false">取消</button>
-					<button class="action-sheet-btn danger" @click="doDelete">删除</button>
-				</view>
-			</view>
-		</view>
 	</view>
 </template>
 
@@ -315,7 +301,7 @@ export default {
 			holidayMap: [],
 			workdayMap: [],
 
-			showDeleteModal: false, deletingId: null,
+			deletingId: null,
 
 			editingRecord: null,
 			editId: null
@@ -511,7 +497,16 @@ export default {
 		},
 		confirmDelete(r) {
 			this.deletingId = r.id;
-			this.showDeleteModal = true;
+			uni.showModal({
+				title: '删除记录',
+				content: '确定要删除这条记录吗？删除后不可恢复。',
+				confirmColor: '#e64340',
+				success: (res) => {
+					if (res.confirm) {
+						this.doDelete();
+					}
+				},
+			});
 		},
 		async loadData() {
 			try {
@@ -630,7 +625,6 @@ export default {
 				});
 				uni.hideLoading();
 				if (res.data.code === 200) {
-					this.showDeleteModal = false;
 					uni.showToast({ title:'已删除', icon:'success' });
 					this.loadData();
 				}
@@ -802,29 +796,4 @@ export default {
 .dp-day.today { font-weight:700; color:#3071f6; background:#eff6ff; }
 .dp-day.selected { color:#fff; background:#3071f6; font-weight:700; }
 
-/* 底部弹出菜单 */
-.action-sheet-overlay {
-	position:fixed; top:0; left:0; right:0; bottom:0;
-	background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center;
-	z-index:9999; padding:40upx; animation:lmFadeIn 0.2s ease;
-}
-.action-sheet {
-	background:#fff; border-radius:28upx; padding:40upx 36upx 32upx;
-	width:86%; max-width:560upx; box-shadow:0 16upx 48upx rgba(0,0,0,0.15);
-	animation:lmSlideUp 0.25s ease; text-align:center;
-}
-.action-sheet-handle { display:none; }
-.action-sheet-title { display:block; font-size:30upx; font-weight:700; color:#1f2937; margin-bottom:10upx; }
-.action-sheet-hint { display:block; font-size:24upx; color:#ef4444; padding:8upx 12upx; background:#fef2f2; border-radius:10upx; margin:12upx 0 22upx; }
-.action-sheet-btn {
-	flex:1; height:80upx; line-height:80upx; font-size:28upx; font-weight:500;
-	border-radius:14upx; border:none; margin-bottom:0;
-}
-.action-sheet-btn.danger { flex:1; height:80upx; line-height:80upx; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; font-size:28upx; font-weight:600; border-radius:14upx; border:none; text-align:center; box-shadow:0 4upx 12upx rgba(239,68,68,0.3); }
-.action-sheet-btn.cancel { flex:1; height:80upx; line-height:80upx; background:#f3f4f6; color:#374151; font-size:28upx; font-weight:500; border-radius:14upx; border:none; text-align:center; }
-.confirm-icon-wrap { width:80upx; height:80upx; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20upx; }
-.confirm-icon-wrap.danger-icon { background:linear-gradient(135deg,#fef2f2,#fecaca); box-shadow:0 4upx 16upx rgba(239,68,68,0.25); }
-.confirm-icon-text { font-size:36upx; font-weight:700; }
-.danger-icon .confirm-icon-text { color:#ef4444; }
-.confirm-actions { display:flex; gap:16upx; }
 </style>
