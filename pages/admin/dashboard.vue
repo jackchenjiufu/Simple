@@ -75,7 +75,7 @@ export default {
 				if (res.code === 200 && res.data) {
 					const d = res.data;
 					this.coreStats[0].value = d.total_users ?? '-';
-					this.coreStats[1].value = d.total_content ?? '-';
+					this.coreStats[1].value = d.total_articles ?? d.total_content ?? '-';
 					this.coreStats[2].value = d.today_users ?? '-';
 					this.coreStats[3].value = d.total_pending_feedback ?? '-';
 
