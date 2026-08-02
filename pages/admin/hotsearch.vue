@@ -70,6 +70,16 @@
 						{{ runningHN ? '抓取中...' : '手动执行' }}
 					</button>
 				</view>
+
+				<view class="tool-item">
+					<view class="tool-info">
+						<text class="tool-name">国际新闻</text>
+						<text class="tool-desc">Google News + BBC 全球新闻（经日本服务器中转）</text>
+					</view>
+					<button class="tool-btn" :class="{ 'btn-disabled': runningIntl }" @click="runCrawl('intl')">
+						{{ runningIntl ? '抓取中...' : '手动执行' }}
+					</button>
+				</view>
 			</view>
 
 			<!-- 执行结果 -->
@@ -96,6 +106,7 @@ export default {
 			runningZhihu: false,
 			runningRednote: false,
 			runningHN: false,
+			runningIntl: false,
 			resultText: '',
 		};
 	},
@@ -105,12 +116,12 @@ export default {
 	methods: {
 		goBack() { uni.navigateBack(); },
 		runCrawl(type) {
-			if (this.runningWeibo || this.runningDouyin || this.runningToutiao || this.runningZhihu || this.runningRednote || this.runningHN) return;
+			if (this.runningWeibo || this.runningDouyin || this.runningToutiao || this.runningZhihu || this.runningRednote || this.runningHN || this.runningIntl) return;
 			// 设置对应运行状态
-			const flagMap = { weibo: 'runningWeibo', douyin: 'runningDouyin', toutiao: 'runningToutiao', zhihu: 'runningZhihu', rednote: 'runningRednote', hn: 'runningHN' };
+			const flagMap = { weibo: 'runningWeibo', douyin: 'runningDouyin', toutiao: 'runningToutiao', zhihu: 'runningZhihu', rednote: 'runningRednote', hn: 'runningHN', intl: 'runningIntl' };
 			this[flagMap[type]] = true;
-			const nameMap = { weibo: '微博热搜', douyin: '抖音热榜', toutiao: '头条热榜', zhihu: '知乎热榜', rednote: '小红书热榜', hn: 'HackerNews' };
-			const apiMap = { weibo: 'crawlWeiboHot', douyin: 'crawlDouyinHot', toutiao: 'crawlToutiaoHot', zhihu: 'crawlZhihuHot', rednote: 'crawlRednoteHot', hn: 'crawlHNHot' };
+			const nameMap = { weibo: '微博热搜', douyin: '抖音热榜', toutiao: '头条热榜', zhihu: '知乎热榜', rednote: '小红书热榜', hn: 'HackerNews', intl: '国际新闻' };
+			const apiMap = { weibo: 'crawlWeiboHot', douyin: 'crawlDouyinHot', toutiao: 'crawlToutiaoHot', zhihu: 'crawlZhihuHot', rednote: 'crawlRednoteHot', hn: 'crawlHNHot', intl: 'crawlIntlNews' };
 			const name = nameMap[type];
 			this.resultText = '';
 			uni.showLoading({ title: '正在抓取...', mask: true });
@@ -134,6 +145,7 @@ export default {
 				this.runningZhihu = false;
 				this.runningRednote = false;
 				this.runningHN = false;
+				this.runningIntl = false;
 			});
 		},
 	},
