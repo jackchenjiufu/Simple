@@ -68,7 +68,7 @@
               <span style="width:18px;font-size:12px;font-weight:600;color:#909399;text-align:center">{{ i+1 }}</span>
               <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ u.nickname || u.username || '未知' }}</span>
               <span style="font-size:12px;color:#3071f6;font-weight:600;width:50px;text-align:right">{{ parseFloat(u.total_hours||0).toFixed(1) }}h</span>
-              <div :style="{width: Math.min(parseFloat(u.total_hours||0) * 8, 60) + 'px', height:'8px', background:'linear-gradient(90deg,#3071f6,#5b8df9)', borderRadius:'4px'}"></div>
+              <div :style="{width: Math.min(parseFloat(u.total_hours||0) * 8, 60) + 'px', height:'8px', background:'#2f6bf0', borderRadius:'3px'}"></div>
             </div>
           </div>
           <div v-else style="color:#909399;font-size:13px;text-align:center;padding:20px">暂无数据</div>
@@ -86,7 +86,7 @@
       <el-table-column prop="rate" label="时薪(元)" width="90" />
       <el-table-column prop="multiplier" label="倍数" width="70" />
       <el-table-column prop="salary" label="加班费" width="100">
-        <template #default="{row}">{{ (row.salary||0).toFixed(2) }}</template>
+        <template #default="{row}">{{ parseFloat(row.salary||0).toFixed(2) }}</template>
       </el-table-column>
       <el-table-column label="类型" width="90">
         <template #default="{row}">
@@ -119,7 +119,7 @@
             <el-form-item label="时长(h)" required><el-input-number v-model="form.hours" :min="0.5" :max="24" :step="0.5" style="width:100%" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="时薪(元)" required><el-input-number v-model="form.rate" :min="0" :step="5" style="width:100%" /></el-form-item>
+            <el-form-item label="时薪(元)" required><el-input-number v-model="form.rate" :min="0.01" :step="5" style="width:100%" /></el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="倍数"><el-input-number v-model="form.multiplier" :min="1" :max="3" :step="0.5" style="width:100%" /></el-form-item>
@@ -184,7 +184,7 @@ const summary = computed(() => {
 const load = async () => {
   loading.value = true
   try {
-    const params = { month: filterMonth.value || new Date().toISOString().slice(0, 7) }
+    const now = new Date(); const localMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); const params = { month: filterMonth.value || localMonth }
     if (filterUser.value) params.user_id = filterUser.value
     const [lr, cr] = await Promise.all([
       api.get('/admin_overtime.php', { params }),
@@ -198,7 +198,7 @@ const load = async () => {
 
 const loadUsers = async () => {
   try {
-    const r = await api.get('/admin_users.php')
+    const r = await api.get('/admin_users.php', { params: { limit: 100 } })
     if (r.data.code === 200) users.value = r.data.data || []
   } catch (e) { /* ignore */ }
 }
@@ -243,7 +243,7 @@ const del = async (row) => {
   } catch (e) { ElMessage.error('删除失败') }
 }
 
-onMounted(() => { filterMonth.value = new Date().toISOString().slice(0, 7); load(); loadUsers() })
+onMounted(() => { const now = new Date(); filterMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); load(); loadUsers() })
 </script>
 
 <style scoped>

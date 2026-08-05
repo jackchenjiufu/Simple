@@ -57,16 +57,14 @@
 			<view class="form-card fade-up">
 				<text class="form-subtitle">联系我们</text>
 				<view class="contact-row">
-					<text class="contact-icon">📧</text>
-					<text class="contact-text">chensauce@qq.com</text>
+					<text class="contact-text">邮箱：chensauce@qq.com</text>
 				</view>
 				<view class="contact-row">
-					<text class="contact-icon">💬</text>
 					<text class="contact-text">微信：ChenSauce</text>
 				</view>
 			</view>
 
-			<text class="footer-text">Origin v{{ currentVersion }}</text>
+			<text class="footer-text">Simple V{{ currentVersion }}</text>
 		</view>
 	</view>
 </template>

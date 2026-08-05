@@ -64,6 +64,18 @@
 			}
 		},
 		{
+			"path": "pages/chat/conversations",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/chat/chat",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/tabbar/tabbar-5/tabbar-5",
 			"style": {
 				"navigationStyle": "custom"
@@ -136,7 +148,13 @@
 			}
 		},
 		{
-			"path": "pages/admin/carousel",
+			"path": "pages/admin/comments",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin/reports",
 			"style": {
 				"navigationStyle": "custom"
 			}

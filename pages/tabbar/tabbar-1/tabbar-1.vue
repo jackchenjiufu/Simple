@@ -52,8 +52,12 @@
 									>
 										<view class="article-header">
 											<view class="author-info">
-												<image class="author-avatar" :src="article.author_avatar || '/static/img/qa.png'" mode="aspectFill"></image>
-												<text class="author-name">{{ article.author || '未知作者' }}</text>
+												<image class="author-avatar" :src="article.author_avatar || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png'" mode="aspectFill" @click.stop="chatWith(article.user_id, article.author)"></image>
+												<view class="author-name-wrap">
+													<text class="author-name">{{ article.author || '未知作者' }}</text>
+													<text v-if="isBadgeRole(article.author_role)" class="role-badge" :style="badgeStyle(article.author_role)">{{ badgeLabel(article.author_role) }}</text>
+												<text class="role-badge level" v-if="article.author_level > 0">Lv.{{ article.author_level }}</text>
+												</view>
 												<text class="article-date">{{ article.date }}</text>
 											</view>
 											<text class="article-title">{{ article.title }}</text>
@@ -109,6 +113,7 @@
 
 <script>
 import apiConfig from '../../../utils/api.js';
+import { loadRoles, isBadgeRole as badgeRoleFn, badgeLabel as badgeLabelFn, badgeStyle as badgeStyleFn } from '../../../utils/role-badges.js';
 import request from '../../../utils/request.js';
 import NavBar from '../../../components/modules/nav-bar/nav-bar.vue';
 
@@ -163,6 +168,8 @@ export default {
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
 		this.loadCarouselData();
 			this.generateRecommendations();
+		// 预加载角色列表，保证作者徽章（含自定义角色如「运营」）正常显示
+		loadRoles();
 		// 监听键盘高度变化
 		this._keyboardHandler = (res) => {
 			if (res.height > 0) {
@@ -183,6 +190,10 @@ export default {
 		}
 	},
 	methods: {
+		// 角色徽章辅助（注册为实例方法，供模板调用）
+		isBadgeRole(name) { return badgeRoleFn(name); },
+		badgeLabel(name) { return badgeLabelFn(name); },
+		badgeStyle(name) { return badgeStyleFn(name); },
 		switchTab(tab) {
 			this.activeTab = tab;
 			const map = { articles: 0, agent: 1 };
@@ -326,7 +337,7 @@ export default {
 						this.articleList = result.data.articles.map(article => {
 							return {
 								...article,
-								author_avatar: article.author_avatar || '/static/img/qa.png',
+								author_avatar: article.author_avatar || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png',
 								date: article.date || article.created_at || new Date().toISOString().split('T')[0]
 							};
 						});
@@ -361,7 +372,7 @@ export default {
 					const more = result.data.articles.map(article => {
 						return {
 							...article,
-							author_avatar: article.author_avatar || '/static/img/qa.png',
+							author_avatar: article.author_avatar || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png',
 							date: article.date || article.created_at || new Date().toISOString().split('T')[0]
 						};
 					});
@@ -413,6 +424,32 @@ export default {
 			uni.navigateTo({
 				url: '/pages/content/article-detail',
 				success: (res) => res.eventChannel.emit('setArticle', article)
+			});
+		},
+		// 点击用户头像 → 私聊
+		chatWith(userId, nickname) {
+			if (!userId) {
+				uni.showToast({ title: '用户信息缺失', icon: 'none' });
+				return;
+			}
+			const myId = uni.getStorageSync('userId');
+			if (!myId) {
+				uni.showModal({
+					title: '未登录',
+					content: '登录后才能私聊，现在去登录？',
+					confirmText: '去登录',
+					success: (r) => {
+						if (r.confirm) uni.navigateTo({ url: '/pages/auth/login' });
+					}
+				});
+				return;
+			}
+			if (Number(myId) === Number(userId)) {
+				uni.showToast({ title: '这是你自己', icon: 'none' });
+				return;
+			}
+			uni.navigateTo({
+				url: `/pages/chat/chat?user_id=${userId}&nickname=${encodeURIComponent(nickname || '用户')}`
 			});
 		}
 	}
@@ -570,10 +607,28 @@ export default {
 	border-radius: 50%;
 }
 
+.author-name-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8upx;
+	min-width: 0;
+}
+
 .author-name {
 	font-size: 24upx;
 	color: #6b7280;
 }
+
+.role-badge {
+	font-size: 16upx;
+	padding: 1upx 10upx;
+	border-radius: 20upx;
+	flex-shrink: 0;
+}
+.role-badge.super { color: #b8860b; background: #fff8e6; border: 1upx solid #f0d48a; }
+.role-badge.admin { color: #1b44a6; background: #f0f5ff; border: 1upx solid #b8cdf5; }
+.role-badge.editor { color: #1a7d3a; background: #e8f8ee; border: 1upx solid #b7e4c7; }
+.role-badge.level { color: #7c5cfc; background: #f3f0ff; border: 1upx solid #d4c8f7; }
 
 .article-date {
 	font-size: 24upx;

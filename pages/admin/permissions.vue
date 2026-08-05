@@ -6,7 +6,7 @@
 				<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
 			</view>
 			<text class="nav-title">权限管理</text>
-			<view class="nav-placeholder"></view>
+			<view class="nav-new" @click="openCreate">新建角色</view>
 		</view>
 
 		<scroll-view class="body" scroll-y="true" show-scrollbar="false" style="height: calc(100vh - 88px);">
@@ -16,7 +16,7 @@
 				<view class="role-item" v-for="r in roles" :key="r.id" @click="openRole(r)">
 					<view class="role-avatar" :class="'ra-' + (r.id % 4 + 1)">{{ (r.name || '?').charAt(0) }}</view>
 					<view class="role-info">
-						<text class="role-name">{{ r.name }}</text>
+						<text class="role-name">{{ roleDisplayName(r) }}</text>
 						<text class="role-desc">{{ r.description || '暂无描述' }}</text>
 					</view>
 					<view class="role-count">{{ (r.permissions || []).length }} 项权限</view>
@@ -45,7 +45,7 @@
 					<text class="sheet-title">分配权限 · {{ currentRole.name }}</text>
 					<text class="sheet-close" @click="showAssign = false">✕</text>
 				</view>
-				<scroll-view class="assign-body" scroll-y="true" style="height: 50vh;">
+				<scroll-view class="assign-body" scroll-y="true" show-scrollbar="false">
 					<view class="assign-item" v-for="p in permissions" :key="p.id" @click="togglePerm(p.id)">
 						<view class="perm-check" :class="{ checked: assignedPerms.includes(p.id) }">
 							<text v-if="assignedPerms.includes(p.id)">✓</text>
@@ -58,6 +58,27 @@
 				</scroll-view>
 				<view class="sheet-actions">
 					<button class="btn-save" @click="saveAssign">保存分配</button>
+				</view>
+			</view>
+		</view>
+
+		<!-- 新建角色弹层 -->
+		<view class="mask" v-if="showCreate" @click="closeCreate">
+			<view class="sheet sheet-sm" @click.stop>
+				<view class="sheet-header">
+					<text class="sheet-title">新建角色</text>
+					<text class="sheet-close" @click="closeCreate">✕</text>
+				</view>
+				<view class="form-item">
+					<text class="form-label">角色名</text>
+					<input class="form-input" v-model="createForm.name" placeholder="例如：editor" />
+				</view>
+				<view class="form-item">
+					<text class="form-label">描述</text>
+					<input class="form-input" v-model="createForm.description" placeholder="角色说明（可选）" />
+				</view>
+				<view class="sheet-actions">
+					<button class="btn-save" @click="createRole">创建</button>
 				</view>
 			</view>
 		</view>
@@ -76,6 +97,8 @@ export default {
 			showAssign: false,
 			currentRole: null,
 			assignedPerms: [],
+			showCreate: false,
+			createForm: { name: '', description: '' },
 		};
 	},
 	onLoad() {
@@ -84,6 +107,11 @@ export default {
 	},
 	methods: {
 		goBack() { uni.navigateBack(); },
+		// 角色显示名：display_name 仅取字符串，避免渲染 [object Object]
+		roleDisplayName(r) {
+			const dn = r && r.display_name;
+			return (typeof dn === 'string' && dn) ? dn : String((r && r.name) || '');
+		},
 		loadData() {
 			adminApi.getRoles().then(res => {
 				if (res.code === 200) this.roles = res.data || [];
@@ -101,6 +129,36 @@ export default {
 			const idx = this.assignedPerms.indexOf(id);
 			if (idx >= 0) this.assignedPerms.splice(idx, 1);
 			else this.assignedPerms.push(id);
+		},
+		openCreate() {
+			this.createForm = { name: '', description: '' };
+			this.showCreate = true;
+		},
+		closeCreate() {
+			this.showCreate = false;
+		},
+		createRole() {
+			if (!this.createForm.name.trim()) {
+				uni.showToast({ title: '请输入角色名', icon: 'none' });
+				return;
+			}
+			uni.showLoading({ title: '创建中...' });
+			adminApi.createRole({
+				role_name: this.createForm.name.trim(),
+				description: this.createForm.description || ''
+			}).then(res => {
+				uni.hideLoading();
+				if (res.code === 200) {
+					uni.showToast({ title: '创建成功', icon: 'success' });
+					this.showCreate = false;
+					this.loadData();
+				} else {
+					uni.showToast({ title: res.message || '创建失败', icon: 'none' });
+				}
+			}).catch(e => {
+				uni.hideLoading();
+				uni.showToast({ title: (e && e.message) || '创建失败', icon: 'none' });
+			});
 		},
 		saveAssign() {
 			uni.showLoading({ title: '保存中...' });
@@ -128,7 +186,7 @@ export default {
 .nav-back { width: 36px; height: 36px; display: flex; align-items: center; }
 .back-icon { width: 20px; height: 20px; }
 .nav-title { font-size: 17px; font-weight: 600; color: #1a1a2e; }
-.nav-placeholder { width: 36px; }
+.nav-new { font-size: 14px; font-weight: 600; color: #3071f6; padding: 6px 8px; }
 .body { flex: 1; min-height: 0; overflow: hidden; padding: 16px; box-sizing: border-box; }
 
 .section-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin: 20px 0 12px; }
@@ -170,12 +228,19 @@ export default {
 }
 .sheet {
 	width: 100%; background: #fff; border-radius: 16px 16px 0 0;
-	padding: 20px 16px 30px; box-sizing: border-box; max-height: 80vh;
+	padding: 20px 16px 30px; box-sizing: border-box; height: 75vh;
 	display: flex; flex-direction: column;
 }
 .sheet-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .sheet-title { font-size: 16px; font-weight: 600; color: #1a1a2e; flex: 1; }
 .sheet-close { font-size: 16px; color: #999; padding: 4px; }
+.sheet-sm { height: auto; }
+.form-item { margin-bottom: 16px; }
+.form-label { font-size: 13px; color: #666; margin-bottom: 8px; display: block; }
+.form-input {
+	width: 100%; height: 44px; line-height: 44px; background: #f5f6fa;
+	border-radius: 10px; padding: 0 14px; box-sizing: border-box; font-size: 14px;
+}
 .assign-body { flex: 1; min-height: 0; }
 .assign-item {
 	display: flex; align-items: center; padding: 12px 4px; border-bottom: 1px solid #f5f5f5;

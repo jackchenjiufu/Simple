@@ -80,11 +80,41 @@ export default {
 	onShow: function() {
 		this.installPendingWgt();
 		this.silentCheckWgt();
+		// 在线时长心跳（等级成长值：每10分钟 +1）
+		this.startHeartbeat();
+	},
+	onHide: function() {
+		this.stopHeartbeat();
 	},
 	methods: {
 		cancelUpdate() {
 			this.showUpdateModal = false;
 			this._updateInfo = null;
+		},
+		// ===== 在线时长心跳 =====
+		startHeartbeat() {
+			this.stopHeartbeat();
+			// 立即上报一次（本次会话），之后每 5 分钟一次
+			this.heartbeat();
+			this._heartbeatTimer = setInterval(() => this.heartbeat(), 5 * 60 * 1000);
+		},
+		stopHeartbeat() {
+			if (this._heartbeatTimer) {
+				clearInterval(this._heartbeatTimer);
+				this._heartbeatTimer = null;
+			}
+		},
+		heartbeat() {
+			if (!uni.getStorageSync('isLoggedIn')) return;
+			const token = uni.getStorageSync('token') || '';
+			uni.request({
+				url: apiConfig.baseUrl + 'heartbeat.php',
+				method: 'POST',
+				header: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+				data: { seconds: 300 },
+				success: () => {},
+				fail: () => {}
+			});
 		},
 		confirmUpdate() {
 			this.showUpdateModal = false;
@@ -121,15 +151,27 @@ export default {
 						uni.setStorageSync("pendingApkPath", dl.filename);
 						uni.setStorageSync("pendingWgtVersion", newVer);
 						uni.showToast({ title: '下载完成，请确认安装', icon: 'none' });
-						// 立即尝试安装（Android 会拉起系统安装确认）
-						plus.runtime.install(dl.filename, { force: true }, function() {
+						// 拉起系统安装器安装本地 APK（不带 force，避免静默安装失败）
+						plus.runtime.install(dl.filename, {}, function() {
 							uni.setStorageSync("wgtVersion", newVer);
 							uni.removeStorageSync("pendingApkPath");
 							uni.removeStorageSync("pendingWgtVersion");
 							uni.showToast({ title: '更新成功', icon: 'none' });
 						}, function(e) {
 							console.error("APK安装失败:", e);
-							// 等待下次启动 installPendingWgt 重试
+							// 用系统 Intent 打开本地 APK 调起安装器
+							try {
+								var main = plus.android.runtimeMainActivity();
+								var Intent = plus.android.importClass('android.content.Intent');
+								var Uri = plus.android.importClass('android.net.Uri');
+								var File = plus.android.importClass('java.io.File');
+								var intent = new Intent('android.intent.action.VIEW');
+								intent.setDataAndType(Uri.fromFile(new File(dl.filename)), 'application/vnd.android.package-archive');
+								main.startActivity(intent);
+								uni.removeStorageSync("pendingApkPath");
+							} catch (e2) {
+								// 兜底：下次启动 installPendingWgt 重试
+							}
 						});
 					}
 				} else {
@@ -157,17 +199,9 @@ export default {
 						if (result && result.code === 200 && result.data && result.data.hasUpdate) {
 							var newVer = result.data.latestVersion;
 							if (compareVersion(newVer, curVer) > 0) {
-								var apkUrl = result.data.downloadUrl || '';
-								var wgtUrl = result.data.apkDownloadUrl || '';
-								var targetUrl = '';
-								var isWgt = false;
-								// 优先 APK 全量包，WGT 热更新作为备选
-								if (apkUrl && apkUrl.indexOf('.apk') > 0) {
-									targetUrl = apkUrl;
-								} else if (wgtUrl && wgtUrl.indexOf('.wgt') > 0) {
-									targetUrl = wgtUrl;
-									isWgt = true;
-								}
+								// downloadUrl 为主下载地址（wgt 热更新优先，apk 全量降级）
+								var targetUrl = result.data.downloadUrl || result.data.apkDownloadUrl || '';
+								var isWgt = targetUrl.indexOf('.wgt') > 0;
 								if (targetUrl) {
 									// #ifdef APP-PLUS
 									// 自定义弹窗（左右按钮布局）
@@ -223,10 +257,20 @@ export default {
 			if (apkPath) {
 				// #ifdef APP-ANDROID
 				plus.io.resolveLocalFileSystemURL(apkPath, function() {
-					plus.runtime.install(apkPath, { force: true }, function() {
+					plus.runtime.install(apkPath, {}, function() {
 						uni.removeStorageSync("pendingApkPath");
 						uni.removeStorageSync("pendingWgtVersion");
 					}, function() {
+						// 失败 → 系统 Intent 打开本地 APK 调起安装器
+						try {
+							var main = plus.android.runtimeMainActivity();
+							var Intent = plus.android.importClass('android.content.Intent');
+							var Uri = plus.android.importClass('android.net.Uri');
+							var File = plus.android.importClass('java.io.File');
+							var intent = new Intent('android.intent.action.VIEW');
+							intent.setDataAndType(Uri.fromFile(new File(apkPath)), 'application/vnd.android.package-archive');
+							main.startActivity(intent);
+						} catch (e) { /* ignore */ }
 						uni.removeStorageSync("pendingApkPath");
 						uni.removeStorageSync("pendingWgtVersion");
 					});

@@ -2,33 +2,13 @@
 	<view class="content">
 		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
-		<!-- 深蓝色头部 -->
-		<view class="header-section">
-			<view class="nav-bar">
-				<view class="nav-back" @click="goBack">
-					<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
-				</view>
-				<text class="nav-title">修改密码</text>
-				<view class="nav-placeholder"></view>
+		<!-- 标准导航栏（与其他页面统一） -->
+		<view class="nav-bar">
+			<view class="nav-back" @click="goBack">
+				<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
 			</view>
-			<view class="header-content">
-				<view class="header-left">
-					<text class="header-greeting">安全设置</text>
-					<text class="header-subtitle">保护您的账号安全</text>
-				</view>
-				<view class="header-right">
-					<view class="character-area">
-						<view class="char-circle char-circle-1"></view>
-						<view class="char-circle char-circle-2"></view>
-						<view class="char-body"></view>
-						<view class="char-head"></view>
-					</view>
-				</view>
-			</view>
-			<!-- 装饰圆点 -->
-			<view class="deco-dot dot-1"></view>
-			<view class="deco-dot dot-2"></view>
-			<view class="deco-dot dot-3"></view>
+			<text class="nav-title">修改密码</text>
+			<view class="nav-placeholder"></view>
 		</view>
 
 		<!-- 表单区域 -->
@@ -196,33 +176,26 @@ export default {
 .content {
 	width: 100%;
 	min-height: 100vh;
-	background-color: #ffffff;
+	background-color: #f8f9fb;
 	display: flex;
 	flex-direction: column;
 }
 
 .status-bar {
 	width: 100%;
-	background: #1b44a6;
+	background: #ffffff;
 }
 
-/* ===================== 深蓝色头部 ===================== */
-.header-section {
-	position: relative;
-	width: 100%;
-	background: #1b44a6;
-	overflow: hidden;
-	box-sizing: border-box;
-	animation: fadeDown 0.5s ease-out;
-}
-
+/* ===================== 标准导航栏 ===================== */
 .nav-bar {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 12upx 24upx 0;
-	position: relative;
-	z-index: 2;
+	height: 88upx;
+	padding: 0 24upx;
+	background: #ffffff;
+	border-bottom: 1px solid #f0f0f0;
+	flex-shrink: 0;
 }
 
 .nav-back {
@@ -239,143 +212,28 @@ export default {
 }
 
 .nav-title {
-	font-size: 32upx;
+	font-size: 30upx;
 	font-weight: 600;
-	color: #ffffff;
-	letter-spacing: 2upx;
+	color: #303132;
 }
 
 .nav-placeholder {
 	width: 72upx;
 }
 
-.header-content {
-	position: relative;
-	z-index: 2;
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-end;
-	padding: 60upx 48upx 80upx;
-	min-height: 360upx;
-}
-
-.header-left {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-}
-
-.header-greeting {
-	font-size: 56upx;
-	font-weight: 700;
-	color: #ffffff;
-	line-height: 1.2;
-	margin-bottom: 12upx;
-}
-
-.header-subtitle {
-	font-size: 24upx;
-	color: rgba(255, 255, 255, 0.65);
-}
-
-.header-right {
-	width: 220upx;
-	height: 260upx;
-	position: relative;
-	flex-shrink: 0;
-}
-
-.character-area {
-	position: relative;
-	width: 100%;
-	height: 100%;
-}
-
-.char-circle-1 {
-	position: absolute;
-	width: 140upx;
-	height: 140upx;
-	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.08);
-	top: 10upx;
-	right: -10upx;
-}
-
-.char-circle-2 {
-	position: absolute;
-	width: 80upx;
-	height: 80upx;
-	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.12);
-	bottom: 20upx;
-	right: 20upx;
-}
-
-.char-body {
-	position: absolute;
-	width: 100upx;
-	height: 120upx;
-	background: rgba(255, 255, 255, 0.15);
-	border-radius: 50upx 50upx 30upx 30upx;
-	bottom: 20upx;
-	right: 40upx;
-}
-
-.char-head {
-	position: absolute;
-	width: 80upx;
-	height: 80upx;
-	background: rgba(255, 215, 200, 0.35);
-	border-radius: 50%;
-	top: 50upx;
-	right: 50upx;
-}
-
-.deco-dot {
-	position: absolute;
-	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.06);
-	z-index: 1;
-}
-
-.dot-1 {
-	width: 300upx;
-	height: 300upx;
-	top: -100upx;
-	right: 30upx;
-}
-
-.dot-2 {
-	width: 160upx;
-	height: 160upx;
-	bottom: 40upx;
-	left: -40upx;
-}
-
-.dot-3 {
-	width: 100upx;
-	height: 100upx;
-	top: 40upx;
-	left: 160upx;
-}
-
 /* ===================== 表单区域 ===================== */
 .form-section {
 	flex: 1;
-	background: #ffffff;
-	padding: 0 40upx;
-	margin-top: -40upx;
+	background: #f8f9fb;
+	padding: 24upx;
 	box-sizing: border-box;
 }
 
 .form-card {
 	background: #ffffff;
-	border-radius: 24upx;
-	padding: 40upx 36upx;
-	box-shadow: 0 4upx 32upx rgba(0, 0, 0, 0.06);
-	position: relative;
-	z-index: 3;
-	animation: fadeUp 0.5s ease-out;
+	border-radius: 16upx;
+	padding: 32upx 28upx;
+	box-shadow: 0 2upx 12upx rgba(0, 0, 0, 0.04);
 }
 
 .form-subtitle {
@@ -510,12 +368,12 @@ export default {
 /* ===================== 提交按钮 ===================== */
 .btn-submit {
 	width: 100%;
-	height: 96upx;
-	line-height: 96upx;
+	height: 88upx;
+	line-height: 88upx;
 	background: #3071f6;
 	color: #ffffff;
 	border-radius: 16upx;
-	font-size: 32upx;
+	font-size: 30upx;
 	font-weight: 600;
 	letter-spacing: 6upx;
 	border: none;
@@ -533,29 +391,6 @@ export default {
 }
 .btn-submit::after {
 	border: none;
-}
-
-/* ===================== 动画 ===================== */
-@keyframes fadeUp {
-	from {
-		opacity: 0;
-		transform: translateY(24upx);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-@keyframes fadeDown {
-	from {
-		opacity: 0;
-		transform: translateY(-20upx);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
 }
 
 /* 隐藏滚动条 */

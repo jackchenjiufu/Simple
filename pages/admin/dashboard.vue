@@ -33,6 +33,21 @@
 				<view class="empty-tip" v-if="!trendData.length">暂无数据</view>
 			</view>
 
+			<!-- 近7日版本下载量 -->
+			<view class="section-title">近 7 日版本下载量</view>
+			<view class="panel">
+				<view class="trend-bars">
+					<view class="bar-col" v-for="(b, i) in downloadTrend" :key="i">
+						<view class="bar-track">
+							<view class="bar-fill dl" :style="{ height: b.pct + '%' }"></view>
+						</view>
+						<text class="bar-label">{{ b.label }}</text>
+						<text class="bar-value">{{ b.value }}</text>
+					</view>
+				</view>
+				<view class="empty-tip" v-if="!downloadTrend.length">暂无数据</view>
+			</view>
+
 			<!-- 最近动态 -->
 			<view class="section-title">最近动态</view>
 			<view class="panel">
@@ -61,6 +76,7 @@ export default {
 				{ label: '待处理反馈', value: '-', color: 4 },
 			],
 			trendData: [],
+			downloadTrend: [],
 			activities: [],
 		};
 	},
@@ -97,6 +113,18 @@ export default {
 							color: Math.floor(Math.random() * 4) + 1,
 						}));
 					}
+				}
+			}).catch(() => {});
+
+			// 近7日版本下载量
+			adminApi.getStats('version_downloads').then(res => {
+				if (res.code === 200 && Array.isArray(res.data)) {
+					const max = Math.max(...res.data.map(x => x.count), 1);
+					this.downloadTrend = res.data.map(x => ({
+						label: (x.date || '').slice(5),
+						value: x.count,
+						pct: Math.round(x.count / max * 100),
+					}));
 				}
 			}).catch(() => {});
 		},
@@ -145,6 +173,7 @@ export default {
 	width: 100%; background: linear-gradient(180deg, #5b8df9, #3071f6);
 	border-radius: 10px 10px 0 0; transition: height .4s;
 }
+.bar-fill.dl { background: linear-gradient(180deg, #34d399, #00a862); }
 .bar-label { font-size: 10px; color: #909399; }
 .bar-value { font-size: 10px; color: #3071f6; font-weight: 600; }
 

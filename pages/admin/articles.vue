@@ -54,18 +54,33 @@
 					<text class="sheet-title">发布文章</text>
 					<text class="sheet-close" @click="showCreate = false">✕</text>
 				</view>
-				<view class="form-group">
-					<text class="form-label">标题</text>
-					<input class="form-input" v-model="createForm.title" placeholder="请输入标题" />
-				</view>
-				<view class="form-group">
-					<text class="form-label">作者</text>
-					<input class="form-input" v-model="createForm.author" placeholder="请输入作者" />
-				</view>
-				<view class="form-group">
-					<text class="form-label">内容</text>
-					<textarea class="form-textarea" v-model="createForm.content" placeholder="请输入文章内容" />
-				</view>
+				<scroll-view class="sheet-body" scroll-y="true">
+					<view class="form-group">
+						<text class="form-label">标题</text>
+						<input class="form-input" v-model="createForm.title" placeholder="请输入标题" />
+					</view>
+					<view class="form-group">
+						<text class="form-label">作者</text>
+						<input class="form-input" v-model="authorSearch" placeholder="搜索用户名/昵称" @focus="onAuthorFocus" @input="onAuthorSearch" @blur="onAuthorBlur" />
+						<scroll-view class="author-list" scroll-y="true" v-if="authorListVisible && authorOptions.length">
+							<view
+								class="author-item"
+								v-for="u in authorOptions"
+								:key="u.username"
+								:class="{ active: createForm.author === u.username }"
+								@click="selectAuthor(u)"
+							>
+								<text class="author-name">{{ u.username }}</text>
+								<text class="author-nick">{{ u.nickname || '' }}</text>
+								<text class="author-check" v-if="createForm.author === u.username">✓</text>
+							</view>
+						</scroll-view>
+					</view>
+					<view class="form-group">
+						<text class="form-label">内容</text>
+						<textarea class="form-textarea" v-model="createForm.content" placeholder="请输入文章内容" />
+					</view>
+				</scroll-view>
 				<view class="sheet-actions">
 					<button class="btn-primary" @click="handleCreate">发布</button>
 				</view>
@@ -91,14 +106,52 @@ export default {
 			detail: null,
 			showCreate: false,
 			createForm: { title: '', author: '', content: '' },
+			authorOptions: [],
+			authorSearch: '',
+			authorTimer: null,
+			authorBlurTimer: null,
+			authorListVisible: false,
 		};
 	},
 	onLoad() {
 		this.statusBarHeight = uni.getSystemInfoSync().statusBarHeight || 0;
 		this.loadArticles();
+		this.loadAuthors();
 	},
 	methods: {
 		goBack() { uni.navigateBack(); },
+		loadAuthors(kw = '') {
+			adminApi.getArticleAuthors(kw).then(res => {
+				if (res.code === 200 && Array.isArray(res.data)) {
+					this.authorOptions = res.data;
+				}
+			}).catch(() => {});
+		},
+		onAuthorFocus() {
+			// 聚焦才显示列表，首次拉取候选
+			this.authorListVisible = true;
+			if (!this.authorOptions.length) this.loadAuthors();
+		},
+		onAuthorBlur() {
+			// 失焦延迟隐藏（给点击列表项留时间）
+			clearTimeout(this.authorBlurTimer);
+			this.authorBlurTimer = setTimeout(() => {
+				this.authorListVisible = false;
+			}, 200);
+		},
+		onAuthorSearch() {
+			// 输入即显示列表 + 防抖搜索
+			this.authorListVisible = true;
+			clearTimeout(this.authorTimer);
+			this.authorTimer = setTimeout(() => {
+				this.loadAuthors(this.authorSearch.trim());
+			}, 300);
+		},
+		selectAuthor(u) {
+			this.createForm.author = u.username;
+			this.authorListVisible = false;
+			clearTimeout(this.authorBlurTimer);
+		},
 		loadArticles() {
 			this.loading = true;
 			this.page = 1;
@@ -230,11 +283,22 @@ export default {
 	width: 100%; height: 44px; border: 1px solid #e5e5e5; border-radius: 10px;
 	padding: 0 12px; box-sizing: border-box; font-size: 14px;
 }
+.author-list { max-height: 180px; border: 1px solid #e5e5e5; border-radius: 10px; margin-top: 6px; }
+.author-item {
+	display: flex; align-items: center; padding: 10px 12px;
+	border-bottom: 1px solid #f5f5f5; background: #fff;
+}
+.author-item:last-child { border-bottom: none; }
+.author-item.active { background: #eef4ff; }
+.author-name { font-size: 14px; color: #333; font-weight: 500; }
+.author-nick { font-size: 12px; color: #999; margin-left: 8px; flex: 1; }
+.author-check { color: #3071f6; font-size: 14px; }
 .form-textarea {
 	width: 100%; height: 160px; border: 1px solid #e5e5e5; border-radius: 10px;
 	padding: 10px 12px; box-sizing: border-box; font-size: 14px;
 }
-.sheet-actions { margin-top: 16px; }
+.sheet-actions { margin-top: 16px; flex-shrink: 0; }
+.sheet-body { flex: 1; min-height: 0; }
 .btn-primary {
 	width: 100%; background: linear-gradient(135deg, #1b44a6, #3071f6); color: #fff;
 	border-radius: 12px; font-size: 15px; height: 44px; line-height: 44px; border: none;

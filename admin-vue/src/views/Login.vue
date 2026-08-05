@@ -12,7 +12,7 @@
           <div class="cc c2"></div>
           <div class="char-body"></div>
           <div class="char-head"></div>
-          <span class="char-eye">👀</span>
+          <span class="char-eye"></span>
         </div>
         <div class="footer-row">
           <span class="footer-item">隐私政策</span>
@@ -75,6 +75,7 @@ const handleLogin = async () => {
     const res = await login(form.username, form.password)
     if (res.data.code === 200 && res.data.data) {
       localStorage.setItem('adminInfo', JSON.stringify(res.data.data))
+      if (res.data.data.id) localStorage.setItem('admin_uid', res.data.data.id)
       if (res.data.data.token) localStorage.setItem('admin_token', res.data.data.token)
       ElMessage.success('登录成功')
       router.push('/')
@@ -108,7 +109,7 @@ const handleLogin = async () => {
 .c2 { width: 90px; height: 90px; background: rgba(255,255,255,0.1); bottom: 40px; right: 30px; }
 .char-body { position: absolute; width: 110px; height: 140px; background: rgba(255,255,255,0.12); border-radius: 55px 55px 35px 35px; bottom: 30px; left: 50%; transform: translateX(-50%); }
 .char-head { position: absolute; width: 90px; height: 90px; background: rgba(255,215,200,0.25); border-radius: 50%; top: 55px; left: 50%; transform: translateX(-50%); }
-.char-eye { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); font-size: 22px; }
+.char-eye { position: absolute; top: 98px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; border-radius: 50%; background: #2f6bf0; }
 .footer-row { display: flex; gap: 24px; }
 .footer-item { font-size: 13px; color: rgba(255,255,255,0.5); cursor: default; }
 .glow { position: absolute; border-radius: 50%; z-index: 1; }
@@ -131,8 +132,8 @@ const handleLogin = async () => {
 .field-item :deep(.el-input__wrapper:hover) { box-shadow: 0 0 0 1.5px #c0c4cc inset; }
 .field-item :deep(.el-input__wrapper.is-focus), .field-item :deep(.is-focused .el-input__wrapper) { box-shadow: 0 0 0 1.5px #3071f6 inset !important; }
 .field-item :deep(.el-input__inner) { font-size: 15px; }
-.login-btn-custom { height: 48px; font-size: 16px; font-weight: 600; border-radius: 12px; letter-spacing: 2px; margin-top: 4px; background: linear-gradient(135deg, #1b44a6, #3071f6); border: none; }
-.login-btn-custom:hover { opacity: 0.9; }
+.login-btn-custom { height: 48px; font-size: 16px; font-weight: 600; border-radius: 10px; letter-spacing: 2px; margin-top: 4px; background: #2f6bf0; border: none; }
+.login-btn-custom:hover { background: #2560e6; }
 
 @media (min-width: 768px) {
   .left-panel { display: flex; }

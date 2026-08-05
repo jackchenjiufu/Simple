@@ -5,7 +5,7 @@
 		<scroll-view class="doc-container" scroll-y="true" show-scrollbar="false">
 			<view class="doc-content">
 				<text class="doc-section-title">1. 引言</text>
-				<text class="doc-text">欢迎使用 Date Of Origin（以下简称"本应用"或"我们"）。本用户协议（以下简称"本协议"）是您与本应用之间关于使用本应用服务所订立的有效协议。请您务必认真阅读并充分理解本协议的全部内容，特别是免除或限制责任的条款、争议解决条款。</text>
+				<text class="doc-text">欢迎使用 Simple（以下简称"本应用"或"我们"）。本用户协议（以下简称"本协议"）是您与本应用之间关于使用本应用服务所订立的有效协议。请您务必认真阅读并充分理解本协议的全部内容，特别是免除或限制责任的条款、争议解决条款。</text>
 				<text class="doc-text">本应用是一款社交内容分享平台，提供内容发布与浏览、即时通讯、AI 智能助手、工资管理工具（含五险一金及个税计算）等功能服务。</text>
 
 				<text class="doc-section-title">2. 协议的接受</text>

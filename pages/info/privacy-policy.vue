@@ -5,7 +5,7 @@
 		<scroll-view class="doc-container" scroll-y="true" show-scrollbar="false">
 			<view class="doc-content">
 				<text class="doc-section-title">1. 引言</text>
-				<text class="doc-text">欢迎使用 Date Of Origin（以下简称"本应用"或"我们"）。我们深知个人信息对您的重要性，并会全力保护您的个人信息安全。本隐私政策旨在向您说明我们如何收集、使用、存储、共享和保护您的个人信息，以及您享有的相关权利。请您在使用本应用前仔细阅读并充分理解本政策。</text>
+				<text class="doc-text">欢迎使用 Simple（以下简称"本应用"或"我们"）。我们深知个人信息对您的重要性，并会全力保护您的个人信息安全。本隐私政策旨在向您说明我们如何收集、使用、存储、共享和保护您的个人信息，以及您享有的相关权利。请您在使用本应用前仔细阅读并充分理解本政策。</text>
 
 				<text class="doc-section-title">2. 信息收集</text>
 				<text class="doc-text">2.1 注册信息：当您注册本应用账号时，我们会收集您的用户名、密码（经加密存储）、邮箱地址（用于找回密码）及头像（可选）。</text>

@@ -195,10 +195,13 @@ export default {
 						uni.setStorageSync('userId', userInfo.id);
 						uni.setStorageSync('isLoggedIn', true);
 					// 管理员身份标记（有权限才显示后台管理入口）
-					const isAdminRole = userInfo.role === 'admin' || userInfo.role === 'super_admin' || userInfo.role === 'editor';
+					const isAdminRole = userInfo.role === 'admin' || userInfo.role === 'super_admin' || userInfo.role === 'editor' || userInfo.role === '运营';
 					uni.setStorageSync('isAdmin', isAdminRole);
 					if (isAdminRole && responseData.admin_token) {
 						uni.setStorageSync('adminToken', responseData.admin_token);
+					} else {
+						// editor 等角色无全局 token：清除旧值，回退使用自身登录 token（后端按 auth_token 识别身份）
+						uni.removeStorageSync('adminToken');
 					}
 					setTimeout(() => {
 						uni.switchTab({ url: '/pages/tabbar/tabbar-1/tabbar-1' });

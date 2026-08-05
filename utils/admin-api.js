@@ -21,6 +21,9 @@ function request(endpoint, options = {}) {
   const { method = 'GET', data = {}, query = {}, timeout = 15000 } = options
   const token = getAdminToken()
   if (token) query.admin_token = token
+  // 附带用户 ID：后端按用户角色查权限表校验
+  const uid = uni.getStorageSync('userId')
+  if (uid) query.admin_uid = uid
 
   // 拼 query 到 URL
   let url = BASE_URL + endpoint
@@ -60,6 +63,9 @@ function request(endpoint, options = {}) {
  * 后台管理接口集合
  */
 const adminApi = {
+  // ===== 权限 =====
+  getMyPermissions: () => request('admin_my_permissions.php'),
+
   // ===== 概览/统计 =====
   getStats: (type = 'overview') => request('admin_stats.php', { query: { type } }),
 
@@ -73,6 +79,7 @@ const adminApi = {
   // ===== 文章管理 =====
   getAdminArticles: (page = 1, limit = 20) =>
     request('admin_articles.php', { query: { page, limit } }),
+  getArticleAuthors: (search = '') => request('article_authors.php', { query: { search } }),
   createArticle: (data) => request('admin_articles.php', { method: 'POST', data }),
   updateArticle: (id, data) => request('admin_articles.php', { method: 'PUT', data: { id, ...data } }),
   deleteArticle: (id) => request('delete_article.php', { method: 'DELETE', data: { id } }),
@@ -85,13 +92,31 @@ const adminApi = {
   setFeedbackStatus: (id, status) =>
     request('admin_feedback.php', { method: 'PUT', data: { id, status } }),
   deleteFeedback: (id) =>
-    request('admin_feedback.php', { method: 'DELETE', data: { id } }),
+    request('admin_feedback.php', { method: 'DELETE', query: { id } }),
 
   // ===== 轮播管理 =====
   getCarousels: () => request('admin_carousels.php'),
   saveCarousel: (data) => request('admin_carousels.php', { method: 'POST', data }),
   updateCarousel: (id, data) => request('admin_carousels.php', { method: 'PUT', data: { id, ...data } }),
   deleteCarousel: (id) => request('admin_carousels.php', { method: 'DELETE', data: { id } }),
+
+  // ===== 评论管理 =====
+  getComments: (page = 1, limit = 20, status, search) =>
+    request('admin_comments.php', { query: { page, limit, ...(status !== undefined && status !== -1 ? { status } : {}), ...(search ? { search } : {}) } }),
+  setCommentTop: (id, isTop) =>
+    request('admin_comments.php', { method: 'PUT', data: { id, is_top: isTop ? 1 : 0 } }),
+  setCommentStatus: (id, status) =>
+    request('admin_comments.php', { method: 'PUT', data: { id, status } }),
+  deleteComment: (id) =>
+    request('admin_comments.php', { method: 'DELETE', query: { id } }),
+
+  // ===== 举报管理 =====
+  getReports: (page = 1, limit = 20, status, type, search) =>
+    request('admin_reports.php', { query: { page, limit, ...(status !== undefined && status !== -1 ? { status } : {}), ...(type ? { type } : {}), ...(search ? { search } : {}) } }),
+  setReportStatus: (id, status) =>
+    request('admin_reports.php', { method: 'PUT', data: { id, status } }),
+  deleteReport: (id) =>
+    request('admin_reports.php', { method: 'DELETE', query: { id } }),
 
   // ===== 公告管理 =====
   getAnnouncements: () => request('announcements.php', { method: 'POST', data: { action: 'get_announcements' } }),
@@ -119,9 +144,12 @@ const adminApi = {
   // ===== 权限管理 =====
   getRoles: () => request('admin_permissions.php', { query: { type: 'roles' } }),
   getPermissions: () => request('admin_permissions.php', { query: { type: 'permissions' } }),
-  getUserRoles: (userId) => request('admin_permissions.php', { query: { type: 'user', user_id: userId } }),
-  assignUserRole: (userId, roleId) => request('admin_permissions.php', { method: 'POST', data: { user_id: userId, role_id: roleId } }),
-  updateRole: (roleId, data) => request('admin_permissions.php', { method: 'PUT', data: { role_id: roleId, ...data } }),
+  getUserRoles: (userId) => request('admin_permissions.php', { query: { type: 'user_roles', user_id: userId } }),
+  createRole: (data) => request('admin_permissions.php', { method: 'POST', data }),
+  updateRole: (roleId, data) =>
+    request('admin_permissions.php', { method: 'PUT', data: { role_id: roleId, ...data } }),
+  assignUserRole: (userId, roleId) =>
+    request('admin_permissions.php', { method: 'POST', data: { user_id: userId, role_id: roleId } }),
 
   // ===== 加班管理 =====
   getOvertime: (type = 'list') => request('admin_overtime.php', { query: { type } }),

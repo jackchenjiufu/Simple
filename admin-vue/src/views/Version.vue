@@ -19,14 +19,14 @@
           <el-table-column prop="description" label="更新说明" min-width="260" show-overflow-tooltip />
           <el-table-column label="类型" width="100">
             <template #default="{row}">
-              <el-tag :type="row.update_type==='apk'?'danger':'success'" size="small">
-                {{ row.update_type==='apk' ? 'APK 全量' : 'WGT 热更新' }}
+              <el-tag :type="row.type==='apk'?'danger':'success'" size="small">
+                {{ row.type==='apk' ? 'APK 全量' : 'WGT 热更新' }}
               </el-tag>
             </template>
           </el-table-column>
           <el-table-column label="下载" width="180">
             <template #default="{row}">
-              <el-button v-if="row.downloadUrl" size="small" link type="primary" @click="handleDownload(row.downloadUrl)">{{ row.update_type==='apk'?'下载 APK':'下载文件' }}</el-button>
+              <el-button v-if="row.downloadUrl" size="small" link type="primary" @click="handleDownload(row.downloadUrl)">{{ row.type==='apk'?'下载 APK':'下载文件' }}</el-button>
               <span v-else style="color:#999">无文件</span>
             </template>
           </el-table-column>
@@ -63,10 +63,10 @@
             <el-form-item label="更新说明">
               <el-input v-model="apkForm.description" type="textarea" :rows="4" placeholder="请输入更新内容" />
             </el-form-item>
-            <el-form-item :label="apkForm.update_type==='apk'?'APK 文件':'文件（可选）'">
-              <input ref="apkFileInput" type="file" :accept="apkForm.update_type==='apk'?'.apk':'.apk,.wgt'" @change="e => apkFile = e.target.files[0]" />
+            <el-form-item :label="apkForm.update_type==='apk'?'APK 文件':'WGT 文件'">
+              <input ref="apkFileInput" type="file" :accept="apkForm.update_type==='apk'?'.apk':'.wgt'" @change="e => apkFile = e.target.files[0]" />
               <div style="font-size:12px;color:#999;margin-top:4px">
-                {{ apkForm.update_type==='apk' ? '上传 APK 文件到 downloads/' : '上传对应文件，文件名建议：app_wgt_v'+apkForm.version.replace(/\\./g,'_')+'.wgt' }}
+                {{ apkForm.update_type==='apk' ? '上传 APK 文件到 downloads/' : '上传对应文件，文件名建议：app_wgt_v'+apkForm.version.replace(/\./g,'_')+'.wgt' }}
               </div>
             </el-form-item>
           </el-form>
@@ -153,7 +153,7 @@ const loadApk = async () => {
 
 const uploadApk = async () => {
   if (!apkForm.value.version) { ElMessage.warning('请输入版本号'); return }
-  if (!apkFile.value) { ElMessage.warning('请选择 APK 文件'); return }
+  if (!apkFile.value) { ElMessage.warning(apkForm.value.update_type === 'apk' ? '请选择 APK 文件' : '请选择 WGT 文件'); return }
   uploadingApk.value = true
   try {
     const fd = new FormData()

@@ -12,7 +12,7 @@
 		<scroll-view class="body" scroll-y="true">
 			<view class="card">
 				<text class="card-title">项目简介</text>
-				<text class="card-text">Origin 是一个内容分享与社交平台，提供内容浏览、用户互动、AI 助手对话等功能。</text>
+				<text class="card-text">Simple 是一个内容分享与社交平台，提供内容浏览、用户互动、AI 助手对话等功能。</text>
 			</view>
 
 			<view class="card">

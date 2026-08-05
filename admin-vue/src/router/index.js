@@ -5,14 +5,22 @@ const routes = [
   {
     path: '/',
     component: () => import('@/views/Layout.vue'),
-    redirect: '/dashboard',
+    // editor 角色默认进入文章管理
+    redirect: () => {
+      const info = JSON.parse(localStorage.getItem('adminInfo') || '{}')
+      return info.role === 'editor' ? '/article' : '/dashboard'
+    },
     children: [
       { path: 'dashboard', component: () => import('@/views/Dashboard.vue') },
       { path: 'users', component: () => import('@/views/Users.vue') },
       { path: 'carousel', component: () => import('@/views/Carousel.vue') },
       { path: 'announcement', component: () => import('@/views/Announcement.vue') },
       { path: 'article', component: () => import('@/views/Article.vue') },
+      { path: 'article-edit', component: () => import('@/views/ArticleEdit.vue') },
+      { path: 'article-edit/:id', component: () => import('@/views/ArticleEdit.vue') },
       { path: 'feedback', component: () => import('@/views/Feedback.vue') },
+      { path: 'comments', component: () => import('@/views/Comments.vue') },
+      { path: 'reports', component: () => import('@/views/Reports.vue') },
       { path: 'version', component: () => import('@/views/Version.vue') },
       { path: 'splash', component: () => import('@/views/Splash.vue') },
       { path: 'stats', component: () => import('@/views/Stats.vue') },
@@ -36,7 +44,9 @@ router.beforeEach((to, from, next) => {
   if (tk) {
     localStorage.setItem('admin_token', tk)
     const name = to.query.admin_name || '管理员'
-    localStorage.setItem('adminInfo', JSON.stringify({ username: name, role: 'admin', token_login: true }))
+    const role = to.query.admin_role || 'admin'
+    if (to.query.admin_uid) localStorage.setItem('admin_uid', to.query.admin_uid)
+    localStorage.setItem('adminInfo', JSON.stringify({ username: name, role, token_login: true }))
     next({ path: '/', replace: true })
     return
   }

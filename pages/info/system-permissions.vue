@@ -22,7 +22,7 @@
 		<scroll-view class="body" scroll-y="true">
 			<view class="info-card">
 				<text class="card-title">必要权限</text>
-				<view class="perm-item" v-for="p in requiredPerms" :key="p.id" @click="openAppSettings">
+				<view class="perm-item" v-for="p in requiredPerms" :key="p.id" @click="requestPermission(p)">
 					<view class="perm-info">
 						<text class="perm-name">{{ p.name }}</text>
 						<text class="perm-desc">{{ p.desc }}</text>
@@ -35,7 +35,7 @@
 
 			<view class="info-card">
 				<text class="card-title">可选权限</text>
-				<view class="perm-item" v-for="p in optionalPerms" :key="p.id" @click="openAppSettings">
+				<view class="perm-item" v-for="p in optionalPerms" :key="p.id" @click="requestPermission(p)">
 					<view class="perm-info">
 						<text class="perm-name">{{ p.name }}</text>
 						<text class="perm-desc">{{ p.desc }}</text>
@@ -47,10 +47,10 @@
 			</view>
 
 			<view class="hint-card" @click="openAppSettings">
-				<text class="hint-text">如需修改权限，请在系统设置中操作 ›</text>
+				<text class="hint-text">以上权限也可在系统设置中手动管理 ›</text>
 			</view>
 
-			<text class="footer-text">DOO v{{ appVersion }}</text>
+			<text class="footer-text">Simple V{{ appVersion }}</text>
 		</scroll-view>
 	</view>
 </template>
@@ -82,7 +82,7 @@ export default {
 		goBack() { uni.navigateBack(); },
 		checkPermissions() {
 			const setLabel = (p) => {
-				p.statusLabel = p.status === 'granted' ? '已授权' : (p.status === 'denied' ? '去设置' : '检测中');
+				p.statusLabel = p.status === 'granted' ? '已授权' : (p.status === 'denied' ? '去授权' : '检测中');
 			};
 			this.requiredPerms.forEach(setLabel);
 			this.optionalPerms.forEach(setLabel);
@@ -126,6 +126,54 @@ export default {
 			} catch(e) {
 				this.requiredPerms.forEach(p => { p.status = 'denied'; setLabel(p); });
 				this.optionalPerms.forEach(p => { p.status = 'denied'; setLabel(p); });
+			}
+		},
+		// 自动申请权限授权
+		requestPermission(p) {
+			if (p.status === 'granted') {
+				uni.showToast({ title: '已授权', icon: 'none' });
+				return;
+			}
+			// @ts-ignore
+			if (typeof plus === 'undefined' || !plus.android) {
+				this.openAppSettings();
+				return;
+			}
+			try {
+				const sdk = parseInt((plus.os.version || '0').split('.')[0]);
+				const perms = [];
+				if (p.id === 'camera') {
+					perms.push('android.permission.CAMERA');
+				} else if (p.id === 'location') {
+					perms.push('android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION');
+				} else if (p.id === 'microphone') {
+					perms.push('android.permission.RECORD_AUDIO');
+				} else if (p.id === 'storage') {
+					if (sdk < 33) {
+						perms.push('android.permission.READ_EXTERNAL_STORAGE', 'android.permission.WRITE_EXTERNAL_STORAGE');
+					}
+					// Android 13+ 存储默认可用，无需申请
+				} else if (p.id === 'notification') {
+					if (sdk >= 33) perms.push('android.permission.POST_NOTIFICATIONS');
+				}
+				if (!perms.length) {
+					// 该权限无系统申请入口（如 Android 13+ 存储），引导去设置
+					this.openAppSettings();
+					return;
+				}
+				// @ts-ignore
+				plus.android.requestPermissions(perms, (e) => {
+					if (e.granted && e.granted.length) {
+						uni.showToast({ title: '授权成功', icon: 'success' });
+					} else {
+						uni.showToast({ title: '未授权，可在系统设置中开启', icon: 'none' });
+					}
+					this.checkPermissions();
+				}, () => {
+					uni.showToast({ title: '申请失败，请到系统设置开启', icon: 'none' });
+				});
+			} catch(e) {
+				this.openAppSettings();
 			}
 		},
 		openAppSettings() {

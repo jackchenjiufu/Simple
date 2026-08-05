@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-      <h2 style="margin:0">公告管理</h2>
+    <div class="header-row">
+      <h2>公告管理</h2>
       <el-button type="primary" size="small" @click="openForm({})">添加公告</el-button>
     </div>
     <el-table :data="list" stripe v-loading="loading" style="width:100%">
@@ -38,7 +38,11 @@ const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row};showDialog.valu
 const save=async()=>{
   saving.value=true
   try{
-    await saveAnnouncement({action:'create_announcement',token: localStorage.getItem('admin_token') || '',...form.value})
+    if (isEdit.value) {
+      await saveAnnouncement({action:'update_announcement', token: localStorage.getItem('admin_token') || '', id: form.value.id, title: form.value.title, content: form.value.content})
+    } else {
+      await saveAnnouncement({action:'create_announcement', token: localStorage.getItem('admin_token') || '', title: form.value.title, content: form.value.content})
+    }
     ElMessage.success('保存成功');showDialog.value=false;load()
   }catch(e){ElMessage.error('保存失败')}
   saving.value=false

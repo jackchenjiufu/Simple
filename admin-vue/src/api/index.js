@@ -71,18 +71,23 @@ export const uploadVersion = (formData) =>
 export const deleteVersion = (id) =>
   api.post('/delete_version.php', { id })
 
-// 轮播删除
+// 轮播删除（后端 DELETE 读取 $_GET['id']）
 export const deleteCarousel = (id) =>
-  api.delete('/admin_carousels.php', { data: { id } })
+  api.delete('/admin_carousels.php', { params: { id } })
+
+// 当前登录管理员角色与权限列表（前端菜单按权限过滤）
+export const getMyPermissions = () =>
+  api.get('/admin_my_permissions.php')
 
 
-// 添加管理员 Token（绕过 Session 认证问题）
+// 添加管理员 Token + 用户 ID（admin_auth.php 权限校验需要识别用户）
+// 必须同时带 admin_token（鉴权）+ admin_uid（识别角色查权限表），缺一即 401
 api.interceptors.request.use(config => {
-  const adminInfo = localStorage.getItem('adminInfo')
-  if (adminInfo) {
-    config.params = config.params || {}
-    // Token handled by admin_auth.php session
-  }
+  config.params = config.params || {}
+  const adminUid = localStorage.getItem('admin_uid')
+  if (adminUid) config.params.admin_uid = adminUid
+  const adminToken = localStorage.getItem('admin_token')
+  if (adminToken) config.params.admin_token = adminToken
   return config
 })
 

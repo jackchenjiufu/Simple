@@ -13,10 +13,10 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': {
-        target: 'http://139.196.185.197:7070/doo/server/api',
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api/, '')
+      // 只代理 API 前缀，避免吞掉 base 路径 /doo/admin-vue/（页面本身）
+      '/doo/server/api': {
+        target: 'http://139.196.185.197:7070',
+        changeOrigin: true
       }
     }
   },

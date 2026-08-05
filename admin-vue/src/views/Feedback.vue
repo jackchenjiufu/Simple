@@ -3,7 +3,7 @@
     <div class="header-row">
       <h2 style="margin:0">反馈管理</h2>
       <div class="header-controls">
-        <el-select v-model="statusFilter" placeholder="全部状态" clearable size="small" style="width:120px" @change="load">
+        <el-select v-model="statusFilter" placeholder="全部状态" clearable size="small" style="width:120px" @change="() => load()">
           <el-option :value="''" label="全部状态" />
           <el-option :value="0" label="未读" />
           <el-option :value="1" label="已读" />
@@ -100,7 +100,7 @@
         :total="total"
         layout="total, prev, pager, next"
         small
-        @current-change="load"
+        @current-change="() => load()"
       />
     </div>
   </div>
@@ -108,7 +108,7 @@
 
 <script setup>
 import {ref,onMounted,onUnmounted} from 'vue'
-import {ElMessage} from 'element-plus'
+import {ElMessage,ElNotification} from 'element-plus'
 import api from '@/api'
 
 const list=ref([]), loading=ref(true), editingId=ref(null), replyText=ref('')
@@ -177,7 +177,7 @@ const saveReply=async(row)=>{
 
 const handleDelete=async(row)=>{
   try{
-    await api.delete('/admin_feedback.php', { data: { id: row.id } })
+    await api.delete('/admin_feedback.php', { params: { id: row.id } })
     ElMessage.success('已删除')
     if (list.value.length <= 1 && currentPage.value > 1) {
       currentPage.value--
@@ -191,6 +191,7 @@ const followUpCount=ref(0)
 let lastSnapshot={}
 let lastTotal=null
 let pollTimer=null
+let pollInitialized=false  // 首次轮询只建快照，不通知历史追问
 
 const notifyFollowUp=(row,last)=>{
   followUpCount.value++
@@ -225,14 +226,14 @@ const poll=async()=>{
       const last=reps.length?reps[reps.length-1]:null
       snap[row.id]={rc,status:row.status}
       // 新追问：最后一条是用户消息 且 回复数比上次多（或首次出现时 status=0）
-      const isNewFollow = last && last.role==='user' && (!prev || prev.rc<rc)
-      if(isNewFollow){
+      const isNewFollow = last && last.role==='user' && prev && prev.rc<rc
+      if(pollInitialized && isNewFollow){
         changed=true
         notifyFollowUp(row,last)
       }
     }
-    // 全新反馈
-    if(lastTotal!==null && r.data.total>lastTotal){
+    // 全新反馈（首次轮询不通知历史数据）
+    if(pollInitialized && lastTotal!==null && r.data.total>lastTotal){
       const newRows=rows.filter(x=>!lastSnapshot[x.id] && (x.replies||[]).length===0)
       for(const nr of newRows.slice(0,3)){
         changed=true
@@ -241,17 +242,27 @@ const poll=async()=>{
     }
     lastTotal=r.data.total
     lastSnapshot=snap
+    pollInitialized=true
     if(changed) load(true)
   }catch(e){/* 静默，下轮再试 */}
 }
 
 const startPoll=()=>{
   pollTimer=setInterval(poll,15000)
-  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) poll() })
+  const onVisible=()=>{ if(!document.hidden) poll() }
+  document.addEventListener('visibilitychange',onVisible)
+  document._fbVisibilityHandler=onVisible
 }
 
 onMounted(()=>{ load(); startPoll() })
-onUnmounted(()=>{ if(pollTimer) clearInterval(pollTimer) })
+onUnmounted(()=>{
+  if(pollTimer) clearInterval(pollTimer)
+  if(document._fbVisibilityHandler){
+    document.removeEventListener('visibilitychange',document._fbVisibilityHandler)
+    delete document._fbVisibilityHandler
+  }
+  document.title='反馈管理'
+})
 </script>
 
 <style scoped>

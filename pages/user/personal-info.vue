@@ -33,6 +33,27 @@
 					<text class="info-label">用户名</text>
 					<text class="info-value">{{ userInfo.username || '-' }}</text>
 				</view>
+				<view class="info-item identity-item">
+					<view class="identity-top">
+						<text class="info-label">身份</text>
+						<view class="info-right">
+							<text v-if="isBadgeRole(userRole)" class="role-badge" :style="badgeStyle(userRole)">{{ badgeLabel(userRole) }}</text>
+							<text class="role-badge level" v-if="growthLevel > 0">Lv.{{ growthLevel }}</text>
+							<text class="growth-text">成长值 {{ growth }}</text>
+						</view>
+					</view>
+					<view class="growth-bar-wrap" v-if="growth > 0">
+						<view class="growth-bar-track">
+							<view class="growth-bar-fill" :style="{ width: growthPercent + '%' }"></view>
+						</view>
+						<text class="growth-bar-tip">{{ growthTip }}</text>
+						<view class="growth-detail" v-if="growthDetail.posts !== undefined">
+							<text class="gd-item">发帖 {{ growthDetail.posts }} ×20</text>
+							<text class="gd-item">评论 {{ growthDetail.comments }} ×2</text>
+							<text class="gd-item">在线 {{ growthDetail.onlineHours }}h</text>
+						</view>
+					</view>
+				</view>
 				<view class="info-item noborder">
 					<text class="info-label">注册时间</text>
 					<text class="info-value">{{ registerTime }}</text>
@@ -42,13 +63,22 @@
 			<button class="edit-btn" @click="saveProfile">保存</button>
 		</scroll-view>
 
-		<!-- 头像选择 -->
+		<!-- 头像选择（底部操作表） -->
 		<view class="modal-overlay" v-if="showUploadModal" @click="showUploadModal = false">
 			<view class="action-sheet" @click.stop>
-				<text class="action-sheet-title">更换头像</text>
-				<button class="action-btn" @click="chooseFromAlbum">从相册选择</button>
-				<button class="action-btn" @click="takePhoto">拍照</button>
-				<button class="action-btn cancel" @click="showUploadModal = false">取消</button>
+				<view class="sheet-head">
+					<text class="sheet-title">更换头像</text>
+					<text class="sheet-sub">选择图片来源</text>
+				</view>
+				<view class="sheet-option" @click="chooseFromAlbum">
+					<text class="option-text">从相册选择</text>
+					<text class="option-arrow">›</text>
+				</view>
+				<view class="sheet-option" @click="takePhoto">
+					<text class="option-text">拍照</text>
+					<text class="option-arrow">›</text>
+				</view>
+				<view class="sheet-cancel" @click="showUploadModal = false">取消</view>
 			</view>
 		</view>
 
@@ -62,32 +92,74 @@
 
 <script>
 import apiConfig from '../../utils/api.js';
+import { loadRoles, isBadgeRole as badgeRoleFn, badgeLabel as badgeLabelFn, badgeStyle as badgeStyleFn } from '../../utils/role-badges.js';
 export default {
 	data() {
 		return {
-			statusBarHeight: 0, isLoggedIn: false, userInfo: null, avatarUrl: '/static/img/qa.png',
-			nickname: '', email: '', registerTime: '', showUploadModal: false,
-}
+			statusBarHeight: 0, isLoggedIn: false, userInfo: null, avatarUrl: 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png',
+			nickname: '', email: '', registerTime: '', showUploadModal: false, userRole: '', growth: 0, growthLevel: 0, growthPercent: 0, growthTip: '', growthDetail: {},
+		};
 	},
 	onLoad() {
 		const info = uni.getSystemInfoSync();
 		this.statusBarHeight = info.statusBarHeight || 0;
 		this.loadUserInfo();
+		this.loadGrowth();
+		loadRoles();
 	},
 	methods: {
+		// 角色徽章辅助（注册为实例方法，供模板调用）
+		isBadgeRole(name) { return badgeRoleFn(name); },
+		badgeLabel(name) { return badgeLabelFn(name); },
+		badgeStyle(name) { return badgeStyleFn(name); },
 		loadUserInfo() {
 			const ui = uni.getStorageSync('userInfo');
 			if (ui && uni.getStorageSync('isLoggedIn')) {
 				this.isLoggedIn = true;
 				this.userInfo = ui;
+				this.userRole = ui.role || '';
 				this.nickname = ui.nickname || ui.username || '';
 				this.email = ui.email || '';
-				this.avatarUrl = this.fixImageUrl(ui.avatar) || '/static/img/qa.png';
+				this.avatarUrl = this.fixImageUrl(ui.avatar) || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png';
 				this.registerTime = this.formatDate(ui.created_at);
 			}
 		},
 		fixImageUrl(url) {
 			return apiConfig.getImageUrl(url);
+		},
+		// 加载成长值（新等级机制：发帖×20 + 有效评论×2 + 在线每10分钟+1）
+		loadGrowth() {
+			const ui = uni.getStorageSync('userInfo');
+			if (!ui || !ui.id) return;
+			uni.request({
+				url: apiConfig.baseUrl + 'user_growth.php',
+				method: 'GET',
+				data: { user_id: ui.id },
+				success: (res) => {
+					try {
+						const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+						if (result && result.code === 200) {
+							const d = result.data;
+							this.growth = d.growth;
+							this.growthLevel = d.level;
+							this.growthDetail = {
+								posts: d.posts,
+								comments: d.valid_comments,
+								onlineHours: d.online_hours,
+							};
+							// 进度条与提示
+							this.growthPercent = d.percent;
+							if (d.level >= 10) {
+								this.growthTip = '已达最高等级';
+							} else if (d.is_manual) {
+								this.growthTip = '等级由管理员手动设置';
+							} else {
+								this.growthTip = `距 Lv.${d.level + 1} 还差 ${d.remaining} 成长值`;
+							}
+						}
+					} catch (e) { /* ignore */ }
+				}
+			});
 		},
 		formatDate(d) {
 			if (!d) return '-';
@@ -187,11 +259,45 @@ export default {
 .login-text { font-size: 28upx; color: #909398; }
 .login-btn { width: 300upx; height: 80upx; line-height: 80upx; background: #3071f6; color: #fff; font-size: 28upx; border-radius: 16upx; border: none; }
 .info-input { flex:1; height:56upx; font-size:28upx; color:#303132; text-align:right; border:none; background:transparent; }
-.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:9999; padding:40upx; animation:fadeIn 0.2s ease; }
+.role-badge { font-size: 20upx; padding: 2upx 12upx; border-radius: 20upx; margin-left: 12upx; flex-shrink: 0; }
+.role-badge.super { color: #b8860b; background: #fff8e6; border: 1upx solid #f0d48a; }
+.role-badge.admin { color: #1b44a6; background: #f0f5ff; border: 1upx solid #b8cdf5; }
+.role-badge.editor { color: #1a7d3a; background: #e8f8ee; border: 1upx solid #b7e4c7; }
+.role-badge.level { color: #7c5cfc; background: #f3f0ff; border: 1upx solid #d4c8f7; }
+.growth-text { font-size: 24upx; color: #909398; }
+.identity-item { flex-direction: column; align-items: stretch; }
+.identity-top { display: flex; justify-content: space-between; align-items: center; }
+.growth-bar-wrap { display: flex; align-items: center; gap: 12upx; margin-top: 14upx; }
+.growth-bar-track { flex: 1; height: 12upx; background: #f0f0f5; border-radius: 6upx; overflow: hidden; }
+.growth-bar-fill { height: 100%; background: linear-gradient(90deg, #8b5cf6, #7c5cfc); border-radius: 6upx; transition: width 0.4s ease; }
+.growth-bar-tip { font-size: 20upx; color: #9ca3af; flex-shrink: 0; }
+.growth-detail { display: flex; flex-wrap: wrap; gap: 12upx; margin-top: 12upx; }
+.gd-item { font-size: 20upx; color: #6b7280; background: #f3f4f6; border-radius: 8upx; padding: 4upx 12upx; }
+/* 底部操作表（iOS 风格） */
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; z-index:9999; animation:fadeIn 0.2s ease; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-.action-sheet { background:#fff; border-radius:28upx; padding:36upx 32upx 28upx; width:86%; max-width:560upx; box-shadow:0 16upx 48upx rgba(0,0,0,0.15); animation:slideUp 0.25s ease; }
-@keyframes slideUp { from{transform:translateY(30upx);opacity:0} to{transform:translateY(0);opacity:1} }
-.action-sheet-title { display:block; text-align:center; font-size:28upx; font-weight:700; color:#1f2937; margin-bottom:20upx; }
-.action-btn { width:100%; height:88upx; line-height:88upx; font-size:28upx; font-weight:500; border-radius:16upx; border:1px solid #e5e7eb; margin-bottom:12upx; background:#fff; color:#303132; }
-.action-btn.cancel { background:#f3f4f6; border:none; color:#909398; }
+.action-sheet {
+	width: 100%; background: #f7f8fa; border-radius: 28upx 28upx 0 0;
+	padding: 32upx 24upx 48upx; box-sizing: border-box;
+	animation: sheetUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.sheet-head { text-align: center; margin-bottom: 24upx; }
+.sheet-title { display: block; font-size: 30upx; font-weight: 700; color: #1f2937; }
+.sheet-sub { display: block; font-size: 24upx; color: #9ca3af; margin-top: 6upx; }
+.sheet-option {
+	display: flex; align-items: center; background: #fff; height: 104upx;
+	padding: 0 28upx; margin-bottom: 2upx; transition: background 0.15s;
+}
+.sheet-option:first-of-type { border-radius: 16upx 16upx 0 0; }
+.sheet-option:nth-last-of-type(2) { border-radius: 0 0 16upx 16upx; }
+.sheet-option:active { background: #f0f2f5; }
+.option-text { flex: 1; font-size: 28upx; color: #303132; }
+.option-arrow { font-size: 32upx; color: #c0c4cc; font-weight: 300; }
+.sheet-cancel {
+	margin-top: 16upx; background: #fff; height: 100upx; line-height: 100upx;
+	text-align: center; font-size: 28upx; color: #303132; font-weight: 500;
+	border-radius: 16upx; transition: background 0.15s;
+}
+.sheet-cancel:active { background: #f0f2f5; }
 </style>

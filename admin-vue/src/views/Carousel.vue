@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-      <h2 style="margin:0">轮播管理</h2>
+    <div class="header-row">
+      <h2>轮播管理</h2>
       <el-button type="primary" size="small" @click="openForm({})">添加轮播</el-button>
     </div>
     <el-table :data="list" stripe v-loading="loading" style="width:100%">
@@ -14,6 +14,7 @@
       <el-table-column prop="is_active" label="状态" width="70">
         <template #default="{row}"><el-tag :type="row.is_active==1?'success':'info'" size="small">{{row.is_active==1?'启用':'禁用'}}</el-tag></template>
       </el-table-column>
+      <el-table-column prop="created_at" label="时间" width="170" />
       <el-table-column label="操作" width="160" fixed="right">
         <template #default="{row}">
           <el-button size="small" @click="openForm(row)">编辑</el-button>
@@ -26,7 +27,7 @@
       <el-form :model="form" label-width="80px">
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="图片">
-          <el-upload :action="uploadUrl" :headers="uploadHeaders" :data="uploadData" :on-success="handleUploadSuccess" :on-error="uploadError" :show-file-list="false" accept="image/*">
+          <el-upload name="image" :action="uploadUrl" :headers="uploadHeaders" :data="uploadData" :on-success="handleUploadSuccess" :on-error="uploadError" :show-file-list="false" accept="image/*">
             <el-button size="small">上传图片</el-button>
           </el-upload>
           <el-image v-if="form.image_url" :src="form.image_url" style="width:160px;height:100px;margin-top:8px;border-radius:4px" fit="cover" />
@@ -53,7 +54,7 @@ const uploadError=()=>ElMessage.error('上传失败')
 const uploadHeaders = {'X-Admin-Token': localStorage.getItem('admin_token') || ''}
 const uploadData = {title:'carousel',author:'admin'}
 const uploadUrl = "/doo/server/api/upload_image.php"
-const handleUploadSuccess=(res)=>{if(res.code===200&&res.data?.image_url)form.value.image_url=res.data.image_url}
+const handleUploadSuccess=(res)=>{if(res.code===200&&res.data?.url)form.value.image_url=res.data.url}
 const load=async()=>{loading.value=true;try{const r=await api.get('/admin_carousels.php');if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
 const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row,sort_order:row.sort_order??0,is_active:row.is_active??1};showForm.value=true}
 const save=async()=>{

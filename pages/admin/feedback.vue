@@ -33,6 +33,12 @@
 				</view>
 				<text class="fb-content">{{ f.content }}</text>
 
+				<!-- 操作按钮：始终可见 -->
+				<view class="fb-actions">
+					<text class="action-btn" @click="setStatus(f, 3)">完结</text>
+					<text class="action-btn danger" @click="handleDelete(f)">删除</text>
+				</view>
+
 				<!-- 回复区 -->
 				<view class="fb-replies" v-if="expanded[f.id]">
 					<view class="reply-bubble" v-for="(r, ri) in f.replies" :key="ri">
@@ -51,10 +57,6 @@
 							@confirm="sendReply(f)"
 						/>
 						<text class="reply-send" @click="sendReply(f)">发送</text>
-					</view>
-					<view class="fb-actions">
-						<text class="action-btn" @click="setStatus(f, 3)">完结</text>
-						<text class="action-btn danger" @click="handleDelete(f)">删除</text>
 					</view>
 				</view>
 			</view>
@@ -138,10 +140,19 @@ export default {
 			}).catch(() => {});
 		},
 		setStatus(f, status) {
-			adminApi.setFeedbackStatus(f.id, status).then(() => {
-				uni.showToast({ title: status === 3 ? '已完结' : '已更新', icon: 'success' });
-				this.loadFeedback(true);
-			}).catch(() => {});
+			// 完结需确认
+			uni.showModal({
+				title: '完结反馈',
+				content: '确定将这条反馈标记为已完结？',
+				confirmColor: '#3071f6',
+				success: (r) => {
+					if (!r.confirm) return;
+					adminApi.setFeedbackStatus(f.id, status).then(() => {
+						uni.showToast({ title: '已完结', icon: 'success' });
+						this.loadFeedback(true);
+					}).catch(() => {});
+				},
+			});
 		},
 		handleDelete(f) {
 			uni.showModal({

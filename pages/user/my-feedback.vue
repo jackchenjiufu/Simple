@@ -1,5 +1,5 @@
 <template>
-	<view class="content">
+	<view class="content" @touchstart="onTouchStart" @touchend="onTouchEnd">
 		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 		<view class="nav-bar">
 			<view class="nav-back" @click="goBack">
@@ -109,7 +109,10 @@
 					</view>
 					
 					<view class="history-footer" v-if="!isCollapsed(item)">
-						<text class="history-close-btn" v-if="item.status !== 3" @click="closeFeedback(item)">完结问题</text>
+						<view class="history-footer-left">
+							<text class="history-close-btn" v-if="item.status !== 3" @click="closeFeedback(item)">完结问题</text>
+							<text class="history-delete-btn" v-if="item.status === 3" @click="deleteFeedback(item)">删除反馈</text>
+						</view>
 						<text class="history-footer-time">{{ formatTime(item.created_at) }}</text>
 					</view>
 				</view>
@@ -133,10 +136,13 @@
 			<text class="login-msg">请先登录</text>
 		</view>
 
-		<!-- 类型选择弹窗 -->
+		<!-- 类型选择弹窗（底部操作表） -->
 		<view class="modal-overlay" v-if="showTypePicker" @click="showTypePicker = false">
-			<view class="modal-content" @click.stop>
-				<text class="modal-title">选择反馈类型</text>
+			<view class="action-sheet" @click.stop>
+				<view class="sheet-head">
+					<text class="sheet-title">选择反馈类型</text>
+					<text class="sheet-sub">请选择最符合的类型</text>
+				</view>
 				<view class="type-list">
 					<view
 						class="type-item"
@@ -145,11 +151,11 @@
 						:class="{ active: form.type === item }"
 						@click="selectType(item)"
 					>
-						<text class="type-text">{{ item }}</text>
+						<text class="type-text" :class="{ 'type-text-active': form.type === item }">{{ item }}</text>
 						<text class="type-check" v-if="form.type === item">✓</text>
 					</view>
 				</view>
-				<button class="modal-close-btn" @click="showTypePicker = false">取消</button>
+				<view class="sheet-cancel" @click="showTypePicker = false">取消</view>
 			</view>
 		</view>
 	</view>
@@ -165,6 +171,7 @@ export default {
 			submitting: false,
 			showTypePicker: false,
 			tab: 'submit',
+			touchStartX: undefined,
 			historyList: [],
 			loadingHistory: false,
 			page: 1,
@@ -215,6 +222,21 @@ export default {
 			this.page = 1;
 			this.hasMore = true;
 			this.loadHistory();
+		},
+		// ===== 左右滑动切换 tab =====
+		onTouchStart(e) {
+			this.touchStartX = e.touches[0].clientX;
+		},
+		onTouchEnd(e) {
+			if (this.touchStartX === undefined) return;
+			const dx = e.changedTouches[0].clientX - this.touchStartX;
+			this.touchStartX = undefined;
+			if (Math.abs(dx) < 60) return; // 滑动距离不足，视为点击
+			if (dx < 0 && this.tab === 'submit') {
+				this.switchToHistory(); // 左滑 → 历史反馈
+			} else if (dx > 0 && this.tab === 'history') {
+				this.tab = 'submit'; // 右滑 → 提交反馈
+			}
 		},
 		// 已完结的问题默认折叠；手动展开过的保持展开
 		isCollapsed(item) {
@@ -421,6 +443,45 @@ export default {
 				}
 			});
 		},
+		deleteFeedback(item) {
+			uni.showModal({
+				title: '删除反馈',
+				content: '确定删除这条已完结的反馈？删除后不可恢复。',
+				confirmText: '删除',
+				confirmColor: '#e64340',
+				success: (res) => {
+					if (!res.confirm) return;
+					const userInfo = uni.getStorageSync('userInfo');
+					if (!userInfo || !userInfo.id) return;
+					uni.request({
+						url: apiConfig.baseUrl + 'feedback.php',
+						method: 'POST',
+						data: {
+							action: 'delete',
+							user_id: userInfo.id,
+							feedback_id: item.id
+						},
+						success: (res) => {
+							try {
+								const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+								if (result && result.code === 200) {
+									uni.showToast({ title: '已删除', icon: 'success' });
+									this.page = 1;
+									this.loadHistory();
+								} else {
+									uni.showToast({ title: result.message || '删除失败', icon: 'none' });
+								}
+							} catch (e) {
+								uni.showToast({ title: '服务器异常', icon: 'none' });
+							}
+						},
+						fail: () => {
+							uni.showToast({ title: '网络错误', icon: 'none' });
+						}
+					});
+				}
+			});
+		},
 		formatTime(t) {
 			if (!t) return '';
 			try {
@@ -549,8 +610,11 @@ export default {
 
 .history-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12upx; }
 .history-footer .history-footer-time { margin-top: 0; }
+.history-footer-left { display: flex; align-items: center; gap: 12upx; }
 .history-close-btn { font-size: 22upx; color: #909398; padding: 6upx 20upx; border: 1upx solid #d8dbe0; border-radius: 20upx; line-height: 1.4; }
 .history-close-btn:active { color: #ef4444; border-color: #ef4444; }
+.history-delete-btn { font-size: 22upx; color: #e64340; padding: 6upx 20upx; border: 1upx solid #f0b3b0; border-radius: 20upx; line-height: 1.4; }
+.history-delete-btn:active { background: #fdecec; }
 .history-footer-time { font-size: 20upx; color: #d1d5db; display: block; text-align: right; }
 
 /* 顶部标签栏 */
@@ -568,17 +632,30 @@ export default {
 .history-empty { text-align: center; padding: 100upx 0; }
 .empty-text { font-size: 28upx; color: #909398; }
 
-/* 弹窗 */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 40upx; }
-.modal-content { background: #fff; border-radius: 28upx; padding: 36upx 32upx 28upx; width: 86%; max-width: 560upx; box-shadow: 0 16upx 48upx rgba(0, 0, 0, 0.15); max-height: 78vh; overflow-y: auto; }
-.modal-title { font-size: 32upx; font-weight: 600; color: #303132; display: block; text-align: center; margin-bottom: 24upx; }
-.type-list { margin-bottom: 24upx; }
-.type-item { display: flex; align-items: center; justify-content: space-between; padding: 24upx 20upx; margin-bottom: 4upx; border-radius: 12upx; border-bottom: 1px solid #f3f4f6; }
-.type-item:active { background: #f3f6fc; }
-.type-item.active { background: #f0f5ff; border-left: 4upx solid #3071f6; padding-left: 16upx; }
+/* 底部操作表 */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: flex-end; z-index: 9999; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.action-sheet {
+	width: 100%; background: #f7f8fa; border-radius: 28upx 28upx 0 0;
+	padding: 32upx 24upx 48upx; box-sizing: border-box;
+	animation: sheetUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.sheet-head { text-align: center; margin-bottom: 24upx; }
+.sheet-title { display: block; font-size: 30upx; font-weight: 700; color: #1f2937; }
+.sheet-sub { display: block; font-size: 24upx; color: #9ca3af; margin-top: 6upx; }
+.type-list { background: #fff; border-radius: 16upx; overflow: hidden; }
+.type-item { display: flex; align-items: center; justify-content: space-between; height: 100upx; padding: 0 28upx; border-bottom: 1px solid #f3f4f6; }
 .type-item:last-child { border-bottom: none; }
+.type-item:active { background: #f0f2f5; }
+.type-item.active { background: #f0f5ff; }
 .type-text { font-size: 28upx; color: #303132; }
+.type-text-active { color: #3071f6; font-weight: 600; }
 .type-check { font-size: 32upx; color: #3071f6; font-weight: 600; }
-.modal-close-btn { width: 100%; height: 88upx; line-height: 88upx; background: #ffffff; color: #3071f6; font-size: 28upx; font-weight: 500; border-radius: 16upx; border: 2upx solid #3071f6; }
-.modal-close-btn:active { background: #f0f5ff; }
+.sheet-cancel {
+	margin-top: 16upx; background: #fff; height: 100upx; line-height: 100upx;
+	text-align: center; font-size: 28upx; color: #303132; font-weight: 500;
+	border-radius: 16upx; transition: background 0.15s;
+}
+.sheet-cancel:active { background: #f0f2f5; }
 </style>

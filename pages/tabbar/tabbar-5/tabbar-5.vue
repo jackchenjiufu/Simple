@@ -25,7 +25,11 @@
 			<!-- 用户信息区域 -->
 			<view class="user-info">
 				<!-- 昵称，可点击进入编辑资料 -->
-				<text class="nickname" @click="goToPersonalInfo">{{ nickname }}</text>
+				<view class="nickname-row">
+					<text class="nickname" @click="goToPersonalInfo">{{ nickname }}</text>
+					<text v-if="isBadgeRole(userRole)" class="role-badge" :style="badgeStyle(userRole)">{{ badgeLabel(userRole) }}</text>
+					<text class="role-badge level" v-if="growthLevel > 0">Lv.{{ growthLevel }}</text>
+				</view>
 			</view>
 			
 			<!-- 未登录状态下显示登录/注册按钮组 -->
@@ -62,19 +66,23 @@
 
 <script>
 import apiConfig from '../../../utils/api.js';
+import { loadRoles, isBadgeRole as badgeRoleFn, badgeLabel as badgeLabelFn, badgeStyle as badgeStyleFn } from '../../../utils/role-badges.js';
 export default {
 	/**
 	 * 组件数据
 	 */
 	data() {
 		return {
-			avatarUrl: 'https://via.placeholder.com/150', // 头像URL
+			avatarUrl: 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png', // 头像URL
 			nickname: '未登录', // 用户昵称
 			isLoggedIn: false, // 登录状态
-			backgroundUrl: 'https://via.placeholder.com/750x450/f33e54/ffffff?text=Background', // 背景图URL
+			backgroundUrl: 'http://139.196.185.197:7070/doo/server/uploads/default_background.png', // 背景图URL
 			statusBarHeight: 0, // 状态栏高度
 			bannerHeight: 0, // 背景横幅总高度（含状态栏延伸部分）
 			userInfo: null, // 用户信息对象
+			userRole: '', // 用户角色（super_admin 显示勋章）
+			growth: 0, // 成长值（发布文章数）
+			growthLevel: 0, // 等级：每 5 篇 1 级，最高 10 级
 			apiBase: '', // API基础地址（在onLoad中初始化）
 			registerTime: '' // 注册时间
 		};
@@ -106,12 +114,18 @@ export default {
 	onShow() {
 		// 每次显示页面时重新加载用户信息，确保数据最新
 		this.loadUserInfo();
+		this.loadGrowth();
+		loadRoles();
 	},
 	
 	/**
 	 * 组件方法
 	 */
 	methods: {
+		// 角色徽章辅助（注册为实例方法，供模板调用）
+		isBadgeRole(name) { return badgeRoleFn(name); },
+		badgeLabel(name) { return badgeLabelFn(name); },
+		badgeStyle(name) { return badgeStyleFn(name); },
 		/**
 		 * 处理图片 URL，确保包含正确的端口号
 		 * @param {string} url - 原始图片 URL
@@ -131,6 +145,34 @@ export default {
 		 * 加载用户信息
 		 * 从本地存储获取用户信息和登录状态，处理头像和背景图URL
 		 */
+		// 加载成长值（发布文章数）→ 等级：阈值 5,10,30,60,80,100,120,140,160,180（最高 10 级）
+		loadGrowth() {
+			const ui = uni.getStorageSync('userInfo');
+			if (!ui || !ui.id) return;
+			uni.request({
+				url: apiConfig.baseUrl + 'get_user_articles.php',
+				method: 'GET',
+				data: { user_id: ui.id, limit: 1 },
+				success: (res) => {
+					try {
+						const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+						if (result && result.code === 200) {
+							const total = Number(result.data.total || 0);
+							const levels = [5, 10, 30, 60, 80, 100, 120, 140, 160, 180];
+							let level = 0;
+							for (let i = 0; i < levels.length; i++) {
+								if (total >= levels[i]) level = i + 1;
+							}
+							// 手动等级优先（后台用户管理设置）
+							const manual = Number(ui.level || 0);
+							if (manual > 0) level = Math.min(10, manual);
+							this.growth = total;
+							this.growthLevel = level;
+						}
+					} catch (e) { /* ignore */ }
+				}
+			});
+		},
 		loadUserInfo() {
 			const userInfo = uni.getStorageSync('userInfo');
 			const isLoggedIn = uni.getStorageSync('isLoggedIn');
@@ -140,14 +182,15 @@ export default {
 			if (isLoggedIn && userInfo) {
 				this.isLoggedIn = true;
 				this.userInfo = userInfo;
+				this.userRole = userInfo.role || '';
 				this.nickname = userInfo.nickname || userInfo.username;
 				
 				// 处理头像URL，确保包含正确的端口号
-				let avatarUrl = userInfo.avatar || 'https://via.placeholder.com/150';
+				let avatarUrl = userInfo.avatar || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png';
 				this.avatarUrl = this.processImageUrl(avatarUrl);
 				
 				// 处理背景图片URL，确保包含正确的端口号
-				let backgroundUrl = userInfo.background_image || 'https://via.placeholder.com/750x450/f33e54/ffffff?text=Background';
+				let backgroundUrl = userInfo.background_image || 'http://139.196.185.197:7070/doo/server/uploads/default_background.png';
 				this.backgroundUrl = this.processImageUrl(backgroundUrl);
 				
 			} else {
@@ -155,8 +198,8 @@ export default {
 				this.isLoggedIn = false;
 				this.userInfo = null;
 				this.nickname = '未登录';
-				this.avatarUrl = 'https://via.placeholder.com/150';
-				this.backgroundUrl = 'https://via.placeholder.com/750x450/f33e54/ffffff?text=Background';
+				this.avatarUrl = 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png';
+				this.backgroundUrl = 'http://139.196.185.197:7070/doo/server/uploads/default_background.png';
 			}
 		},
 		
@@ -520,12 +563,45 @@ feedback: '/pages/user/my-feedback', // 问题反馈
 		margin-right: 20upx;
 	}
 
+	.nickname-row {
+		display: flex;
+		align-items: center;
+		margin-bottom: 15upx;
+	}
+
 	.nickname {
 		font-size: 36upx;
 		font-weight: bold;
 		color: #303132;
 		display: block;
-		margin-bottom: 15upx;
+	}
+
+	.role-badge {
+		font-size: 20upx;
+		padding: 2upx 12upx;
+		border-radius: 20upx;
+		margin-left: 14upx;
+		flex-shrink: 0;
+	}
+	.role-badge.super {
+		color: #b8860b;
+		background: #fff8e6;
+		border: 1upx solid #f0d48a;
+	}
+	.role-badge.admin {
+		color: #1b44a6;
+		background: #f0f5ff;
+		border: 1upx solid #b8cdf5;
+	}
+	.role-badge.editor {
+		color: #1a7d3a;
+		background: #e8f8ee;
+		border: 1upx solid #b7e4c7;
+	}
+	.role-badge.level {
+		color: #7c5cfc;
+		background: #f3f0ff;
+		border: 1upx solid #d4c8f7;
 	}
 
 	.button-group {

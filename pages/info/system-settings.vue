@@ -59,12 +59,6 @@
 					</view>
 					<text class="item-arrow">›</text>
 				</view>
-				<view class="settings-item" @click="openDocumentation">
-					<view class="item-left">
-						<text class="item-text">文档中心</text>
-					</view>
-					<text class="item-arrow">›</text>
-				</view>
 			</view>
 
 			<view class="settings-section">
@@ -134,7 +128,7 @@ export default {
 		// 管理员才有后台管理入口（登录时写入 isAdmin，兼容旧数据再读一次 userInfo.role）
 		this.isAdmin = uni.getStorageSync('isAdmin') === true;
 		const ui = uni.getStorageSync('userInfo');
-		if (!this.isAdmin && ui && (ui.role === 'admin' || ui.role === 'super_admin' || ui.role === 'editor')) this.isAdmin = true;
+		if (!this.isAdmin && ui && (ui.role === 'admin' || ui.role === 'super_admin' || ui.role === 'editor' || ui.role === '运营')) this.isAdmin = true;
 	},
 	methods: {
 		checkUpdate() { uni.navigateTo({ url: '/pages/info/check-update' }); },
@@ -213,8 +207,7 @@ export default {
 				return (bytes / 1048576).toFixed(1) + ' MB';
 			},
 			openUserAgreement() { uni.navigateTo({ url: '/pages/info/user-agreement' }); },
-		openPrivacyPolicy() { uni.navigateTo({ url: '/pages/info/privacy-policy' }); },
-		openDocumentation() { uni.navigateTo({ url: '/pages/info/documentation' }); }
+		openPrivacyPolicy() { uni.navigateTo({ url: '/pages/info/privacy-policy' }); }
 	}
 };
 </script>

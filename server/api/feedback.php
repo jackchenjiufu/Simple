@@ -197,6 +197,47 @@ if ($method === 'POST') {
         exit;
     }
 
+    // === 用户删除反馈（仅已完结可删，连带删除回复记录）===
+    if ($action === 'delete') {
+        $feedback_id = intval($input['feedback_id'] ?? 0);
+
+        if (empty($feedback_id)) {
+            http_response_code(400);
+            echo json_encode(array("message" => "参数不完整", "code" => 400));
+            exit;
+        }
+
+        // 验证反馈属于该用户且已完结
+        $check = $db->prepare("SELECT id, status FROM feedback WHERE id = :id AND user_id = :uid");
+        $check->bindParam(":id", $feedback_id, PDO::PARAM_INT);
+        $check->bindParam(":uid", $user_id, PDO::PARAM_INT);
+        $check->execute();
+        $feedbackRow = $check->fetch(PDO::FETCH_ASSOC);
+        if (!$feedbackRow) {
+            http_response_code(403);
+            echo json_encode(array("message" => "无权操作", "code" => 403));
+            exit;
+        }
+        if ((int)$feedbackRow['status'] !== 3) {
+            http_response_code(400);
+            echo json_encode(array("message" => "仅已完结的反馈可删除", "code" => 400));
+            exit;
+        }
+
+        try {
+            $delReplies = $db->prepare("DELETE FROM feedback_replies WHERE feedback_id = :id");
+            $delReplies->execute([':id' => $feedback_id]);
+            $delFb = $db->prepare("DELETE FROM feedback WHERE id = :id");
+            $delFb->execute([':id' => $feedback_id]);
+            http_response_code(200);
+            echo json_encode(array("message" => "反馈已删除", "code" => 200));
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(array("message" => "服务器错误", "code" => 500));
+        }
+        exit;
+    }
+
     // === 提交新反馈 ===
     $type = isset($input['type']) ? trim($input['type']) : '';
     $content = isset($input['content']) ? trim($input['content']) : '';

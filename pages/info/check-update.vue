@@ -80,18 +80,18 @@
 			<view class="info-card">
 				<text class="card-title">更新日志</text>
 				<view class="log-item" v-for="(item, index) in changelog.slice(0, 5)" :key="index">
-					<view class="log-left">
+					<view class="log-head">
 						<text class="log-version">v{{ item.version }}</text>
-						<text class="log-desc">{{ item.description || '无说明' }}</text>
+						<text class="log-date">{{ formatDate(item.created_at) }}</text>
 					</view>
-					<text class="log-date">{{ formatDate(item.created_at) }}</text>
+					<text class="log-desc">{{ item.description || '无说明' }}</text>
 				</view>
 				<view class="empty-log" v-if="!changelog || changelog.length === 0">
 					<text class="empty-text">暂无更新记录</text>
 				</view>
 			</view>
 
-			<text class="footer-text">Origin v{{ currentVersion }}</text>
+			<text class="footer-text">Simple V{{ currentVersion }}</text>
 		</scroll-view>
 	</view>
 </template>
@@ -245,17 +245,29 @@ export default {
 				uni.hideToast();
 				if (status === 200) {
 					uni.showToast({ title: '下载完成，正在安装...', icon: 'none', duration: 3000 });
+					// 拉起系统安装器安装本地 APK（不带 force，避免静默安装失败）
 					plus.runtime.install(d.filename, {}, function() {
 						uni.showToast({ title: '安装成功', icon: 'none' });
 						self.downloading = false;
 					}, function(e) {
-						plus.runtime.openURL(apkUrl);
-						uni.showToast({ title: '安装失败，已打开浏览器下载', icon: 'none' });
+						// install 失败 → 用系统 Intent 打开本地 APK 调起安装器
+						try {
+							var main = plus.android.runtimeMainActivity();
+							var Intent = plus.android.importClass('android.content.Intent');
+							var Uri = plus.android.importClass('android.net.Uri');
+							var File = plus.android.importClass('java.io.File');
+							var intent = new Intent('android.intent.action.VIEW');
+							intent.setDataAndType(Uri.fromFile(new File(d.filename)), 'application/vnd.android.package-archive');
+							main.startActivity(intent);
+							uni.showToast({ title: '请在弹出的安装器中完成安装', icon: 'none' });
+						} catch (e2) {
+							plus.runtime.openURL(apkUrl);
+							uni.showToast({ title: '安装失败，已打开浏览器下载', icon: 'none' });
+						}
 						self.downloading = false;
 					});
 				} else {
-					uni.showToast({ title: '下载失败，已打开浏览器重试', icon: 'none' });
-					plus.runtime.openURL(apkUrl);
+					uni.showToast({ title: '下载失败，请稍后重试', icon: 'none' });
 					self.downloading = false;
 				}
 			});
@@ -358,11 +370,11 @@ function compareVersion(v1, v2) {
 .progress-fill { height: 100%; background: #3071f6; border-radius: 4upx; transition: width 0.3s ease; }
 .cancel-link { font-size: 22upx; color: #9ca3af; text-decoration: underline; }
 
-.log-item { display: flex; align-items: center; justify-content: space-between; padding: 14upx 0; border-bottom: 1px solid #f5f5f5; }
-.log-left { flex: 1; display: flex; flex-direction: column; gap: 4upx; }
+.log-item { padding: 14upx 0; border-bottom: 1px solid #f5f5f5; }
+.log-head { display: flex; align-items: center; gap: 16upx; margin-bottom: 4upx; }
 .log-version { font-size: 26upx; font-weight: 600; color: #3071f6; }
 .log-desc { font-size: 24upx; color: #6b7280; }
-.log-date { font-size: 20upx; color: #c0c4cc; flex-shrink: 0; margin-left: 16upx; }
+.log-date { font-size: 20upx; color: #c0c4cc; flex-shrink: 0; }
 .empty-log { padding: 24upx 0; text-align: center; }
 .empty-text { font-size: 24upx; color: #c0c4cc; }
 
