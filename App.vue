@@ -21,6 +21,7 @@
 
 <script>
 import apiConfig from './utils/api.js';
+import { compareVersion } from './utils/version.js';
 
 export default {
 	globalData: { userInfo: null },
@@ -62,7 +63,20 @@ export default {
 		});
 		uni.addInterceptor("switchTab", {
 			invoke: function(args) {
-				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login", animationDuration: 0 }); return false; }
+				if (!uni.getStorageSync("isLoggedIn")) {
+					// 已在登录页时不再重复 reLaunch（否则与 login 页 onLoad 的跳转形成死循环）
+					var pages = getCurrentPages();
+					var currentPath = pages.length > 0 ? pages[pages.length - 1].route : '';
+					if (!isLoginPage(currentPath)) {
+						uni.reLaunch({ url: "/pages/auth/login", animationDuration: 0 });
+					}
+					// 状态自愈：残留的 userInfo（无 isLoggedIn）会导致 login 页 onLoad 反复尝试跳走
+					if (uni.getStorageSync("userInfo")) {
+						uni.removeStorageSync("userInfo");
+						uni.removeStorageSync("userId");
+					}
+					return false;
+				}
 				return true;
 			}
 		});
@@ -283,17 +297,6 @@ export default {
 	}
 };
 
-function compareVersion(v1, v2) {
-	var a1 = v1.split('.').map(Number);
-	var a2 = v2.split('.').map(Number);
-	for (var i = 0; i < Math.max(a1.length, a2.length); i++) {
-		var n1 = a1[i] || 0;
-		var n2 = a2[i] || 0;
-		if (n1 > n2) return 1;
-		if (n1 < n2) return -1;
-	}
-	return 0;
-}
 </script>
 
 <style>

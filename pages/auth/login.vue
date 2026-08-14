@@ -92,7 +92,13 @@
 
 <script>
 import apiConfig from '../../utils/api.js';
+import { mapGetters, mapActions } from 'vuex';
 export default {
+	computed: {
+		// #ifdef VUE3
+		...mapGetters('user', ['isLoggedIn']),
+		// #endif
+	},
 	data() {
 		return {
 			username: '',
@@ -113,14 +119,23 @@ export default {
 			this.isRegister = true;
 		}
 
+		// 已登录才跳首页：isLoggedIn 与 userInfo 必须同时存在（残留的 userInfo 不足以判定登录态）
 		const userInfo = uni.getStorageSync('userInfo');
-		if (userInfo) {
+		if (uni.getStorageSync('isLoggedIn') && userInfo) {
 			uni.switchTab({
 				url: '/pages/tabbar/tabbar-1/tabbar-1'
 			});
+		} else if (userInfo) {
+			// 状态不一致（有 userInfo 无 isLoggedIn）：清理残留，避免 onLoad 反复触发跳转
+			uni.removeStorageSync('userInfo');
+			uni.removeStorageSync('userId');
 		}
 	},
 	methods: {
+		// #ifdef VUE3
+		// 注意：本地方法也叫 login，Vuex action 必须取别名，否则同名覆盖导致递归
+		...mapActions('user', { vuexLogin: 'login' }),
+		// #endif
 		toggleMode() {
 			this.isRegister = !this.isRegister;
 			this.username = '';
@@ -190,10 +205,8 @@ export default {
 					const responseData = res.data.data;
 					const userInfo = responseData.user;
 					const token = responseData.token;
-					uni.setStorageSync('userInfo', userInfo);
-					uni.setStorageSync('token', token);
-						uni.setStorageSync('userId', userInfo.id);
-						uni.setStorageSync('isLoggedIn', true);
+					// 统一走 Vuex user 模块（内部同步 uni storage）
+					this.vuexLogin({ token, userInfo });
 					// 管理员身份标记（有权限才显示后台管理入口）
 					const isAdminRole = userInfo.role === 'admin' || userInfo.role === 'super_admin' || userInfo.role === 'editor' || userInfo.role === '运营';
 					uni.setStorageSync('isAdmin', isAdminRole);

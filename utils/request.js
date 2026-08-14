@@ -1,6 +1,7 @@
 /**
  * API请求工具
  * 用于处理API请求，集成缓存功能，减少网络请求，提高应用性能
+ * 支持 query 参数、超时、401 处理；admin-api.js 复用本内核
  */
 
 import apiConfig from './api.js';
@@ -20,33 +21,46 @@ const DEFAULT_RETRY_DELAY = 1000;
  * @param {Object} options - 请求选项
  * @param {string} options.method - 请求方法，默认为GET
  * @param {Object} options.data - 请求数据
+ * @param {Object} options.query - URL查询参数（拼到地址栏，如 admin_token）
  * @param {Object} options.header - 请求头
+ * @param {number} options.timeout - 超时（毫秒）
  * @param {boolean} options.cache - 是否使用缓存，默认为false
  * @param {number} options.cacheTime - 缓存时间（毫秒），默认为30分钟
  * @param {boolean} options.debounce - 是否使用防抖，默认为false
  * @param {number} options.debounceTime - 防抖时间（毫秒），默认为300ms
  * @param {number} options.retry - 重试次数，默认为3
  * @param {number} options.retryDelay - 重试延迟（毫秒），默认为1000ms
+ * @param {boolean} options.onUnauthorized - 401时提示并回调（管理员接口使用）
  * @returns {Promise<Object>} 请求结果
  */
 async function request(endpoint, options = {}) {
   const {
     method = 'GET',
     data = {},
+    query = {},
     header = {},
+    timeout = 15000,
     cache: useCache = false,
     cacheTime = 30 * 60 * 1000,
     debounce: useDebounce = false,
     debounceTime = 300,
     retry = DEFAULT_RETRY_COUNT,
-    retryDelay = DEFAULT_RETRY_DELAY
+    retryDelay = DEFAULT_RETRY_DELAY,
+    onUnauthorized = null
   } = options;
 
   // 构建请求URL
-  const url = apiConfig.getUrl(endpoint);
-  // 构建缓存键名，基于端点、方法和请求数据
-  const cacheKey = `${endpoint}_${method}_${JSON.stringify(data)}`;
-  
+  let url = apiConfig.getUrl(endpoint);
+  // 拼 query 到 URL
+  const qs = Object.keys(query)
+    .filter(k => query[k] !== undefined && query[k] !== null && query[k] !== '')
+    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(query[k])}`)
+    .join('&');
+  if (qs) url += (url.includes('?') ? '&' : '?') + qs;
+
+  // 构建缓存键名，基于端点、方法、请求数据和查询参数
+  const cacheKey = `${endpoint}_${method}_${qs}_${JSON.stringify(data)}`;
+
   // 检查是否需要使用缓存
   if (useCache) {
     // 从缓存获取数据
@@ -66,6 +80,7 @@ async function request(endpoint, options = {}) {
     url: url,
     method: method,
     data: data,
+    timeout: timeout,
     header: {
       'Content-Type': 'application/json',
       ...authHeader,
@@ -86,18 +101,21 @@ async function request(endpoint, options = {}) {
           // 检查响应状态
           if (res.statusCode === 200) {
             const result = res.data;
-            
+
             // 检查是否需要缓存数据
             if (useCache && result.code === 200) {
               // 缓存请求结果
               cache.setCache(cacheKey, result, cacheTime);
             }
-            
+
             resolve(result);
+          } else if (res.statusCode === 401) {
+            if (onUnauthorized) onUnauthorized(res.data);
+            reject(new Error('未授权，请重新登录'));
           } else {
             const error = new Error(`请求失败，状态码：${res.statusCode}`);
             console.error('API请求失败:', error);
-            
+
             // 检查是否需要重试
             if (attempt < retry) {
               console.log(`请求失败，正在重试（${attempt + 1}/${retry}）...`);
@@ -114,7 +132,7 @@ async function request(endpoint, options = {}) {
         fail: (err) => {
           const error = new Error(`请求失败: ${err.errMsg}`);
           console.error('API请求失败:', error);
-          
+
           // 检查是否需要重试
           if (attempt < retry) {
             console.log(`请求失败，正在重试（${attempt + 1}/${retry}）...`);
@@ -132,7 +150,7 @@ async function request(endpoint, options = {}) {
   };
 
   // 检查是否已经有相同的请求在进行中
-  const queueKey = `${endpoint}_${method}_${JSON.stringify(data)}`;
+  const queueKey = `${endpoint}_${method}_${qs}_${JSON.stringify(data)}`;
   if (requestQueue.has(queueKey)) {
     console.log('使用队列中的请求:', queueKey);
     return requestQueue.get(queueKey);

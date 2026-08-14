@@ -22,6 +22,8 @@ export default defineConfig({
   },
   build: {
     outDir: '../admin-vue-dist',
-    assetsDir: 'assets'
+    assetsDir: 'assets',
+    // outDir 在项目根外，Vite 默认不清空导致旧哈希文件累积；显式开启清空
+    emptyOutDir: true
   }
 })

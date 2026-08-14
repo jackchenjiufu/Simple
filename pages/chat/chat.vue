@@ -63,6 +63,8 @@
 </template>
 
 <script>
+import apiConfig from '../../utils/api.js';
+import config from '../../utils/config.js';
 import chatApi from '../../utils/chat-api.js';
 import reportApi from '../../utils/report-api.js';
 
@@ -89,7 +91,7 @@ export default {
 			pollTimer: null,
 			peerAvatar: '',
 			myAvatar: '',
-			defaultAvatar: 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png',
+			defaultAvatar: apiConfig.getServerUrl(config.defaultAvatar),
 		};
 	},
 	onLoad(options) {
@@ -127,7 +129,7 @@ export default {
 		fixUrl(url) {
 			if (!url) return '';
 			if (url.startsWith('http://') || url.startsWith('https://')) return url;
-			return 'http://139.196.185.197:7070/doo/' + url.replace(/^\//, '');
+			return config.siteUrl + (url.startsWith('/') ? url : '/' + url);
 		},
 		loadMessages(reset) {
 			if (this.loading) return;

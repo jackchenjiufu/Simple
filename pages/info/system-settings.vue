@@ -109,6 +109,7 @@
 
 <script>
 import apiConfig from '../../utils/api.js';
+import { mapActions } from 'vuex';
 export default {
 	data() {
 	return {
@@ -131,6 +132,9 @@ export default {
 		if (!this.isAdmin && ui && (ui.role === 'admin' || ui.role === 'super_admin' || ui.role === 'editor' || ui.role === '运营')) this.isAdmin = true;
 	},
 	methods: {
+		// #ifdef VUE3
+		...mapActions('user', ['logout']),
+		// #endif
 		checkUpdate() { uni.navigateTo({ url: '/pages/info/check-update' }); },
 		goBack() { uni.navigateBack(); },
 		goToChangePassword() { uni.navigateTo({ url: '/pages/auth/change-password' }); },
@@ -150,8 +154,9 @@ export default {
 			uni.navigateTo({ url: '/pages/admin/index' });
 		},
 		confirmLogout() {
-			uni.removeStorageSync('userInfo'); uni.removeStorageSync('isLoggedIn');
-			uni.removeStorageSync('token'); this.isLoggedIn = false;
+			// 统一走 Vuex user 模块登出（清理 token/userInfo/登录态）
+			this.logout();
+			this.isLoggedIn = false;
 			this.showLogoutModal = false;
 			uni.showToast({ title: '已退出登录', icon: 'success' });
 			setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 1500);

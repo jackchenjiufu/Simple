@@ -46,13 +46,13 @@
 									</view>
 									<view
 										class="article-item"
-										v-for="(article, index) in group"
-										:key="index"
+										v-for="article in group"
+										:key="article.date + '_' + article.id"
 										@click="viewArticle(article)"
 									>
 										<view class="article-header">
 											<view class="author-info">
-												<image class="author-avatar" :src="article.author_avatar || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png'" mode="aspectFill" @click.stop="chatWith(article.user_id, article.author)"></image>
+												<image class="author-avatar" :src="article.author_avatar || defaultAvatarUrl" mode="aspectFill" @click.stop="chatWith(article.user_id, article.author)"></image>
 												<view class="author-name-wrap">
 													<text class="author-name">{{ article.author || '未知作者' }}</text>
 													<text v-if="isBadgeRole(article.author_role)" class="role-badge" :style="badgeStyle(article.author_role)">{{ badgeLabel(article.author_role) }}</text>
@@ -72,7 +72,7 @@
 										</view>
 									</view>
 								</view>
-								<view class="empty-state" v-if="articleList.length === 0">
+								<view class="empty-state" v-if="!articleLoading && articleList.length === 0">
 									<text class="empty-text">暂无文章</text>
 								</view>
 							</view>
@@ -114,11 +114,20 @@
 <script>
 import apiConfig from '../../../utils/api.js';
 import { loadRoles, isBadgeRole as badgeRoleFn, badgeLabel as badgeLabelFn, badgeStyle as badgeStyleFn } from '../../../utils/role-badges.js';
-import request from '../../../utils/request.js';
+// 引入以激活 utils/request.js 中 uni.request 全局 Token 注入副作用
+import '../../../utils/request.js';
 import NavBar from '../../../components/modules/nav-bar/nav-bar.vue';
 
 
 const API_BASE = apiConfig.baseUrl;
+
+// 本地日期字符串（YYYY-MM-DD），避免 toISOString 的 UTC 时区偏差
+function localDateString() {
+	const d = new Date();
+	const mm = String(d.getMonth() + 1).padStart(2, '0');
+	const dd = String(d.getDate()).padStart(2, '0');
+	return `${d.getFullYear()}-${mm}-${dd}`;
+}
 
 export default {
 	components: { NavBar },
@@ -127,14 +136,7 @@ export default {
 			activeTab: 'articles',
 			activeTabIndex: 0,
 			statusBarHeight: 0,
-			carouselList: [],
-			cardList: [],
-			currentRecommendId: '',
-			refreshing: false,
-			loadingRecommend: false,
-			loadingMore: false,
-			currentPage: 1,
-			pageSize: 4,
+			defaultAvatarUrl: apiConfig.getServerUrl('/server/uploads/default_avatar.png'),
 			articleList: [],
 			articleTotal: 0,
 			articleLoading: false,
@@ -143,7 +145,6 @@ export default {
 			categories: [],
 			activeCategory: 'all',
 			articlesRefreshing: false,
-			hasMoreCards: true,
 			agentInput: '',
 			agentMsgs: [],
 			agentLoading: false,
@@ -158,25 +159,30 @@ export default {
 				if (!groups[date]) groups[date] = [];
 				groups[date].push(article);
 			});
+			// 日期解析兼容 "2025-01-15" 与 MySQL "2025-01-15 10:30:00"（iOS 解析带空格日期返回 Invalid Date）
+			const parseTime = (d) => {
+				const t = new Date(String(d).replace(' ', 'T')).getTime();
+				return isNaN(t) ? 0 : t;
+			};
 			const sorted = {};
-			Object.keys(groups).sort((a, b) => new Date(b) - new Date(a)).forEach(d => { sorted[d] = groups[d]; });
+			Object.keys(groups).sort((a, b) => parseTime(b) - parseTime(a)).forEach(d => { sorted[d] = groups[d]; });
 			return sorted;
 		}
 	},
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
-		this.loadCarouselData();
-			this.generateRecommendations();
 		// 预加载角色列表，保证作者徽章（含自定义角色如「运营」）正常显示
 		loadRoles();
-		// 监听键盘高度变化
-		this._keyboardHandler = (res) => {
-			if (res.height > 0) {
-				this.$nextTick(() => { this.agentScrl = 'agent-bottom'; });
-			}
-		};
-		uni.onKeyboardHeightChange(this._keyboardHandler);
+		// 监听键盘高度变化（onKeyboardHeightChange 仅 App 端支持，需能力检测）
+		if (uni.onKeyboardHeightChange) {
+			this._keyboardHandler = (res) => {
+				if (res.height > 0) {
+					this.$nextTick(() => { this.agentScrl = 'agent-bottom'; });
+				}
+			};
+			uni.onKeyboardHeightChange(this._keyboardHandler);
+		}
 	},
 	onShow() {
 		// 每次回到页面刷新文章列表（首次进入、从详情返回、切换tab回来都保持最新）
@@ -184,7 +190,7 @@ export default {
 	},
 	onUnload() {
 		// 移除键盘监听，防止内存泄漏
-		if (this._keyboardHandler) {
+		if (this._keyboardHandler && uni.offKeyboardHeightChange) {
 			uni.offKeyboardHeightChange(this._keyboardHandler);
 			this._keyboardHandler = null;
 		}
@@ -197,127 +203,21 @@ export default {
 		switchTab(tab) {
 			this.activeTab = tab;
 			const map = { articles: 0, agent: 1 };
-			this.activeTabIndex = map[tab] || 0;
-			if (tab === 'articles') this.loadArticles();
-			},
+			const index = map[tab] || 0;
+			if (index === this.activeTabIndex) {
+				// 已是当前 Tab：swiper 不会触发 change，手动刷新一次
+				if (tab === 'articles') this.loadArticles();
+				return;
+			}
+			// 切换 Tab：由 onSwiperChange 统一加载，避免重复请求
+			this.activeTabIndex = index;
+		},
 		onSwiperChange(event) {
 			const index = event.detail.current;
 			this.activeTabIndex = index;
 			const tabs = ['articles', 'agent'];
-				this.activeTab = tabs[index] || 'articles';
+			this.activeTab = tabs[index] || 'articles';
 			if (this.activeTab === 'articles') this.loadArticles();
-				},
-		async loadCarouselData() {
-			try {
-				const result = await request.get(apiConfig.endpoints.carousel, {}, { cache: true, cacheTime: 15 * 60 * 1000 });
-				if (result) {
-					if (Array.isArray(result)) {
-						this.carouselList = result;
-					} else if (result.code === 200 && result.data) {
-						this.carouselList = Array.isArray(result.data) ? result.data : [];
-					}
-				}
-				if (this.carouselList.length === 0) this.useDefaultCarouselData();
-			} catch (e) {
-				this.useDefaultCarouselData();
-			}
-		},
-		useDefaultCarouselData() {
-			this.carouselList = [
-				{ id: 1, title: '热门推荐', author: '官方推荐', image: '/static/img/banner1.jpg' },
-				{ id: 2, title: '精选内容', author: '编辑精选', image: '/static/img/banner2.jpg' },
-				{ id: 3, title: '最新发布', author: '用户发布', image: '/static/img/banner3.jpg' },
-				{ id: 4, title: '关注推荐', author: '好友推荐', image: '/static/img/banner4.jpg' }
-			];
-		},
-		async onRefresh() {
-			this.refreshing = true;
-			try {
-				await this.loadCarouselData();
-				await this.generateRecommendations();
-			} catch (e) { /* silent */ }
-			this.refreshing = false;
-		},
-		clickCarouselItem(item) {
-			uni.navigateTo({ url: '/pages/content/card-detail' });
-		},
-		async clickCard(card) {
-			uni.navigateTo({
-				url: '/pages/content/card-detail',
-				success: (res) => res.eventChannel.emit('setCard', card)
-		});
-		},
-		async generateRecommendations() {
-			this.loadingRecommend = true;
-			try {
-				const res = await uni.request({
-					url: API_BASE + 'content.php',
-					method: 'GET',
-					data: { limit: 10, offset: 0, status: 'published' }
-				});
-				const result = res.data;
-				if (result.code === 200 && result.data) {
-					const recommendations = (result.data.contents || []).filter(item => item.image_url);
-					this.currentRecommendId = `rec_${Date.now()}`;
-					if (recommendations.length > 0) {
-						this.cardList = recommendations.map(item => ({
-							id: item.id,
-							title: item.title || '无标题',
-							author: item.author || (item.user_id ? `用户${item.user_id}` : '未知用户'),
-							cover: item.image_url || '/static/img/logo.png',
-							type: 'image',
-							recommendedBy: 'content'
-						}));
-					} else {
-						this.useDefaultRecommendations();
-					}
-				} else {
-					this.useDefaultRecommendations();
-				}
-			} catch (e) {
-				this.useDefaultRecommendations();
-			}
-			this.loadingRecommend = false;
-		},
-		useDefaultRecommendations() {
-			this.cardList = [
-				{ id: 1, title: '美丽的自然风光', author: '推荐系统', cover: '/static/img/banner1.jpg', type: 'image', recommendedBy: 'default' },
-				{ id: 2, title: '城市夜景', author: '推荐系统', cover: '/static/img/banner2.jpg', type: 'image', recommendedBy: 'default' },
-				{ id: 3, title: '精选内容', author: '推荐系统', cover: '/static/img/banner3.jpg', type: 'image', recommendedBy: 'default' },
-				{ id: 4, title: '关注推荐', author: '推荐系统', cover: '/static/img/banner4.jpg', type: 'image', recommendedBy: 'default' }
-			];
-		},
-		loadMoreCards() {
-			if (this.loadingMore || !this.hasMoreCards) return;
-			this.loadingMore = true;
-			uni.request({
-				url: API_BASE + 'content.php',
-				method: 'GET',
-				data: { limit: this.pageSize, offset: (this.currentPage - 1) * this.pageSize, status: 'published' },
-				success: (res) => {
-					try {
-						const result = res.data;
-						if (result.code === 200) {
-							const contents = (result.data.contents || []).filter(item => item.image_url);
-							if (contents.length > 0) {
-								const moreCards = contents.map(item => ({
-									id: item.id,
-									title: item.title,
-									author: item.author || (item.user_id ? `用户${item.user_id}` : '未知用户'),
-									cover: item.image_url,
-									type: 'image',
-									recommendedBy: 'content'
-								}));
-								this.cardList = [...this.cardList, ...moreCards];
-								this.currentPage++;
-							} else {
-								this.hasMoreCards = false;
-							}
-						}
-					} catch (e) { /* silent */ }
-				},
-				complete: () => { this.loadingMore = false; }
-			});
 		},
 		async loadArticles() {
 			this.articleLoading = true;
@@ -337,8 +237,8 @@ export default {
 						this.articleList = result.data.articles.map(article => {
 							return {
 								...article,
-								author_avatar: article.author_avatar || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png',
-								date: article.date || article.created_at || new Date().toISOString().split('T')[0]
+								author_avatar: article.author_avatar || this.defaultAvatarUrl,
+								date: article.date || article.created_at || localDateString()
 							};
 						});
 					}
@@ -372,8 +272,8 @@ export default {
 					const more = result.data.articles.map(article => {
 						return {
 							...article,
-							author_avatar: article.author_avatar || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png',
-							date: article.date || article.created_at || new Date().toISOString().split('T')[0]
+							author_avatar: article.author_avatar || this.defaultAvatarUrl,
+							date: article.date || article.created_at || localDateString()
 						};
 					});
 					this.articleList = this.articleList.concat(more);

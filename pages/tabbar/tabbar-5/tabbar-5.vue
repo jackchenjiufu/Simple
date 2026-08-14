@@ -66,6 +66,7 @@
 
 <script>
 import apiConfig from '../../../utils/api.js';
+import config from '../../../utils/config.js';
 import { loadRoles, isBadgeRole as badgeRoleFn, badgeLabel as badgeLabelFn, badgeStyle as badgeStyleFn } from '../../../utils/role-badges.js';
 export default {
 	/**
@@ -73,10 +74,10 @@ export default {
 	 */
 	data() {
 		return {
-			avatarUrl: 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png', // 头像URL
+			avatarUrl: apiConfig.getServerUrl(config.defaultAvatar), // 头像URL
 			nickname: '未登录', // 用户昵称
 			isLoggedIn: false, // 登录状态
-			backgroundUrl: 'http://139.196.185.197:7070/doo/server/uploads/default_background.png', // 背景图URL
+			backgroundUrl: apiConfig.getServerUrl('/server/uploads/default_background.png'), // 背景图URL
 			statusBarHeight: 0, // 状态栏高度
 			bannerHeight: 0, // 背景横幅总高度（含状态栏延伸部分）
 			userInfo: null, // 用户信息对象
@@ -186,11 +187,11 @@ export default {
 				this.nickname = userInfo.nickname || userInfo.username;
 				
 				// 处理头像URL，确保包含正确的端口号
-				let avatarUrl = userInfo.avatar || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png';
+				let avatarUrl = userInfo.avatar || apiConfig.getServerUrl(config.defaultAvatar);
 				this.avatarUrl = this.processImageUrl(avatarUrl);
 				
 				// 处理背景图片URL，确保包含正确的端口号
-				let backgroundUrl = userInfo.background_image || 'http://139.196.185.197:7070/doo/server/uploads/default_background.png';
+				let backgroundUrl = userInfo.background_image || apiConfig.getServerUrl('/server/uploads/default_background.png');
 				this.backgroundUrl = this.processImageUrl(backgroundUrl);
 				
 			} else {
@@ -198,8 +199,8 @@ export default {
 				this.isLoggedIn = false;
 				this.userInfo = null;
 				this.nickname = '未登录';
-				this.avatarUrl = 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png';
-				this.backgroundUrl = 'http://139.196.185.197:7070/doo/server/uploads/default_background.png';
+				this.avatarUrl = apiConfig.getServerUrl(config.defaultAvatar);
+				this.backgroundUrl = apiConfig.getServerUrl('/server/uploads/default_background.png');
 			}
 		},
 		

@@ -2,7 +2,7 @@
 
 	<view class="content">
 
-		<NavBar title="公告详情" />
+ <NavBar mode="back" title="公告详情" />
 
 
 
@@ -62,7 +62,7 @@
 
 <script>
 
-import NavBar from '../../components/nav-bar.vue';
+import NavBar from '../../components/modules/nav-bar/nav-bar.vue';
 
 import apiConfig from '../../utils/api.js';
 

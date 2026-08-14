@@ -2,12 +2,13 @@
  * API配置文件
  * 统一管理API地址，便于后续维护和更新
  */
+import config from './config.js'
 
 const apiConfig = {
     /**
      * API基础地址
      */
-    baseUrl: 'http://139.196.185.197:7070/doo/server/api/',
+    baseUrl: config.baseUrl,
     
     /**
      * 各个API端点（仅保留实际被引用的）
@@ -35,7 +36,7 @@ const apiConfig = {
      * @returns {string} 修复后的完整URL
      */
     getImageUrl(url) {
-        if (!url) return '/static/img/default-cover.png';
+        if (!url) return config.defaultCover;
         url = url.trim().replace(/`/g, '');
         // 已经是完整URL
         if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -49,7 +50,21 @@ const apiConfig = {
         if (url.startsWith('/')) {
             return this.baseUrl.replace(/api\/$/, '') + url.substr(1);
         }
-        return '/static/img/default-cover.png';
+        return config.defaultCover;
+    },
+
+    /**
+     * 统一修复服务器资源URL（图片/文件，非 API）
+     * @param {string} url - 形如 '/server/uploads/xxx.png' 或 'uploads/xxx.png'
+     * @returns {string} 完整URL
+     */
+    getServerUrl(url) {
+        if (!url) return config.defaultAvatar;
+        url = String(url).trim().replace(/`/g, '');
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/static/')) {
+            return url;
+        }
+        return config.siteUrl + (url.startsWith('/') ? url : '/' + url);
     }
 };
 

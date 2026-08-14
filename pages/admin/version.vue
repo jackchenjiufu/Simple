@@ -69,6 +69,7 @@
 
 <script>
 import adminApi from '../../utils/admin-api.js';
+import config from '../../utils/config.js';
 
 export default {
 	data() {
@@ -106,7 +107,7 @@ export default {
 			// 上传版本走独立接口 upload_version.php（multipart）
 			const token = uni.getStorageSync('adminToken') || uni.getStorageSync('token') || '';
 			uni.request({
-				url: 'http://139.196.185.197:7070/doo/server/api/upload_version.php',
+				url: config.baseUrl + 'upload_version.php',
 				method: 'POST',
 				data: {
 					version: f.version,

@@ -92,11 +92,12 @@
 
 <script>
 import apiConfig from '../../utils/api.js';
+import config from '../../utils/config.js';
 import { loadRoles, isBadgeRole as badgeRoleFn, badgeLabel as badgeLabelFn, badgeStyle as badgeStyleFn } from '../../utils/role-badges.js';
 export default {
 	data() {
 		return {
-			statusBarHeight: 0, isLoggedIn: false, userInfo: null, avatarUrl: 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png',
+			statusBarHeight: 0, isLoggedIn: false, userInfo: null, avatarUrl: apiConfig.getServerUrl(config.defaultAvatar),
 			nickname: '', email: '', registerTime: '', showUploadModal: false, userRole: '', growth: 0, growthLevel: 0, growthPercent: 0, growthTip: '', growthDetail: {},
 		};
 	},
@@ -120,7 +121,7 @@ export default {
 				this.userRole = ui.role || '';
 				this.nickname = ui.nickname || ui.username || '';
 				this.email = ui.email || '';
-				this.avatarUrl = this.fixImageUrl(ui.avatar) || 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png';
+				this.avatarUrl = this.fixImageUrl(ui.avatar) || apiConfig.getServerUrl(config.defaultAvatar);
 				this.registerTime = this.formatDate(ui.created_at);
 			}
 		},

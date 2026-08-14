@@ -28,7 +28,7 @@ server/
 ├── uploads/      # 上传文件
 ├── downloads/    # APK 下载
 ├── sql/          # 数据库脚本
-├── websocket/    # Node.js WebSocket 推送服务
+├── websocket/    # Node.js WebSocket 推送服务（服务端，App 端未接入）
 └── mail.php      # 邮件（PHPMailer）
 
 admin-vue/        # 管理后台（Vue 3 SPA，Hash 路由）
@@ -76,11 +76,10 @@ curl http://localhost/server/api/reset_admin.php        # 管理员 → REDACTED
 | 系统 | 9 | 监控/部署/AI代理/版本管理/数据库初始化 |
 | 管理后台 | 12 | 用户/内容/轮播/消息/日志/统计/反馈/权限/开屏/文章管理 |
 
-### WebSocket
+### WebSocket（服务端）
 
-- App 启动自动连接 `ws://139.196.185.197:1884`
-- 心跳保活（8 秒间隔），断线自动重连
-- 支持：认证、推送消息、在线人数统计、踢下线
+- `websocket/ws-server.js`：Node.js 推送服务（ws://139.196.185.197:1884）
+- ⚠️ App 端当前**未接入** WebSocket，私聊走轮询（chat.vue 5s / conversations.vue 10s）
 
 ## 响应格式
 

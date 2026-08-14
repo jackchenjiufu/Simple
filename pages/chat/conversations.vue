@@ -42,6 +42,7 @@
 
 <script>
 import chatApi from '../../utils/chat-api.js';
+import config from '../../utils/config.js';
 
 export default {
 	data() {
@@ -73,7 +74,7 @@ export default {
 		fixUrl(url) {
 			if (!url) return '';
 			if (url.startsWith('http://') || url.startsWith('https://')) return url;
-			return 'http://139.196.185.197:7070/doo/' + url.replace(/^\//, '');
+			return config.siteUrl + (url.startsWith('/') ? url : '/' + url);
 		},
 		loadData(reset) {
 			if (this.loading) return;

@@ -1,6 +1,6 @@
 <template>
 	<view class="content">
-		<NavBar title="详情" />
+ <NavBar mode="back" title="详情" />
 
 		<!-- 图片显示区域 -->
 		<view class="image-container">
@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import NavBar from '../../components/nav-bar.vue';
+import NavBar from '../../components/modules/nav-bar/nav-bar.vue';
 import apiConfig from '../../utils/api.js';
 export default {
 	components: { NavBar },

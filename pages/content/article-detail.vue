@@ -1,6 +1,6 @@
 <template>
 	<view class="page">
-		<NavBar title="文章详情" />
+		<NavBar mode="back" title="文章详情" />
 
 		<scroll-view
 			class="scroll-area"
@@ -190,8 +190,9 @@
 				</template>
 
 <script>
-import NavBar from '../../components/nav-bar.vue';
+import NavBar from '../../components/modules/nav-bar/nav-bar.vue';
 import apiConfig from '../../utils/api.js';
+import config from '../../utils/config.js';
 import reportApi from '../../utils/report-api.js';
 import { loadRoles, isBadgeRole as badgeRoleFn, badgeLabel as badgeLabelFn, badgeStyle as badgeStyleFn } from '../../utils/role-badges.js';
 
@@ -234,7 +235,7 @@ export default {
 		avatarUrl() {
 			return this.article.author_avatar
 				? apiConfig.getImageUrl(this.article.author_avatar)
-				: 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png';
+				: apiConfig.getServerUrl(config.defaultAvatar);
 		},
 		formatDate() {
 			const d = this.article.date || this.article.created_at || '';
@@ -446,7 +447,7 @@ export default {
 			getCommentAvatar(avatar) {
 				return avatar
 					? apiConfig.getImageUrl(avatar)
-					: 'http://139.196.185.197:7070/doo/server/uploads/default_avatar.png';
+					: apiConfig.getServerUrl(config.defaultAvatar);
 			},
 			checkLogin() {
 				const ui = uni.getStorageSync('userInfo');

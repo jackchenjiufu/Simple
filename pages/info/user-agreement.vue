@@ -1,6 +1,6 @@
 <template>
 	<view class="content">
-		<NavBar title="用户协议" />
+ <NavBar mode="back" title="用户协议" />
 
 		<scroll-view class="doc-container" scroll-y="true" show-scrollbar="false">
 			<view class="doc-content">
@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import NavBar from '../../components/nav-bar.vue';
+import NavBar from '../../components/modules/nav-bar/nav-bar.vue';
 export default {
 	components: { NavBar }
 };
