@@ -1,29 +1,33 @@
 <template>
-  <view class="nav-bar">
+  <view class="nav-root">
     <template v-if="mode === 'back'">
       <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
-      <view class="nav-back" @click="goBack">
-        <image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
+      <view class="nav-bar nav-bar-back">
+        <view class="nav-back" @click="goBack">
+          <image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
+        </view>
+        <text class="nav-title">{{ title }}</text>
+        <view class="nav-placeholder"></view>
       </view>
-      <text class="nav-title">{{ title }}</text>
-      <view class="nav-placeholder"></view>
     </template>
     <template v-else>
-      <view
-        class="nav-item"
-        :class="{ active: activeTab === 'articles' }"
-        @click="switchTab('articles')"
-      >
-        <text class="nav-label">文章</text>
-        <view class="nav-indicator" v-if="activeTab === 'articles'"></view>
-      </view>
-      <view
-        class="nav-item"
-        :class="{ active: activeTab === 'agent' }"
-        @click="switchTab('agent')"
-      >
-        <text class="nav-label">智能体</text>
-        <view class="nav-indicator" v-if="activeTab === 'agent'"></view>
+      <view class="nav-bar">
+        <view
+          class="nav-item"
+          :class="{ active: activeTab === 'articles' }"
+          @click="switchTab('articles')"
+        >
+          <text class="nav-label">文章</text>
+          <view class="nav-indicator" v-if="activeTab === 'articles'"></view>
+        </view>
+        <view
+          class="nav-item"
+          :class="{ active: activeTab === 'agent' }"
+          @click="switchTab('agent')"
+        >
+          <text class="nav-label">智能体</text>
+          <view class="nav-indicator" v-if="activeTab === 'agent'"></view>
+        </view>
       </view>
     </template>
   </view>
@@ -70,6 +74,8 @@ export default {
 </script>
 
 <style scoped>
+.nav-root { background-color: #ffffff; flex-shrink: 0; }
+
 .nav-bar {
   display: flex;
   align-items: center;

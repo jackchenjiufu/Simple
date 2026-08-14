@@ -216,9 +216,11 @@ export default {
 						// editor 等角色无全局 token：清除旧值，回退使用自身登录 token（后端按 auth_token 识别身份）
 						uni.removeStorageSync('adminToken');
 					}
+					uni.showToast({ title: '登录成功', icon: 'success' });
+					// 短延时仅保证成功提示可见，随后立即跳转首页（原 1.5s 过长，用户感知为"跳转慢"）
 					setTimeout(() => {
 						uni.switchTab({ url: '/pages/tabbar/tabbar-1/tabbar-1' });
-					}, 1500);
+					}, 600);
 				} else {
 					uni.showToast({ title: res.data.message || '登录失败', icon: 'none' });
 				}

@@ -35,11 +35,19 @@
 							</view>
 							<scroll-view class="category-tabs" scroll-x="true" show-scrollbar="false" v-if="categories.length">
 								<view class="cat-bar">
-									<view class="cat-tab" :class="{act:activeCategory==='all'}" @click="activeCategory='all';loadArticles()">全部</view>
-									<view class="cat-tab" v-for="c in categories" :key="c.cat_name" :class="{act:activeCategory===c.cat_name}" @click="activeCategory=c.cat_name;loadArticles()">{{ c.cat_name }}({{ c.count }})</view>
+									<view class="cat-tab" :class="{act:activeCategory==='all'}" @click="activeCategory='all';loadArticles(false)">全部</view>
+									<view class="cat-tab" v-for="c in categories" :key="c.cat_name" :class="{act:activeCategory===c.cat_name}" @click="activeCategory=c.cat_name;loadArticles(false)">{{ c.cat_name }}({{ c.count }})</view>
 								</view>
 							</scroll-view>
 							<view class="article-list">
+								<!-- 骨架屏：首次加载中显示（避免白屏闪烁） -->
+								<view class="article-skeleton" v-if="articleLoading && articleList.length === 0">
+									<view class="sk-item" v-for="n in 4" :key="n">
+										<view class="sk-line sk-title"></view>
+										<view class="sk-line sk-excerpt w60"></view>
+										<view class="sk-line sk-excerpt w80"></view>
+									</view>
+								</view>
 								<view v-for="(group, date) in groupedArticles" :key="date" class="date-group">
 									<view class="date-header">
 										<text class="date-text">{{ date }}</text>
@@ -114,8 +122,8 @@
 <script>
 import apiConfig from '../../../utils/api.js';
 import { loadRoles, isBadgeRole as badgeRoleFn, badgeLabel as badgeLabelFn, badgeStyle as badgeStyleFn } from '../../../utils/role-badges.js';
-// 引入以激活 utils/request.js 中 uni.request 全局 Token 注入副作用
-import '../../../utils/request.js';
+// 请求模块（自带 uni.request 全局 Token 注入副作用），文章列表走缓存
+import requestModule from '../../../utils/request.js';
 import NavBar from '../../../components/modules/nav-bar/nav-bar.vue';
 
 
@@ -185,8 +193,8 @@ export default {
 		}
 	},
 	onShow() {
-		// 每次回到页面刷新文章列表（首次进入、从详情返回、切换tab回来都保持最新）
-		if (this.activeTab === 'articles') this.loadArticles();
+		// 回到页面优先读缓存秒开；下拉刷新/切分类可强制获取最新
+		if (this.activeTab === 'articles') this.loadArticles(true);
 	},
 	onUnload() {
 		// 移除键盘监听，防止内存泄漏
@@ -205,8 +213,8 @@ export default {
 			const map = { articles: 0, agent: 1 };
 			const index = map[tab] || 0;
 			if (index === this.activeTabIndex) {
-				// 已是当前 Tab：swiper 不会触发 change，手动刷新一次
-				if (tab === 'articles') this.loadArticles();
+				// 已是当前 Tab：swiper 不会触发 change，手动刷新一次（用户主动点击，强制取最新）
+				if (tab === 'articles') this.loadArticles(false);
 				return;
 			}
 			// 切换 Tab：由 onSwiperChange 统一加载，避免重复请求
@@ -217,22 +225,21 @@ export default {
 			this.activeTabIndex = index;
 			const tabs = ['articles', 'agent'];
 			this.activeTab = tabs[index] || 'articles';
-			if (this.activeTab === 'articles') this.loadArticles();
+			if (this.activeTab === 'articles') this.loadArticles(true);
 		},
-		async loadArticles() {
+		async loadArticles(useCache = false) {
 			this.articleLoading = true;
 			this.articlePage = 1;
 			this.articleHasMore = true;
 			try {
 				const params = { limit: 20, offset: 0 };
 				if (this.activeCategory !== 'all') params.category = this.activeCategory;
-				const res = await uni.request({
-					url: API_BASE + 'get_articles.php',
-					method: 'GET',
-					data: params
+				// 走 request.js：onShow/切Tab 读缓存秒开，下拉刷新/切分类强制新数据
+				const result = await requestModule.get('get_articles.php', params, {
+					cache: useCache,
+					cacheTime: 30 * 60 * 1000
 				});
-				const result = res.data;
-				if (result.code === 200 && result.data) {
+				if (result && result.code === 200 && result.data) {
 					if (result.data.articles) {
 						this.articleList = result.data.articles.map(article => {
 							return {
@@ -290,7 +297,7 @@ export default {
 		},
 		async onArticlesRefresh() {
 			this.articlesRefreshing = true;
-			try { await this.loadArticles(); } catch (e) { /* silent */ }
+			try { await this.loadArticles(false); } catch (e) { /* silent */ }
 			this.articlesRefreshing = false;
 		},
 		async agentSend() {
@@ -570,6 +577,16 @@ export default {
 	align-items: center;
 	height: 200px;
 }
+
+/* 骨架屏 */
+.article-skeleton { padding: 4upx 0; }
+.sk-item { background: #ffffff; border-radius: 12upx; padding: 24upx; margin-bottom: 20upx; box-shadow: 0 2upx 8upx rgba(0,0,0,0.04); }
+.sk-line { background: linear-gradient(90deg, #f0f0f0 25%, #e7e7e7 37%, #f0f0f0 63%); background-size: 400% 100%; border-radius: 6upx; animation: sk-shimmer 1.4s ease infinite; }
+.sk-title { height: 32upx; width: 70%; margin-bottom: 16upx; }
+.sk-excerpt { height: 24upx; margin-bottom: 12upx; }
+.w60 { width: 60%; }
+.w80 { width: 80%; }
+@keyframes sk-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
 .empty-text {
 	font-size: 26upx;

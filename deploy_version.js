@@ -27,12 +27,13 @@ if (!fs.existsSync(APK_PATH)) {
 }
 const apkSizeMB = (fs.statSync(APK_PATH).size / 1048576).toFixed(1);
 
-const DESCRIPTION = `2.5.0 更新内容：
-1. 修复登录页无限跳转死循环
-2. 修复登录失败问题（Vuex 方法冲突）
-3. 修复后台管理接口调用报错
-4. 考勤页组件化重构（薪资汇总/日历/设置/记录）
-5. 服务器地址统一配置管理`;
+const DESCRIPTION = `2.5.1 更新内容：
+1. 修复首页切换Tab重复请求、日期排序在iOS上失效
+2. 修复工时页重复请求、五险一金比例显示错误
+3. 工时页导航栏固定、卡片宽度与样式统一
+4. 修复文章详情页在App端报错、XSS过滤加固
+5. 修复详情页返回导航按钮不可见
+6. 登录成功后跳转提速、首页缓存秒开、新增加载骨架屏`;
 
 // 写入版本记录：download_url 存文件名；update_type 列存在则置为 apk（不存在自动跳过）
 const SQL_PHP = `<?php

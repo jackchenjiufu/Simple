@@ -175,19 +175,19 @@
 					<text>{{ commentSending ? '发送中' : '发送' }}</text>
 				</view>
 				</view>
-				</view>
+			</view>
 
-				<!-- 删除评论确认弹窗（底部弹出） -->
-				<view class="sheet-mask" v-if="deleteSheetVisible" @click="closeDeleteSheet">
+			<!-- 删除评论确认弹窗（底部弹出） -->
+			<view class="sheet-mask" v-if="deleteSheetVisible" @click="closeDeleteSheet">
 				<view class="sheet-panel" @click.stop>
-				<view class="sheet-title">删除这条评论？</view>
-				<view class="sheet-desc">删除后不可恢复，确认要删除吗？</view>
-				<view class="sheet-btn sheet-danger" @click="confirmDelete">删除</view>
-				<view class="sheet-btn sheet-cancel" @click="closeDeleteSheet">取消</view>
+					<view class="sheet-title">删除这条评论？</view>
+					<view class="sheet-desc">删除后不可恢复，确认要删除吗？</view>
+					<view class="sheet-btn sheet-danger" @click="confirmDelete">删除</view>
+					<view class="sheet-btn sheet-cancel" @click="closeDeleteSheet">取消</view>
 				</view>
-				</view>
-				</view>
-				</template>
+			</view>
+		</view>
+</template>
 
 <script>
 import NavBar from '../../components/modules/nav-bar/nav-bar.vue';
@@ -338,6 +338,8 @@ export default {
 		bindLinks() {
 			// 在 DOM 中找到所有 <a> 链接，绑定原生 click 事件
 			// uni-app 的 v-html 渲染的元素不经过 Vue 事件系统，需要用原生方式
+			// 注意：document 仅 H5 平台存在，App 端无 DOM API，需条件编译隔离
+			// #ifdef H5
 			const container = document.querySelector('#article-body');
 			if (!container) return;
 			const links = container.querySelectorAll('a');
@@ -359,6 +361,7 @@ export default {
 					}
 				});
 			});
+			// #endif
 		},
 		// Markdown → HTML（轻量转换：标题/链接/图片/加粗/斜体/行内代码/列表/引用）
 		mdToHtml(md) {
@@ -413,9 +416,18 @@ export default {
 			return html
 				.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
 				.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+				.replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
+				.replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '')
+				.replace(/<embed[^>]*>/gi, '')
+				.replace(/<link[^>]*>/gi, '')
+				.replace(/<meta[^>]*>/gi, '')
+				.replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
 				.replace(/\s+on\w+\s*=\s*"[^"]*"/gi, '')
 				.replace(/\s+on\w+\s*=\s*'[^']*'/gi, '')
-				.replace(/javascript\s*:/gi, '');
+				.replace(/\s+srcdoc\s*=\s*"[^"]*"/gi, '')
+				.replace(/\s+srcdoc\s*=\s*'[^']*'/gi, '')
+				.replace(/javascript\s*:/gi, '')
+				.replace(/data:\s*text\/html/gi, '');
 		},
 		enhanceContent(html) {
 			if (!html) return '';
@@ -441,8 +453,8 @@ export default {
 			return enhanced;
 		},
 		onTagClick(tag) {
-				uni.showToast({ title: `#${tag}`, icon: 'none' });
-			},
+			uni.showToast({ title: `#${tag}`, icon: 'none' });
+		},
 			// ===== 评论区方法 =====
 			getCommentAvatar(avatar) {
 				return avatar
@@ -1075,11 +1087,6 @@ export default {
 .comment-time {
 	font-size: 20upx;
 	color: #b0b3ba;
-}
-.comment-reply-btn {
-	font-size: 22upx;
-	color: #3071f6;
-	padding: 4upx 8upx;
 }
 .comment-pin-btn {
 	font-size: 22upx;
