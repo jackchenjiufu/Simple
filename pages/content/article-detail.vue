@@ -252,6 +252,7 @@ export default {
 		},
 	},
 	onLoad() {
+		this._stayStart = Date.now();
 		loadRoles();
 		try {
 			const ec = this.getOpenerEventChannel();
@@ -267,14 +268,35 @@ export default {
 					this.$nextTick(this.bindLinks);
 					// 文章就绪后加载评论
 					if (data && data.id) {
+						this.reportBehavior('page_view', 0, data.id);
 						this.checkLogin();
 						this.loadComments(true);
 					}
 					});
 			}
 		} catch (e) { /* silent */ }
-	},
-	methods: {
+		},
+		onUnload() { this.reportStay(); },
+		onHide() { this.reportStay(); },
+		methods: {
+			reportBehavior(type, duration, contentId) {
+				const token = uni.getStorageSync('token');
+				if (!token) return;
+				uni.request({
+					url: apiConfig.baseUrl + 'user_behavior.php?token=' + token,
+					method: 'POST',
+					data: { type: type, content_id: contentId || 0, duration: duration || 0 },
+					header: { 'Content-Type': 'application/json' },
+					fail: () => {}
+				});
+			},
+			reportStay() {
+				if (this._stayReported) return;
+				this._stayReported = true;
+				const sec = Math.round((Date.now() - (this._stayStart || Date.now())) / 1000);
+				const id = (this.article && this.article.id) || 0;
+				if (sec >= 2 && id) this.reportBehavior('page_stay', sec, id);
+			},
 		// 点击用户头像 → 私聊（未登录弹窗引导；自己头像不动作）
 		chatWith(userId, nickname) {
 			if (!userId) {

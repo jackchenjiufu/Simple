@@ -1,8 +1,10 @@
 <template>
 
+
 	<view class="content">
 
  <NavBar mode="back" title="公告详情" />
+
 
 
 
@@ -77,14 +79,61 @@ export default {
 	},
 
 	onLoad(options) {
+		this._stayStart = Date.now();
 
 		this.id = options.id;
 
-		if (this.id) this.loadDetail();
+		if (this.id) {
+
+			this.reportBehavior('page_view', 0, this.id);
+
+			this.loadDetail();
+
+		}
 
 	},
 
+	onUnload() { this.reportStay(); },
+
+	onHide() { this.reportStay(); },
+
 	methods: {
+
+		reportBehavior(type, duration, contentId) {
+
+			const token = uni.getStorageSync('token');
+
+			if (!token) return;
+
+			uni.request({
+
+				url: apiConfig.baseUrl + 'user_behavior.php?token=' + token,
+
+				method: 'POST',
+
+				data: { type: type, content_id: contentId || 0, duration: duration || 0 },
+
+				header: { 'Content-Type': 'application/json' },
+
+				fail: () => {}
+
+			});
+
+		},
+
+		reportStay() {
+
+			if (this._stayReported) return;
+
+			this._stayReported = true;
+
+			const sec = Math.round((Date.now() - (this._stayStart || Date.now())) / 1000);
+
+			const id = (this.announcement && this.announcement.id) || this.id || 0;
+
+			if (sec >= 2 && id) this.reportBehavior('page_stay', sec, id);
+
+		},
 
 		async loadDetail() {
 
@@ -129,28 +178,11 @@ export default {
 </script>
 
 
-
 <style>
 
 .content { height: 100vh; background: #f8f9fb; display: flex; flex-direction: column; overflow: hidden; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .body { flex: 1; min-height: 0; padding: 24upx; }
-
-
 
 .detail-header {
 
@@ -192,8 +224,6 @@ export default {
 
 .header-time { display: block; font-size: 22upx; color: #909398; }
 
-
-
 .detail-body {
 
 	background: #ffffff;
@@ -210,10 +240,7 @@ export default {
 
 .detail-content { font-size: 28upx; color: #4b5563; line-height: 1.8; }
 
-
-
 .empty-state { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 26upx; color: #909398; }
 
 </style>
-
 

@@ -8,8 +8,7 @@ const path = require('path');
 const target = process.argv[2] || 'app';
 process.env.UNI_INPUT_DIR = path.resolve(__dirname, '..');
 
-const args = ['build'];
-if (target !== 'h5') args.push('-p', target);
+const args = ['build', '-p', target];
 
 const r = spawnSync('npx', ['uni', ...args], { stdio: 'inherit', shell: true });
 process.exit(r.status || 0);

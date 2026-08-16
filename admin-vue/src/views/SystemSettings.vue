@@ -10,7 +10,7 @@
           <template #header>热搜抓取管理</template>
           <div style="display:flex;flex-direction:column;gap:12px">
             <div style="font-size:13px;color:#555">
-              触发各平台热搜抓取，抓取成功后将自动整理并发布文章（发布账号 user_id=16）
+              触发各平台热搜抓取，抓取成功后将自动整理并发布文章
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:8px">
               <el-button
@@ -49,10 +49,16 @@
 
         <!-- AI 代理配置 -->
         <el-card shadow="never" style="margin-bottom:16px">
-          <template #header>AI 代理配置</template>
+          <template #header>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span>AI 代理配置</span>
+              <span style="font-size:12px;color:#909399">Chat（DeepSeek 兼容） + GLM 识图（GLM-4V 打标）</span>
+            </div>
+          </template>
           <el-form :model="aiConfig" label-width="80px" size="small">
+            <el-divider content-position="left" style="margin:4px 0 12px">💬 Chat 对话（DeepSeek 兼容）</el-divider>
             <el-form-item label="接口地址">
-              <el-input v-model="aiConfig.base_url" placeholder="http://192.168.1.10:8080" />
+              <el-input v-model="aiConfig.base_url" placeholder="https://api.deepseek.com/v1" />
             </el-form-item>
             <el-form-item label="模型">
               <el-input v-model="aiConfig.model" placeholder="deepseek-chat" />
@@ -60,13 +66,25 @@
             <el-form-item label="API Key">
               <el-input v-model="aiConfig.api_key" type="password" show-password placeholder="sk-..." />
             </el-form-item>
+            <el-divider content-position="left" style="margin:8px 0 12px">🖼 GLM 识图（AI 打标）</el-divider>
+            <el-form-item label="接口地址">
+              <el-input v-model="aiConfig.glm_base_url" placeholder="https://open.bigmodel.cn/api/paas/v4/" />
+            </el-form-item>
+            <el-form-item label="模型">
+              <el-input v-model="aiConfig.glm_vision_model" placeholder="glm-4v-flash" />
+            </el-form-item>
+            <el-form-item label="API Key">
+              <el-input v-model="aiConfig.glm_api_key" type="password" show-password placeholder="GLM API Key（用于图片自动打标）" />
+            </el-form-item>
             <el-form-item>
               <el-button type="primary" :loading="savingAi" @click="saveAiConfig">保存配置</el-button>
-              <el-button :loading="testingAi" @click="testAiConfig" style="margin-left:8px">测试连接</el-button>
+              <el-button :loading="testingAi" @click="testAiConfig('chat')" style="margin-left:8px">测试 Chat</el-button>
+              <el-button :loading="testingAiGlm" @click="testAiConfig('vision')" style="margin-left:8px">测试 GLM 识图</el-button>
             </el-form-item>
           </el-form>
           <div v-if="aiResult" :style="{color:aiResult.ok?'#67c23a':'#f56c6c',fontSize:'13px',marginTop:'8px'}">
             {{ aiResult.msg }}
+            <span v-if="aiResult.glm_reply" style="color:#555">—— 识别结果：{{ aiResult.glm_reply }}</span>
           </div>
         </el-card>
       </el-col>
@@ -171,7 +189,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
 
 const migrating = ref(false)
@@ -181,9 +199,10 @@ const loadingSys = ref(false)
 const loadingAnn = ref(false)
 const savingAi = ref(false)
 const testingAi = ref(false)
+const testingAiGlm = ref(false)
 const sysInfo = ref(null)
 const dbInfo = ref(null)
-const aiConfig = ref({ base_url: '', model: '', api_key: '' })
+const aiConfig = ref({ base_url: '', model: '', api_key: '', glm_base_url: '', glm_vision_model: '', glm_api_key: '' })
 const aiResult = ref(null)
 const announcements = ref([])
 
@@ -312,7 +331,10 @@ const saveAiConfig = async () => {
       action: 'save_config',
       base_url: aiConfig.value.base_url,
       model: aiConfig.value.model,
-      api_key: aiConfig.value.api_key
+      api_key: aiConfig.value.api_key,
+      glm_base_url: aiConfig.value.glm_base_url,
+      glm_vision_model: aiConfig.value.glm_vision_model,
+      glm_api_key: aiConfig.value.glm_api_key
     })
     if (r.data.code === 200) { ElMessage.success('已保存'); aiResult.value = null }
     else ElMessage.error(r.data.message || '保存失败')
@@ -321,21 +343,32 @@ const saveAiConfig = async () => {
 }
 
 // 测试 AI 连接（掩码 key 不发送，让后端用已保存的配置）
-const testAiConfig = async () => {
-  testingAi.value = true; aiResult.value = null
+const testAiConfig = async (mode = 'chat') => {
+  if (mode === 'vision') testingAiGlm.value = true; else testingAi.value = true
+  aiResult.value = null
   try {
     const payload = {
       action: 'test',
+      mode,
       base_url: aiConfig.value.base_url,
-      model: aiConfig.value.model
+      model: aiConfig.value.model,
+      glm_base_url: aiConfig.value.glm_base_url,
+      glm_vision_model: aiConfig.value.glm_vision_model
     }
     if (aiConfig.value.api_key && !String(aiConfig.value.api_key).includes('****')) {
       payload.api_key = aiConfig.value.api_key
     }
+    if (aiConfig.value.glm_api_key && !String(aiConfig.value.glm_api_key).includes('****')) {
+      payload.glm_api_key = aiConfig.value.glm_api_key
+    }
     const r = await api.post('/ai_proxy.php', payload)
-    aiResult.value = { ok: r.data.code === 200, msg: r.data.message || '连接失败' }
+    aiResult.value = {
+      ok: r.data.code === 200,
+      msg: r.data.message || '连接失败',
+      glm_reply: r.data.data?.glm_reply
+    }
   } catch (e) { aiResult.value = { ok: false, msg: '网络错误' } }
-  testingAi.value = false
+  if (mode === 'vision') testingAiGlm.value = false; else testingAi.value = false
 }
 
 onMounted(() => {

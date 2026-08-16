@@ -3,4 +3,5 @@ import uni from "@dcloudio/vite-plugin-uni";
 
 export default defineConfig({
   plugins: [uni()],
+  base: '/doo/h5/',
 });

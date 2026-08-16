@@ -14,6 +14,14 @@
       <view class="nav-bar">
         <view
           class="nav-item"
+          :class="{ active: activeTab === 'home' }"
+          @click="switchTab('home')"
+        >
+          <text class="nav-label">首页</text>
+          <view class="nav-indicator" v-if="activeTab === 'home'"></view>
+        </view>
+        <view
+          class="nav-item"
           :class="{ active: activeTab === 'articles' }"
           @click="switchTab('articles')"
         >

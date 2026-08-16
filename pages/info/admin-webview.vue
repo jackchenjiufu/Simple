@@ -13,8 +13,8 @@ export default {
 		};
 	},
 	onLoad(options) {
-		// 从 baseUrl 推导后台地址：.../doo/server/api/ → .../doo/admin-vue/
-		const base = apiConfig.baseUrl.replace(/\/server\/api\/$/, '/admin-vue/');
+		// 后台地址：siteUrl + /admin-vue/（兼容 apiVersion 版本段，不受 baseUrl 变化影响）
+		const base = apiConfig.siteUrl + '/admin-vue/';
 		const token = options.token || '';
 		const name = options.name ? encodeURIComponent(options.name) : '';
 		// 附带 uid 与角色：web 后台按 uid 查权限表过滤菜单

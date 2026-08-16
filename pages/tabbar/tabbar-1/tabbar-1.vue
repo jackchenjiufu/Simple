@@ -15,7 +15,64 @@
 			:circular="false"
 			:vertical="false"
 			:indicator-dots="false"
+			:disable-touch="activeTabIndex === 2"
 		>
+			<!-- 首页（轮播 + 公告） -->
+			<swiper-item class="swiper-item">
+				<scroll-view class="content-area" scroll-y="true" show-scrollbar="false"
+					:refresher-enabled="true"
+					:refresher-triggered="homeRefreshing"
+					@refresherrefresh="onHomeRefresh">
+					<view class="tab-content">
+						<!-- 轮播横幅（swiper：平滑动画，内联高度防覆盖） -->
+						<view class="banner-wrap" v-if="homeBanners.length">
+							<swiper
+								class="banner-swiper"
+								style="height: 320rpx;"
+								indicator-dots
+								indicator-active-color="#2f6bf0"
+								autoplay
+								circular
+								interval="4000"
+								duration="500"
+							>
+								<swiper-item v-for="b in homeBanners" :key="b.id" @click="onBannerClick(b)">
+									<view class="banner-card">
+										<image class="banner-img" :src="b.image" mode="aspectFill"></image>
+										<view class="banner-overlay"></view>
+										<text class="banner-title" v-if="b.title">{{ b.title }}</text>
+									</view>
+								</swiper-item>
+							</swiper>
+						</view>
+						<!-- 公告条 -->
+						<view class="notice-bar" v-if="homeNotice" @click="goAnnouncement(homeNotice.id)">
+							<text class="notice-icon">📢</text>
+							<text class="notice-text">{{ homeNotice.title }}</text>
+							<text class="notice-arrow">›</text>
+						</view>
+						<!-- 推荐图片流：双列瀑布流 -->
+						<view class="rec-section" v-if="recItems.length">
+							<view class="rec-header">
+								<text class="rec-title">{{ recTitle }}</text>
+								<text class="rec-more" @click="goMoreImages">更多 ›</text>
+							</view>
+							<view class="waterfall">
+								<view class="wf-col" v-for="(col, ci) in wfCols" :key="ci">
+									<view class="wf-item" v-for="img in col" :key="img.id" @click="openImage(img)">
+										<image class="wf-img" :src="img.image_url" mode="widthFix" lazy-load></image>
+										<view class="wf-mask"></view>
+										<text class="wf-title">{{ img.title || '图片' }}</text>
+									</view>
+								</view>
+							</view>
+						</view>
+						<view class="home-placeholder" v-if="!homeBanners.length && !homeLoading" style="height:160px;display:flex;align-items:center;justify-content:center;color:#999;font-size:13px">
+							暂无内容
+						</view>
+					</view>
+				</scroll-view>
+			</swiper-item>
 			<!-- 文章 -->
 			<swiper-item class="swiper-item">
 		<scroll-view
@@ -141,9 +198,15 @@ export default {
 	components: { NavBar },
 	data() {
 		return {
-			activeTab: 'articles',
+			activeTab: 'home',
 			activeTabIndex: 0,
 			statusBarHeight: 0,
+			homeBanners: [],
+			homeNotice: null,
+			homeLoading: false,
+			homeRefreshing: false,
+			recItems: [],
+			recTitle: '图片推荐',
 			defaultAvatarUrl: apiConfig.getServerUrl('/server/uploads/default_avatar.png'),
 			articleList: [],
 			articleTotal: 0,
@@ -160,6 +223,14 @@ export default {
 		};
 	},
 	computed: {
+		// 双列瀑布流分列（交替放入，配合 widthFix 实现错落效果）
+		wfCols() {
+			const cols = [[], []];
+			this.recItems.forEach((img, i) => {
+				cols[i % 2].push(img);
+			});
+			return cols;
+		},
 		groupedArticles() {
 			const groups = {};
 			this.articleList.forEach(article => {
@@ -182,6 +253,9 @@ export default {
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
 		// 预加载角色列表，保证作者徽章（含自定义角色如「运营」）正常显示
 		loadRoles();
+		// 加载首页轮播 + 公告 + 推荐
+		this.loadHome(true);
+		this.loadRecommend();
 		// 监听键盘高度变化（onKeyboardHeightChange 仅 App 端支持，需能力检测）
 		if (uni.onKeyboardHeightChange) {
 			this._keyboardHandler = (res) => {
@@ -204,17 +278,145 @@ export default {
 		}
 	},
 	methods: {
+		// ===== 首页（轮播 + 公告）=====
+		// 下拉刷新：重新加载轮播 + 公告 + 推荐（绕开 Redis 缓存，强制取最新）
+		onHomeRefresh() {
+			this.homeRefreshing = true;
+			this.loadHome(true);
+			this.loadRecommend();
+			setTimeout(() => { this.homeRefreshing = false; }, 800);
+		},
+		loadHome(useCache = false) {
+			if (this.homeLoading) return;
+			this.homeLoading = true;
+			const base = apiConfig.baseUrl;
+			uni.request({
+				url: base + 'get_carousels.php',
+				method: 'GET',
+				timeout: 10000,
+				success: (res) => {
+					if (res.statusCode === 200 && res.data && res.data.code === 200) {
+						this.homeBanners = res.data.data || [];
+					}
+				},
+				fail: () => { /* 轮播失败不阻塞页面 */ },
+				complete: () => {
+					// 公告（最新一条）
+					uni.request({
+						url: base + 'announcements.php',
+						method: 'POST',
+						data: { action: 'get_announcements' },
+						header: { 'Content-Type': 'application/json' },
+						timeout: 10000,
+						success: (res) => {
+							if (res.statusCode === 200 && res.data && res.data.code === 200) {
+								const list = res.data.data || [];
+								this.homeNotice = list.length ? list[0] : null;
+							}
+						},
+						fail: () => {},
+						complete: () => { this.homeLoading = false; }
+					});
+				}
+			});
+		},
+		// 轮播点击：按跳转类型打开对应页面
+		onBannerClick(b) {
+			if (!b) return;
+			const type = b.link_type || 'none';
+			if (type === 'none') {
+				uni.showToast({ title: '敬请期待', icon: 'none' });
+			} else if (type === 'article') {
+				if (b.link_id) uni.navigateTo({ url: '/pages/content/article-detail?id=' + b.link_id });
+			} else if (type === 'announcement') {
+				if (b.link_id) uni.navigateTo({ url: '/pages/content/announcement-detail?id=' + b.link_id });
+			} else if (type === 'web' && b.link_url) {
+				// App 内嵌网页打开（区别于外链的跳系统浏览器）
+				uni.navigateTo({ url: '/pages/info/webview?url=' + encodeURIComponent(b.link_url) });
+			} else if (type === 'url' && b.link_url) {
+				// #ifdef APP-PLUS
+				plus.runtime.openURL(b.link_url);
+				// #endif
+				// #ifdef H5
+				window.open(b.link_url, '_blank');
+				// #endif
+			}
+		},
+		// 公告条点击
+		goAnnouncement(id) {
+			if (id) uni.navigateTo({ url: '/pages/content/announcement-detail?id=' + id });
+		},
+		// ===== 推荐图片流 =====
+		loadRecommend() {
+			const base = apiConfig.baseUrl;
+			const uid = uni.getStorageSync('userId') || 0;
+			const url = base + 'recommend_images.php' + (uid ? '?user_id=' + uid : '');
+			uni.request({
+				url: url,
+				method: 'GET',
+				timeout: 10000,
+				success: (res) => {
+					if (res.statusCode === 200 && res.data && res.data.code === 200) {
+						this.recItems = (res.data.data && res.data.data.items) || [];
+						this.recTitle = (res.data.data && res.data.data.title) || '图片推荐';
+						// 推荐曝光上报（前 6 条，供 CTR 统计）
+						this.reportRecView(this.recItems.slice(0, 6));
+					}
+				},
+				fail: () => { /* 推荐失败不阻塞页面 */ }
+			});
+		},
+		// 推荐曝光上报（rec_view，CTR 统计用）
+		reportRecView(items) {
+			const token = uni.getStorageSync('token');
+			const uid = uni.getStorageSync('userId') || 0;
+			if (!token || !uid || !items || !items.length) return;
+			items.forEach((img, idx) => {
+				if (!img || !img.id) return;
+				uni.request({
+					url: apiConfig.baseUrl + 'user_behavior.php?token=' + token,
+					method: 'POST',
+					data: { type: 'rec_view', content_id: img.id, duration: idx },
+					header: { 'Content-Type': 'application/json' },
+					fail: () => {}
+				});
+			});
+		},
+		// 点击推荐图片：上报行为（推荐闭环）并进入详情
+		openImage(img) {
+			if (!img || !img.id) return;
+			const token = uni.getStorageSync('token');
+			const uid = uni.getStorageSync('userId') || 0;
+			if (token && uid) {
+				uni.request({
+					url: apiConfig.baseUrl + 'user_behavior.php?token=' + token,
+					method: 'POST',
+					data: { type: 'content_click', content_id: img.id, duration: 0 },
+					header: { 'Content-Type': 'application/json' },
+					fail: () => {}
+				});
+			}
+			// 跳转带图片数据（card-detail 从 query 读取，避免只传 id 无数据）
+			const q = 'id=' + img.id +
+				'&image_url=' + encodeURIComponent(img.image_url || '') +
+				'&title=' + encodeURIComponent(img.title || '');
+			uni.navigateTo({ url: '/pages/content/card-detail?' + q });
+		},
+		goMoreImages() {
+			uni.showToast({ title: '更多图片敬请期待', icon: 'none' });
+		},
 		// 角色徽章辅助（注册为实例方法，供模板调用）
 		isBadgeRole(name) { return badgeRoleFn(name); },
 		badgeLabel(name) { return badgeLabelFn(name); },
 		badgeStyle(name) { return badgeStyleFn(name); },
 		switchTab(tab) {
 			this.activeTab = tab;
-			const map = { articles: 0, agent: 1 };
-			const index = map[tab] || 0;
+			const map = { home: 0, articles: 1, agent: 2 };
+			const index = map[tab] !== undefined ? map[tab] : 0;
 			if (index === this.activeTabIndex) {
 				// 已是当前 Tab：swiper 不会触发 change，手动刷新一次（用户主动点击，强制取最新）
-				if (tab === 'articles') this.loadArticles(false);
+				if (tab === 'home') this.loadHome(true);
+				else if (tab === 'articles') this.loadArticles(false);
 				return;
 			}
 			// 切换 Tab：由 onSwiperChange 统一加载，避免重复请求
@@ -223,9 +425,10 @@ export default {
 		onSwiperChange(event) {
 			const index = event.detail.current;
 			this.activeTabIndex = index;
-			const tabs = ['articles', 'agent'];
-			this.activeTab = tabs[index] || 'articles';
-			if (this.activeTab === 'articles') this.loadArticles(true);
+			const tabs = ['home', 'articles', 'agent'];
+			this.activeTab = tabs[index] || 'home';
+			if (this.activeTab === 'home') this.loadHome(true);
+			else if (this.activeTab === 'articles') this.loadArticles(true);
 		},
 		async loadArticles(useCache = false) {
 			this.articleLoading = true;
@@ -614,8 +817,8 @@ export default {
 
 /* 隐藏滚动条 */
 /* 智能体 */
-.agent-page{display:flex;flex-direction:column;height:100%}
-.agent-scroll{flex:1;min-height:0;padding:24upx 20upx;background:#f5f6f8}
+.agent-page{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.agent-scroll{flex:1;height:0;min-height:0;padding:24upx 20upx;background:#f5f6f8;box-sizing:border-box}
 .agent-empty{text-align:center;padding:200upx 0}
 .agent-logo{width:88upx;height:88upx;border-radius:24upx;background:linear-gradient(135deg,#1b44a6,#3071f6);display:flex;align-items:center;justify-content:center;margin:0 auto 20upx;box-shadow:0 8upx 30upx rgba(48,113,246,.3)}
 .agent-logo-icon{font-size:48upx;color:#fff}
@@ -634,10 +837,34 @@ export default {
 .agent-msg-wrap.ai .agent-bubble-t{color:#303132}
 .agent-bubble.wait{background:#e5e7eb}
 .agent-bubble.wait .agent-bubble-t{color:#909398}
-.agent-foot{background:#fff;padding:16upx 20upx;padding-bottom:calc(16upx + env(safe-area-inset-bottom));border-top:1px solid #f0f0f0;transition:padding-bottom .3s}
+.agent-foot{flex-shrink:0;background:#fff;padding:16upx 20upx;padding-bottom:calc(16upx + env(safe-area-inset-bottom));border-top:1px solid #f0f0f0;transition:padding-bottom .3s}
 .agent-input-wrap{display:flex;align-items:center;background:#f3f4f6;border-radius:40upx;padding:8upx 12upx 8upx 24upx}
 .agent-input{flex:1;height:60upx;font-size:28upx;color:#303132;border:none;background:transparent}
 .agent-send{width:60upx;height:60upx;border-radius:50%;background:#3071f6;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .agent-send-icon{font-size:28upx;color:#fff;font-weight:700}
 ::-webkit-scrollbar{width:0;height:0;background:transparent}
+/* ===== 首页：推荐图片流（双列瀑布流） ===== */
+.rec-section { margin-top: 24upx; }
+.rec-header { display: flex; align-items: center; justify-content: space-between; padding: 0 24upx; margin-bottom: 14upx; }
+.rec-title { font-size: 30upx; font-weight: 700; color: #1f2937; }
+.rec-more { font-size: 24upx; color: #9ca3af; }
+.waterfall { display: flex; padding: 0 20upx; }
+.wf-col { flex: 1; min-width: 0; }
+.wf-col:first-child { margin-right: 14upx; }
+.wf-item { position: relative; margin-bottom: 14upx; border-radius: 14upx; overflow: hidden; }
+.wf-img { width: 100%; display: block; border-radius: 14upx; }
+.wf-mask { position: absolute; left: 0; right: 0; bottom: 0; height: 60upx; background: linear-gradient(transparent, rgba(0,0,0,.45)); border-radius: 0 0 14upx 14upx; }
+.wf-title { position: absolute; left: 12upx; bottom: 8upx; right: 12upx; color: #fff; font-size: 22upx; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* ===== 首页：轮播 + 公告 ===== */
+.banner-wrap { margin-top: 20upx; padding: 0 20upx; }
+.banner-swiper { width: 100%; height: 320upx; border-radius: 20upx; overflow: hidden; }
+.banner-card { position: relative; width: 100%; height: 100%; border-radius: 20upx; overflow: hidden; }
+.banner-img { width: 100%; height: 100%; }
+.banner-overlay { position: absolute; left: 0; right: 0; bottom: 0; height: 90upx; background: linear-gradient(transparent, rgba(0,0,0,.45)); }
+.banner-title { position: absolute; left: 24upx; bottom: 16upx; color: #fff; font-size: 30upx; font-weight: 600; text-shadow: 0 2upx 8upx rgba(0,0,0,.4); max-width: 80%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.notice-bar { display: flex; align-items: center; gap: 12upx; margin: 20upx 24upx 0; padding: 18upx 22upx; background: #f6f8fb; border-radius: 14upx; }
+.notice-icon { font-size: 26upx; }
+.notice-text { flex: 1; font-size: 24upx; color: #374151; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.notice-arrow { font-size: 28upx; color: #9ca3af; }
 </style>

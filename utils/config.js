@@ -11,9 +11,13 @@ const config = {
   /** 站点根路径前缀 */
   sitePath: '/doo',
 
-  /** API 基础地址（带尾斜杠） */
+  /** API 基础地址（带尾斜杠）
+   * 版本段由后端 api_version.php 控制：App 启动时自动拉取并写入 storage('apiVersion')，
+   * 1=v1(无版本段) / 2=v2(/api/v2/)；storage 缺失时默认 v1 */
   get baseUrl() {
-    return `http://${this.host}:${this.port}${this.sitePath}/server/api/`
+    const v = Number(uni.getStorageSync('apiVersion') || 1)
+    const seg = v > 1 ? ('v' + v + '/') : ''
+    return `http://${this.host}:${this.port}${this.sitePath}/server/api/` + seg
   },
 
   /** 站点根地址（含前缀，无尾斜杠） */

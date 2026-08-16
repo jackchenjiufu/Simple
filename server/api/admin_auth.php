@@ -33,7 +33,7 @@ function getAuthUser($db) {
         // 安全：经 admin_uid 参数识别用户且带用户级 auth_token 时，
         // 必须校验 token 与 uid 属于同一用户，防止用他人 uid 冒充高权限账号。
         // （session 模式 / 全局 admin_token 不受此限制）
-        $isUserToken = strlen($adminToken) === 64 && ctype_xdigit($adminToken);
+        $isUserToken = strlen($adminToken) >= 32 && ctype_xdigit($adminToken);
         if (!$viaSession && $isUserToken) {
             $stmt = $db->prepare("SELECT id FROM users WHERE id = ? AND auth_token = ? LIMIT 1");
             $stmt->execute([$uid, $adminToken]);
@@ -49,7 +49,7 @@ function getAuthUser($db) {
         }
     }
     // 用户级 auth_token 识别（旧版 App 请求带自身登录 token）
-    if (isset($_GET['admin_token']) && strlen($_GET['admin_token']) === 64 && ctype_xdigit($_GET['admin_token'])) {
+    if (isset($_GET['admin_token']) && strlen($_GET['admin_token']) >= 32 && ctype_xdigit($_GET['admin_token'])) {
         $stmt = $db->prepare("SELECT id, username, role FROM users WHERE auth_token = ? LIMIT 1");
         $stmt->execute([$_GET['admin_token']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -112,7 +112,7 @@ function checkAdminAuth($requiredPerm = null) {
             $authed = true;
         }
         // 模式3：用户级 auth_token（旧版 App 使用自身登录 token 请求）
-        elseif (strlen($tk) === 64 && ctype_xdigit($tk)) {
+        elseif (strlen($tk) >= 32 && ctype_xdigit($tk)) {
             $dbCheck = (new Database())->getConnection();
             $stmt = $dbCheck->prepare("SELECT id FROM users WHERE auth_token = ? LIMIT 1");
             $stmt->execute([$tk]);

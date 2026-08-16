@@ -118,6 +118,12 @@
 			}
 		},
 		{
+			"path": "pages/info/webview",
+			"style": {
+				"navigationBarTitleText": "网页"
+			}
+		},
+		{
 			"path": "pages/info/privacy-policy",
 			"style": {
 				"navigationStyle": "custom"
@@ -166,6 +172,12 @@
 				},
 				{
 					"path": "dashboard",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "behaviors",
 					"style": {
 						"navigationStyle": "custom"
 					}
@@ -244,6 +256,30 @@
 				},
 				{
 					"path": "carousel",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "cache",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "recommend",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "database",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "sysconfig",
 					"style": {
 						"navigationStyle": "custom"
 					}

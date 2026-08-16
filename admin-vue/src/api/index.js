@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE = '/doo/server/api'
+const API_BASE = '/doo/server/api/v2'
 
 const api = axios.create({ baseURL: API_BASE, timeout: 15000 })
 
@@ -12,15 +12,6 @@ export const login = (username, password) =>
 export const getUsers = (page, limit) =>
   api.get(`/admin_users.php?page=${page}&limit=${limit}`)
 
-// 内容管理
-export const getContent = () =>
-  api.post('/content.php', { action: 'get_content', type: 'image', offset: 0, limit: 100 })
-
-// 轮播
-export const getCarousels = () =>
-  api.post('/admin_carousels.php', { action: 'get_carousels' })
-export const saveCarousel = (data) =>
-  api.post('/admin_carousels.php', data)
 
 // 公告
 export const getAnnouncements = () =>
@@ -78,6 +69,12 @@ export const deleteCarousel = (id) =>
 // 当前登录管理员角色与权限列表（前端菜单按权限过滤）
 export const getMyPermissions = () =>
   api.get('/admin_my_permissions.php')
+
+// API 版本切换（后端全局生效，App 端启动自动跟随）
+export const getApiVersion = () =>
+  api.get('/admin_api_version.php')
+export const switchApiVersion = (version) =>
+  api.post('/admin_api_version.php', { action: 'switch', version })
 
 
 // 添加管理员 Token + 用户 ID（admin_auth.php 权限校验需要识别用户）

@@ -62,6 +62,29 @@
           <div v-else class="empty-tip">暂无数据</div>
         </el-card>
 
+        <!-- 图片分类分布 -->
+        <el-card shadow="never" class="panel-card">
+          <template #header>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="card-head"><span class="head-dot" style="background:#7c3aed"></span>图片分类分布（内容）</div>
+              <el-button size="small" text @click="loadCategoryDist">刷新</el-button>
+            </div>
+          </template>
+          <div v-if="categoryDist.length" style="display:flex;flex-direction:column;gap:10px;padding:4px 0">
+            <div v-for="c in categoryDist" :key="c.category">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+                <span>{{ c.category }}</span>
+                <span style="font-weight:600;color:#6d28d9">
+                  {{ c.count }} 张
+                  <el-tag v-if="c.recommended > 0" size="small" type="success" style="margin-left:6px">推荐 {{ c.recommended }}</el-tag>
+                </span>
+              </div>
+              <el-progress :percentage="Math.round(c.count / categoryDistMax * 100)" :stroke-width="8" color="#7c3aed" />
+            </div>
+          </div>
+          <div v-else class="empty-tip">暂无图片数据</div>
+        </el-card>
+
         <!-- 最近动态 -->
         <el-card shadow="never" class="panel-card">
           <template #header>
@@ -117,7 +140,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  User, TrendCharts, Document, Files, Connection, ChatDotRound, Warning, Right
+  User, TrendCharts, Document, Files, ChatDotRound, Warning, Right, Picture
 } from '@element-plus/icons-vue'
 import api from '@/api'
 
@@ -148,6 +171,16 @@ const recentLogs = ref([])
 const userGrowth = ref([])
 const versionDownloads = ref([])
 const serverInfo = ref(null)
+const categoryDist = ref([])
+const categoryDistMax = computed(() => Math.max(1, ...categoryDist.value.map(c => c.count)))
+
+// 图片分类分布（后台内容按类别统计）
+const loadCategoryDist = async () => {
+  try {
+    const r = await api.get('/admin_stats.php', { params: { type: 'category_dist' } })
+    if (r.data.code === 200) categoryDist.value = (r.data.data?.distribution || []).slice(0, 8)
+  } catch (e) { /* ignore */ }
+}
 
 // editor 只显示文章相关统计
 const visibleStatItems = computed(() => {
@@ -175,8 +208,8 @@ onMounted(async () => {
         { label: '用户总数', value: s.total_users || 0, icon: User, path: '/users', color: '#2563eb', grad: '#2563eb' },
         { label: '今日新增', value: s.today_users || 0, icon: TrendCharts, path: '/users', color: '#059669', grad: '#059669' },
         { label: '文章总数', value: s.total_articles || 0, articleOnly: true, icon: Document, path: '/article', color: '#d97706', grad: '#d97706' },
-        { label: '内容总数', value: s.total_content || 0, icon: Files, path: '/carousel', color: '#7c3aed', grad: '#7c3aed' },
-        { label: '关注关系', value: s.total_follows || 0, icon: Connection, path: '/users', color: '#0891b2', grad: '#0891b2' },
+        { label: '图片内容', value: s.total_images || s.total_content || 0, icon: Picture, path: '/recommend', color: '#7c3aed', grad: '#7c3aed' },
+        { label: '推荐池', value: s.recommended ?? '-', icon: Files, path: '/recommend', color: '#0891b2', grad: '#0891b2' },
         { label: '消息总数', value: s.total_messages || 0, icon: ChatDotRound, path: '/comments', color: '#0d9488', grad: '#0d9488' },
         { label: '待处理反馈', value: fl.data?.total || 0, badge: fl.data?.total || 0, icon: Warning, path: '/feedback', color: '#dc2626', grad: '#dc2626' }
       ]
@@ -185,6 +218,7 @@ onMounted(async () => {
 
     if (lr.data.code === 200) recentLogs.value = lr.data.data || []
     if (vdr.data.code === 200) versionDownloads.value = vdr.data.data || []
+    loadCategoryDist()
 
     // 服务器状态
     if (mr.data.code === 200) {

@@ -37,6 +37,21 @@
         <el-form-item label="启用">
           <el-switch v-model="form.is_active" :active-value="1" :inactive-value="0" />
         </el-form-item>
+        <el-form-item label="点击跳转">
+          <el-select v-model="form.link_type" style="width:160px">
+            <el-option label="不跳转" value="none" />
+            <el-option label="文章详情" value="article" />
+            <el-option label="公告详情" value="announcement" />
+            <el-option label="网页" value="web" />
+            <el-option label="外部链接" value="url" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="form.link_type === 'article' || form.link_type === 'announcement'" :label="form.link_type === 'article' ? '文章 ID' : '公告 ID'">
+          <el-input-number v-model="form.link_id" :min="0" style="width:160px" />
+        </el-form-item>
+        <el-form-item v-if="form.link_type === 'url' || form.link_type === 'web'" label="链接地址">
+          <el-input v-model="form.link_url" placeholder="https://..." />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showForm=false">取消</el-button>
@@ -56,7 +71,7 @@ const uploadData = {title:'carousel',author:'admin'}
 const uploadUrl = "/doo/server/api/upload_image.php"
 const handleUploadSuccess=(res)=>{if(res.code===200&&res.data?.url)form.value.image_url=res.data.url}
 const load=async()=>{loading.value=true;try{const r=await api.get('/admin_carousels.php');if(r.data.code===200)list.value=r.data.data||[]}catch(e){}loading.value=false}
-const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row,sort_order:row.sort_order??0,is_active:row.is_active??1};showForm.value=true}
+const openForm=(row)=>{isEdit.value=!!row.id;form.value={...row,sort_order:Number(row.sort_order)||0,is_active:Number(row.is_active)??1,link_type:row.link_type||'none',link_id:Number(row.link_id)||0,link_url:row.link_url||''};showForm.value=true}
 const save=async()=>{
   saving.value=true
   try{

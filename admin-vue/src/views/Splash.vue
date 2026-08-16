@@ -15,13 +15,21 @@
               <el-input v-model="form.subtitle" placeholder="加载中..." />
             </el-form-item>
             <el-form-item label="Logo">
-              <div style="display:flex;align-items:center;gap:12px;width:100%">
-                <el-input v-model="form.logo_url" placeholder="https://... 或上传" />
-                <el-upload name="image" :action="uploadUrl" :headers="uploadHeaders" :data="uploadData" :on-success="handleUploadSuccess" :on-error="uploadError" :show-file-list="false" accept="image/*">
-                  <el-button size="small">上传</el-button>
-                </el-upload>
-              </div>
-            </el-form-item>
+                          <div style="display:flex;align-items:center;gap:12px;width:100%">
+                            <el-input v-model="form.logo_url" placeholder="https://... 或上传" />
+                            <el-upload name="image" :action="uploadUrl" :headers="uploadHeaders" :data="uploadData" :on-success="handleUploadSuccess" :on-error="uploadError" :show-file-list="false" accept="image/*">
+                              <el-button size="small">上传</el-button>
+                            </el-upload>
+                          </div>
+                        </el-form-item>
+                        <el-form-item label="启动图">
+                          <div style="display:flex;align-items:center;gap:12px;width:100%">
+                            <el-input v-model="form.image_url" placeholder="全屏启动图 https://...（App 端后续启用）" />
+                            <el-upload name="image" :action="uploadUrl" :headers="uploadHeaders" :data="splashUploadData" :on-success="handleSplashUploadSuccess" :on-error="uploadError" :show-file-list="false" accept="image/*">
+                              <el-button size="small">上传</el-button>
+                            </el-upload>
+                          </div>
+                        </el-form-item>
             <el-form-item label="延迟(ms)">
               <el-input-number v-model="form.delay_ms" :min="100" :max="5000" :step="100" />
             </el-form-item>
@@ -36,14 +44,15 @@
       </el-col>
       <el-col :span="10">
         <el-card shadow="never">
-          <template #header>预览</template>
-          <div class="preview-box" :style="{ background: form.bg_color }">
-            <img v-if="form.logo_url" class="preview-logo" :src="form.logo_url" style="object-fit:contain" />
-            <div v-else class="preview-logo preview-logo-text">LOGO</div>
-            <div class="preview-title">{{ form.title || 'Simple' }}</div>
-            <div class="preview-sub">{{ form.subtitle || '加载中...' }}</div>
-          </div>
-        </el-card>
+                  <template #header>预览</template>
+                  <div class="preview-box" :style="{ background: form.bg_color }">
+                    <img v-if="form.image_url" class="preview-bg" :src="form.image_url" style="object-fit:cover" />
+                    <img v-if="form.logo_url" class="preview-logo" :src="form.logo_url" style="object-fit:contain;position:relative" />
+                    <div v-else class="preview-logo preview-logo-text" style="position:relative">LOGO</div>
+                    <div class="preview-title" style="position:relative">{{ form.title || 'Simple' }}</div>
+                    <div class="preview-sub" style="position:relative">{{ form.subtitle || '加载中...' }}</div>
+                  </div>
+                </el-card>
       </el-col>
     </el-row>
   </div>
@@ -57,14 +66,18 @@ import { getSplashConfig, saveSplashConfig } from '@/api'
 const saving = ref(false)
 const form = reactive({
   enabled: 1, title: 'Simple', subtitle: '加载中...',
-  logo_url: '', delay_ms: 300, bg_color: '#ffffff'
+  logo_url: '', image_url: '', delay_ms: 300, bg_color: '#ffffff'
 })
 const uploadUrl = "/doo/server/api/upload_image.php"
 const uploadHeaders = {'X-Admin-Token': localStorage.getItem('admin_token') || ''}
 const uploadData = { title: 'splash', author: 'admin' }
+const splashUploadData = { title: 'splash-bg', author: 'admin' }
 const uploadError = () => ElMessage.error('上传失败')
 const handleUploadSuccess = (res) => {
   if (res.code === 200 && res.data?.url) form.logo_url = res.data.url
+}
+const handleSplashUploadSuccess = (res) => {
+  if (res.code === 200 && res.data?.url) form.image_url = res.data.url
 }
 
 onMounted(async () => {
@@ -92,7 +105,9 @@ const handleSave = async () => {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   border: 2px dashed #ddd;
+  overflow: hidden; position: relative;
 }
+.preview-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .preview-logo { width: 64px; height: 64px; border-radius: 14px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
 .preview-logo-text { font-size: 12px; color: #bbb; font-weight: 600; }
 .preview-title { font-size: 18px; font-weight: 700; color: #1a1a2e; }

@@ -138,6 +138,43 @@ const adminApi = {
   addOvertime: (data) => adminRequest('admin_overtime.php', { method: 'POST', data }),
   updateOvertime: (id, data) => adminRequest('admin_overtime.php', { method: 'PUT', data: { id, ...data } }),
   deleteOvertime: (id) => adminRequest('admin_overtime.php', { method: 'DELETE', data: { id } }),
+
+  // ===== 缓存管理 =====
+  getCacheStatus: () => adminRequest('system_cache.php'),
+  flushCache: () => adminRequest('system_cache.php', { method: 'POST', data: { action: 'flush' } }),
+  forgetCache: (pattern) => adminRequest('system_cache.php', { method: 'POST', data: { action: 'forget', pattern } }),
+
+  // ===== 内容推荐 =====
+  getRecommendOverview: () => adminRequest('admin_recommend.php'),
+  getRecommendContents: (params = {}) => adminRequest('admin_recommend.php', { query: { action: 'contents', ...params } }),
+  getRecommendGroups: () => adminRequest('admin_recommend.php', { query: { action: 'groups' } }),
+  getRecommendFingerprints: () => adminRequest('admin_recommend.php', { query: { action: 'fingerprints' } }),
+  dedupFingerprintGroup: (groupId) =>
+    adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'dedup', group_id: groupId } }),
+  toggleRecommend: (id, recommended) =>
+    adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'toggle', id, recommended } }),
+  tagContent: (id) =>
+    adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'tag_one', id } }),
+
+  // ===== 数据库管理 =====
+  getDbOverview: () => adminRequest('admin_database.php'),
+  getDbTables: (params = {}) => adminRequest('admin_database.php', { query: { action: 'data', ...params } }),
+  getDbStructure: (table) => adminRequest('admin_database.php', { query: { action: 'structure', table } }),
+
+  // ===== 用户行为分析 =====
+  getBehaviorUsers: (params = {}) => adminRequest('admin_behaviors.php', { query: { action: 'list', ...params } }),
+  getBehaviorDetail: (params = {}) => adminRequest('admin_behaviors.php', { query: { action: 'detail', ...params } }),
+  getBehaviorTypes: (params = {}) => adminRequest('admin_behaviors.php', { query: { action: 'types', ...params } }),
+  deleteBehavior: (id) => adminRequest('admin_behaviors.php', { method: 'POST', data: { action: 'delete', id } }),
+  clearUserBehaviors: (userId) => adminRequest('admin_behaviors.php', { method: 'POST', data: { action: 'clear_user', user_id: userId } }),
+
+  // ===== 系统设置 =====
+  getSiteInfo: () => adminRequest('admin_system_config.php'),
+  saveSiteInfo: (data) => adminRequest('admin_system_config.php', { method: 'POST', data: { action: 'site', ...data } }),
+  getSystemConfig: () => adminRequest('admin_system_config.php', { query: { action: 'config' } }),
+  changeAdminPassword: (oldPwd, newPwd) =>
+    adminRequest('admin_system_config.php', { method: 'POST', data: { action: 'password', old_password: oldPwd, new_password: newPwd } }),
+  flushSystemCache: () => adminRequest('admin_system_config.php', { method: 'POST', data: { action: 'flush' } }),
 }
 
 // 导出 baseUrl 供需要直接拼 URL 的场景使用（如手动触发热搜）

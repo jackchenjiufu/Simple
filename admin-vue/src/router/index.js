@@ -16,6 +16,7 @@ const routes = [
       { path: 'carousel', component: () => import('@/views/Carousel.vue') },
       { path: 'announcement', component: () => import('@/views/Announcement.vue') },
       { path: 'article', component: () => import('@/views/Article.vue') },
+      { path: 'content-manage', component: () => import('@/views/ContentManage.vue') },
       { path: 'article-edit', component: () => import('@/views/ArticleEdit.vue') },
       { path: 'article-edit/:id', component: () => import('@/views/ArticleEdit.vue') },
       { path: 'feedback', component: () => import('@/views/Feedback.vue') },
@@ -24,11 +25,17 @@ const routes = [
       { path: 'version', component: () => import('@/views/Version.vue') },
       { path: 'splash', component: () => import('@/views/Splash.vue') },
       { path: 'stats', component: () => import('@/views/Stats.vue') },
+      { path: 'behaviors', component: () => import('@/views/Behaviors.vue') },
       { path: 'logs', component: () => import('@/views/Logs.vue') },
       { path: 'permissions', component: () => import('@/views/Permissions.vue') },
       { path: 'overtime', component: () => import('@/views/Overtime.vue') },
       { path: 'apis', component: () => import('@/views/ApiList.vue') },
-      { path: 'system', component: () => import('@/views/SystemSettings.vue') },
+      { path: 'cache', component: () => import('@/views/CacheManage.vue') },
+      { path: 'database', component: () => import('@/views/DatabaseManage.vue') },
+      { path: 'recommend', component: () => import('@/views/RecommendManage.vue') },
+            { path: 'system', component: () => import('@/views/SystemSettings.vue') },
+            { path: 'system-config', component: () => import('@/views/SystemConfig.vue') },
+      { path: ':pathMatch(.*)*', redirect: '/dashboard' }
     ]
   }
 ]

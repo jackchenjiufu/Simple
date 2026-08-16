@@ -10,6 +10,19 @@
 		</view>
 
 		<scroll-view class="content-area" scroll-y="true">
+			<!-- 关于 / 站点信息 -->
+			<view class="about-card" v-if="siteInfo">
+				<image v-if="siteInfo.logo_url" class="about-logo" :src="siteInfo.logo_url" mode="aspectFill"></image>
+				<view class="about-logo-placeholder" v-else><text class="about-logo-t">{{ (siteInfo.site_name || 'DOO').charAt(0) }}</text></view>
+				<text class="about-name">{{ siteInfo.site_name || 'DOO' }}</text>
+				<text class="about-desc" v-if="siteInfo.site_desc">{{ siteInfo.site_desc }}</text>
+				<view class="about-meta">
+					<text class="about-ver">App v{{ appVersion }}</text>
+					<text class="about-ver">API v{{ siteInfo.api_version }}</text>
+				</view>
+				<text class="about-url">{{ siteInfo.service_url }}</text>
+			</view>
+
 			<view class="settings-section">
 				<view class="settings-item" v-if="isAdmin" @click="goAdmin">
 					<view class="item-left">
@@ -119,6 +132,8 @@ export default {
 		showClearCacheModal: false,
 		cacheSize: '计算中...',
 		isAdmin: false,
+		siteInfo: null,
+		appVersion: '1.0.0',
 	};
 	},
 	onLoad() {
@@ -130,8 +145,31 @@ export default {
 		this.isAdmin = uni.getStorageSync('isAdmin') === true;
 		const ui = uni.getStorageSync('userInfo');
 		if (!this.isAdmin && ui && (ui.role === 'admin' || ui.role === 'super_admin' || ui.role === 'editor' || ui.role === '运营')) this.isAdmin = true;
+		this.loadSiteInfo();
+		// App 版本号（manifest）
+		try {
+			const manifest = require('../../manifest.json');
+			if (manifest && manifest.versionName) this.appVersion = manifest.versionName;
+		} catch (e) { /* 忽略 */ }
 	},
 	methods: {
+		// 加载站点信息（公开接口）
+		loadSiteInfo() {
+			try {
+				const apiConfig = require('../../utils/api.js').default;
+				uni.request({
+					url: apiConfig.baseUrl + 'site_info.php',
+					method: 'GET',
+					timeout: 8000,
+					success: (res) => {
+						if (res.statusCode === 200 && res.data && res.data.code === 200) {
+							this.siteInfo = res.data.data;
+						}
+					},
+					fail: () => {}
+				});
+			} catch (e) { /* 忽略 */ }
+		},
 		// #ifdef VUE3
 		...mapActions('user', ['logout']),
 		// #endif
@@ -150,7 +188,7 @@ export default {
 			uni.navigateTo({ url: '/pages/info/system-permissions' });
 		},
 		goAdmin() {
-			// 登录时已鉴权并保存 token，直达原生后台管理
+			// 直达 App 原生管理页
 			uni.navigateTo({ url: '/pages/admin/index' });
 		},
 		confirmLogout() {
@@ -372,4 +410,22 @@ export default {
 
 
 ::-webkit-scrollbar { width: 0; height: 0; display: none; }
+/* ===== 关于卡片 ===== */
+.about-card {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40upx 24upx 32upx; margin: 20upx 24upx 8upx;
+  background: linear-gradient(135deg, #2c3e7b, #3071f6);
+  border-radius: 20upx;
+}
+.about-logo, .about-logo-placeholder {
+  width: 100upx; height: 100upx; border-radius: 22upx; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.about-logo-placeholder { background: rgba(255,255,255,.2); }
+.about-logo-t { font-size: 44upx; color: #fff; font-weight: 800; }
+.about-name { margin-top: 16upx; font-size: 36upx; font-weight: 700; color: #fff; }
+.about-desc { margin-top: 6upx; font-size: 22upx; color: rgba(255,255,255,.8); }
+.about-meta { display: flex; gap: 16upx; margin-top: 14upx; }
+.about-ver { font-size: 20upx; color: rgba(255,255,255,.85); background: rgba(255,255,255,.15); padding: 4upx 14upx; border-radius: 20upx; }
+.about-url { margin-top: 10upx; font-size: 18upx; color: rgba(255,255,255,.55); }
 </style>

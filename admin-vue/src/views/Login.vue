@@ -4,9 +4,9 @@
     <div class="left-panel">
       <div class="left-inner">
         <div class="logo-row">
-          <div class="logo-placeholder"></div>
-          <span class="logo-label">DOO 后台管理</span>
-        </div>
+                  <div class="logo-placeholder"></div>
+                  <span class="logo-label">{{ siteName }} 后台管理</span>
+                </div>
         <div class="character-area">
           <div class="cc c1"></div>
           <div class="cc c2"></div>
@@ -27,9 +27,9 @@
     <div class="right-panel">
       <div class="form-box">
         <div class="mobile-logo">
-          <div class="logo-placeholder-sm"></div>
-          <span class="mobile-logo-label">DOO 后台管理</span>
-        </div>
+                  <div class="logo-placeholder-sm"></div>
+                  <span class="mobile-logo-label">{{ siteName }} 后台管理</span>
+                </div>
         <div class="form-header">
           <h2 class="form-title">管理员登录</h2>
           <p class="form-desc">请输入管理员账号和密码</p>
@@ -53,10 +53,11 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api'
+import api from '@/api'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -64,8 +65,20 @@ const loading = ref(false)
 const f1 = ref(false)
 const f2 = ref(false)
 const showPwd = ref(false)
+const siteName = ref('DOO')
 const form = reactive({ username: '', password: '' })
 const rules = { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, message: '请输入密码' }] }
+
+// 拉取站点名称（后台系统设置可改，登录页同步显示）
+onMounted(async () => {
+  try {
+    const r = await api.get('/site_info.php')
+    if (r.data.code === 200 && r.data.data?.site_name) {
+      siteName.value = r.data.data.site_name
+      document.title = siteName.value + ' 后台管理'
+    }
+  } catch (e) { /* 保持默认 */ }
+})
 
 const handleLogin = async () => {
   const valid = await formRef.value.validate().catch(() => {})

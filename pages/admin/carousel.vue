@@ -13,7 +13,7 @@
 			<view class="carousel-item" v-for="c in list" :key="c.id">
 				<view class="carousel-info">
 					<text class="carousel-title">{{ c.title || '(无标题)' }}</text>
-					<text class="carousel-meta">排序 {{ c.sort_order }} · {{ c.is_active ? '启用' : '停用' }}</text>
+					<text class="carousel-meta">排序 {{ c.sort_order }} · {{ c.is_active ? '启用' : '停用' }} · {{ linkLabel(c.link_type) }}{{ c.link_type === 'article' || c.link_type === 'announcement' ? ' #' + c.link_id : ((c.link_type === 'url' || c.link_type === 'web') && c.link_url ? ' · ' + c.link_url : '') }}</text>
 				</view>
 				<view class="carousel-actions">
 					<text class="edit-btn" @click="openEdit(c)">编辑</text>
@@ -36,8 +36,12 @@
 					<input class="form-input" v-model="editForm.title" placeholder="请输入标题" />
 				</view>
 				<view class="form-group">
-					<text class="form-label">图片 URL</text>
-					<input class="form-input" v-model="editForm.image_url" placeholder="https://..." />
+					<text class="form-label">图片</text>
+					<view class="upload-row">
+						<input class="form-input" v-model="editForm.image_url" placeholder="输入链接或点击上传" />
+						<view class="upload-btn" @click="chooseUpload">上传</view>
+					</view>
+					<image v-if="editForm.image_url" class="upload-preview" :src="editForm.image_url" mode="aspectFill" @click="chooseUpload"></image>
 				</view>
 				<view class="form-group">
 					<text class="form-label">作者</text>
@@ -46,6 +50,24 @@
 				<view class="form-group">
 					<text class="form-label">排序号</text>
 					<input class="form-input" v-model="editForm.sort_order" type="number" placeholder="数字，越小越靠前" />
+				</view>
+				<view class="form-group">
+					<text class="form-label">点击跳转</text>
+					<view class="link-type-row">
+						<view class="link-type-option" :class="{ active: editForm.link_type === 'none' }" @click="editForm.link_type = 'none'">不跳转</view>
+						<view class="link-type-option" :class="{ active: editForm.link_type === 'article' }" @click="editForm.link_type = 'article'">文章</view>
+						<view class="link-type-option" :class="{ active: editForm.link_type === 'announcement' }" @click="editForm.link_type = 'announcement'">公告</view>
+						<view class="link-type-option" :class="{ active: editForm.link_type === 'web' }" @click="editForm.link_type = 'web'">网页</view>
+						<view class="link-type-option" :class="{ active: editForm.link_type === 'url' }" @click="editForm.link_type = 'url'">外链</view>
+					</view>
+				</view>
+				<view class="form-group" v-if="editForm.link_type === 'article' || editForm.link_type === 'announcement'">
+					<text class="form-label">{{ editForm.link_type === 'article' ? '文章 ID' : '公告 ID' }}</text>
+					<input class="form-input" v-model="editForm.link_id" type="number" placeholder="目标内容 ID" />
+				</view>
+				<view class="form-group" v-if="editForm.link_type === 'web' || editForm.link_type === 'url'">
+					<text class="form-label">链接地址</text>
+					<input class="form-input" v-model="editForm.link_url" placeholder="https://..." />
 				</view>
 				<view class="form-group switch-row">
 					<text class="form-label">启用</text>
@@ -67,7 +89,7 @@ export default {
 			list: [],
 			loading: false,
 			showEdit: false,
-			editForm: { id: null, title: '', image_url: '', author: '', sort_order: 0, is_active: 1 },
+			editForm: { id: null, title: '', image_url: '', author: '', sort_order: 0, is_active: 1, link_type: 'none', link_id: 0, link_url: '' },
 		};
 	},
 	onLoad() {
@@ -76,6 +98,9 @@ export default {
 	},
 	methods: {
 		goBack() { uni.navigateBack(); },
+		linkLabel(t) {
+			return { none: '不跳转', article: '文章', announcement: '公告', web: '网页', url: '外链' }[t] || '不跳转';
+		},
 		loadList() {
 			this.loading = true;
 			adminApi.getCarousels().then(res => {
@@ -86,7 +111,8 @@ export default {
 			this.editForm = c ? {
 				id: c.id, title: c.title || '', image_url: c.image_url || '',
 				author: c.author || '', sort_order: c.sort_order || 0, is_active: c.is_active == null ? 1 : c.is_active,
-			} : { id: null, title: '', image_url: '', author: '', sort_order: 0, is_active: 1 };
+				link_type: c.link_type || 'none', link_id: c.link_id || 0, link_url: c.link_url || '',
+			} : { id: null, title: '', image_url: '', author: '', sort_order: 0, is_active: 1, link_type: 'none', link_id: 0, link_url: '' };
 			this.showEdit = true;
 		},
 		handleSave() {
@@ -95,13 +121,44 @@ export default {
 				uni.showToast({ title: '标题和图片URL必填', icon: 'none' });
 				return;
 			}
-			const payload = { title: f.title, image_url: f.image_url, author: f.author || 'admin', sort_order: parseInt(f.sort_order) || 0, is_active: f.is_active };
+			const payload = { title: f.title, image_url: f.image_url, author: f.author || 'admin', sort_order: parseInt(f.sort_order) || 0, is_active: f.is_active, link_type: f.link_type || 'none', link_id: parseInt(f.link_id) || 0, link_url: f.link_url || '' };
 			const p = f.id ? adminApi.updateCarousel(f.id, payload) : adminApi.saveCarousel(payload);
 			p.then(() => {
 				uni.showToast({ title: '保存成功', icon: 'success' });
 				this.showEdit = false;
 				this.loadList();
 			}).catch(() => {});
+		},
+		chooseUpload() {
+			uni.chooseImage({
+				count: 1,
+				success: (res) => {
+					const filePath = res.tempFilePaths[0];
+					if (!filePath) return;
+					uni.showLoading({ title: '上传中' });
+					const token = uni.getStorageSync('adminToken') || uni.getStorageSync('token') || '';
+					const uid = uni.getStorageSync('userId') || '';
+					uni.uploadFile({
+						url: adminApi.baseUrl + 'upload_image.php?admin_token=' + encodeURIComponent(token) + '&admin_uid=' + uid,
+						filePath: filePath,
+						name: 'image',
+						formData: { title: 'carousel', author: 'admin' },
+						success: (up) => {
+							uni.hideLoading();
+							try {
+								const d = JSON.parse(up.data);
+								if (d.code === 200 && d.data && d.data.url) {
+									this.editForm.image_url = d.data.url;
+									uni.showToast({ title: '上传成功', icon: 'success' });
+								} else {
+									uni.showToast({ title: d.message || '上传失败', icon: 'none' });
+								}
+							} catch (e) { uni.showToast({ title: '上传失败', icon: 'none' }); }
+						},
+						fail: () => { uni.hideLoading(); uni.showToast({ title: '上传失败', icon: 'none' }); }
+					});
+				}
+			});
 		},
 		handleDelete(c) {
 			uni.showModal({
@@ -164,7 +221,20 @@ export default {
 .form-input {
 	height: 42px; background: #f5f6fa; border-radius: 10px; padding: 0 14px; font-size: 14px;
 }
+.upload-row { display: flex; gap: 8px; }
+.upload-btn {
+	flex-shrink: 0; background: #3071f6; color: #fff; font-size: 13px;
+	padding: 0 14px; border-radius: 10px; display: flex; align-items: center;
+}
+.upload-preview { width: 90px; height: 60px; border-radius: 8px; margin-top: 8px; background: #f0f1f4; }
 .switch-row { display: flex; align-items: center; justify-content: space-between; }
+.link-type-row { display: flex; gap: 8px; }
+.link-type-option {
+	flex: 1; height: 38px; line-height: 38px; text-align: center;
+	background: #f5f6fa; border-radius: 10px; font-size: 13px; color: #666;
+	border: 1px solid transparent;
+}
+.link-type-option.active { background: #e8f0ff; color: #3071f6; border-color: #3071f6; font-weight: 500; }
 .btn-primary {
 	background: linear-gradient(135deg, #1b44a6, #3071f6); color: #fff;
 	border-radius: 12px; font-size: 15px; height: 44px; line-height: 44px; margin-top: 20px;

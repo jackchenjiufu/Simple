@@ -8,7 +8,8 @@ const apiConfig = {
     /**
      * API基础地址
      */
-    baseUrl: config.baseUrl,
+    /** 动态跟随 config.baseUrl（后端版本切换后实时生效） */
+    get baseUrl() { return config.baseUrl },
     
     /**
      * 各个API端点（仅保留实际被引用的）
@@ -48,7 +49,8 @@ const apiConfig = {
         }
         // 服务器相对路径
         if (url.startsWith('/')) {
-            return this.baseUrl.replace(/api\/$/, '') + url.substr(1);
+            // 剥离 /api/ 及之后的版本段（兼容 apiVersion=0 与 /api/v2/）
+            return this.baseUrl.replace(/\/api\/.*$/, '/') + url.substr(1);
         }
         return config.defaultCover;
     },

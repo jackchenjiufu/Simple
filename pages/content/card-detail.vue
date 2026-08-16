@@ -58,6 +58,8 @@ export default {
 			}
 		},
 	onLoad(options) {
+		this._stayStart = Date.now();
+		if (options && options.id) this.reportBehavior('page_view', 0, Number(options.id));
 		// 加载用户信息
 		this.loadUserInfo();
 		
@@ -79,7 +81,14 @@ export default {
 			}
 		}
 		
-		if (eventChannel) {
+		// 优先：query 参数直接带图片数据（首页瀑布流/推荐流跳转）
+		if (options && options.image_url) {
+			this.cardData = {
+				id: Number(options.id) || 0,
+				title: decodeURIComponent(options.title || ''),
+				image_url: decodeURIComponent(options.image_url)
+			};
+		} else if (eventChannel) {
 			eventChannel.on('setCard', (data) => {
 				this.cardData = data;
 			});
@@ -92,7 +101,27 @@ export default {
 			};
 		}
 	},
+	onUnload() { this.reportStay(); },
+	onHide() { this.reportStay(); },
 	methods: {
+		reportBehavior(type, duration, contentId) {
+			const token = uni.getStorageSync('token');
+			if (!token) return;
+			uni.request({
+				url: apiConfig.baseUrl + 'user_behavior.php?token=' + token,
+				method: 'POST',
+				data: { type: type, content_id: contentId || 0, duration: duration || 0 },
+				header: { 'Content-Type': 'application/json' },
+				fail: () => {}
+			});
+		},
+		reportStay() {
+			if (this._stayReported) return;
+			this._stayReported = true;
+			const sec = Math.round((Date.now() - (this._stayStart || Date.now())) / 1000);
+			const id = (this.cardData && this.cardData.id) || 0;
+			if (sec >= 2 && id) this.reportBehavior('page_stay', sec, id);
+		},
 		onImageLoad() {
 		},
 		onImageError(e) {

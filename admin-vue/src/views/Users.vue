@@ -202,10 +202,14 @@ const uploadAvatar = async (row) => {
     fd.append('title', 'avatar')
     fd.append('author', 'admin')
     try {
-      const r = await fetch('/doo/server/api/upload_image.php', { method: 'POST', body: fd })
+      const r = await fetch('/doo/server/api/upload_image.php', {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Admin-Token': localStorage.getItem('admin_token') || '' }
+      })
       const res = await r.json()
       if (res.code === 200 && res.data?.url) {
-        await api.put('/admin_users.php', { id: row.id, avatar: res.data.image_url })
+        await api.put('/admin_users.php', { id: row.id, avatar: res.data.url })
         ElMessage.success('头像已更新')
         load()
       } else { ElMessage.error(res.message || '上传失败') }

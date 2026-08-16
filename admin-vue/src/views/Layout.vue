@@ -6,8 +6,8 @@
     <!-- 桌面端侧边栏 -->
     <el-aside v-if="isDesktop" :width="collapsed ? '72px' : '224px'" class="sidebar" style="transition:width .25s">
       <div class="sidebar-logo" :class="{ 'is-collapsed': collapsed }">
-        <div class="logo-tile">DOO</div>
-        <span v-if="!collapsed" class="logo-text">DOO 后台管理</span>
+        <div class="logo-tile">{{ siteShort }}</div>
+        <span v-if="!collapsed" class="logo-text">{{ siteName }} 后台管理</span>
       </div>
       <el-scrollbar class="sidebar-scroll">
         <div v-if="!collapsed" class="menu-label">导航</div>
@@ -93,8 +93,8 @@
       class="mobile-drawer"
     >
       <div class="sidebar-logo">
-        <div class="logo-tile">DOO</div>
-        <span class="logo-text">DOO 后台管理</span>
+        <div class="logo-tile">{{ siteShort }}</div>
+        <span class="logo-text">{{ siteName }} 后台管理</span>
       </div>
       <el-scrollbar class="sidebar-scroll">
         <div class="menu-label">导航</div>
@@ -119,14 +119,29 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import {
-  Menu, User, Picture, Bell, Reading, ChatDotSquare, Connection,
-  Monitor, DataAnalysis, DocumentCopy, Setting, Tools, Timer,
+  Menu, User, Picture, PictureFilled, Bell, Reading, ChatDotSquare, Connection,
+  Monitor, DataAnalysis, DataLine, DocumentCopy, Setting, Tools, Timer, Odometer, Coin, Star,
   Expand, Fold, ArrowDown, Refresh, SwitchButton
 } from '@element-plus/icons-vue'
 import api, { getMyPermissions } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
+// 站点名称（后台「系统设置」可改，登录后动态拉取展示在各处）
+const siteName = ref('DOO')
+const siteShort = computed(() => {
+  const n = siteName.value.trim()
+  return n ? n.charAt(0).toUpperCase() : 'D'
+})
+const loadSiteName = async () => {
+  try {
+    const r = await api.get('/site_info.php')
+    if (r.data.code === 200 && r.data.data?.site_name) {
+      siteName.value = r.data.data.site_name
+      document.title = siteName.value + ' 后台管理'
+    }
+  } catch (e) { /* 保持默认 */ }
+}
 // 路由变化时重新拉取权限（权限管理页改权限后实时生效）
 watch(() => route.path, () => {
   loadMyPermissions()
@@ -149,16 +164,22 @@ const menus = [
   { path: '/carousel', title: '轮播管理', icon: Picture, permission: 'manage_carousel' },
   { path: '/announcement', title: '公告管理', icon: Bell, permission: 'manage_announcements' },
   { path: '/article', title: '文章管理', icon: Reading, permission: 'manage_articles' },
+  { path: '/content-manage', title: '内容管理', icon: PictureFilled, permission: 'manage_content' },
   { path: '/feedback', title: '反馈管理', icon: ChatDotSquare, permission: 'manage_feedback' },
   { path: '/comments', title: '评论管理', icon: ChatDotSquare, permission: 'manage_comments' },
   { path: '/reports', title: '举报管理', icon: ChatDotSquare, permission: 'manage_reports' },
   { path: '/version', title: '版本管理', icon: Connection, permission: 'manage_versions' },
   { path: '/splash', title: '启动页管理', icon: Monitor, permission: 'manage_splash' },
   { path: '/stats', title: '数据统计', icon: DataAnalysis, permission: 'view_stats' },
+  { path: '/behaviors', title: '行为分析', icon: DataLine, permission: 'view_stats' },
   { path: '/logs', title: '系统日志', icon: DocumentCopy, permission: 'manage_logs' },
   { path: '/permissions', title: '权限管理', icon: Setting, permission: 'manage_permissions' },
   { path: '/overtime', title: '加班管理', icon: Timer, permission: 'manage_overtime' },
   { path: '/apis', title: 'API 管理', icon: Connection, permission: 'manage_system' },
+  { path: '/cache', title: '缓存管理', icon: Odometer, permission: 'manage_system' },
+  { path: '/database', title: '数据库管理', icon: Coin, permission: 'manage_system' },
+  { path: '/recommend', title: '内容推荐', icon: Star, permission: 'manage_system' },
+  { path: '/system-config', title: '系统设置', icon: Setting, permission: 'manage_system' },
   { path: '/system', title: '系统维护', icon: Tools, permission: 'manage_system' },
 ]
 
@@ -197,6 +218,7 @@ onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
   loadMyPermissions()
+  loadSiteName()
 })
 
 onUnmounted(() => {

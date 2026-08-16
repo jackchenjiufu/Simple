@@ -34,6 +34,8 @@ export default {
 		};
 	},
 	onLaunch: function() {
+		// 拉取后端当前 API 版本（后台切换 v1/v2 后 App 自动跟随）
+		this.fetchApiVersion();
 		var loginPages = [
 			"pages/auth/login",
 			"pages/auth/forgot-password",
@@ -101,6 +103,24 @@ export default {
 		this.stopHeartbeat();
 	},
 	methods: {
+		// ===== API 版本跟随（后台切换 v1/v2 后 App 自动生效）=====
+		fetchApiVersion() {
+			var url = apiConfig.getServerUrl('/server/api/api_version.php');
+			if (!url) return;
+			uni.request({
+				url: url,
+				method: 'GET',
+				timeout: 5000,
+				success: (res) => {
+					if (res.statusCode === 200 && res.data && res.data.code === 200) {
+						var ver = res.data.data && res.data.data.version;
+						if (ver === 'v2') uni.setStorageSync('apiVersion', 2);
+						else if (ver === 'v1') uni.setStorageSync('apiVersion', 1);
+					}
+				},
+				fail: () => { /* 网络异常时保持当前版本（默认 v1） */ }
+			});
+		},
 		cancelUpdate() {
 			this.showUpdateModal = false;
 			this._updateInfo = null;

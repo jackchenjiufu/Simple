@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
@@ -42,8 +42,8 @@ import { CATEGORY_OPTIONS } from '@/constants/articleCategories'
 const route = useRoute()
 const router = useRouter()
 
-const id = route.params.id
-const isEdit = !!id
+const id = ref(route.params.id)
+const isEdit = computed(() => !!id.value)
 const loading = ref(false), saving = ref(false)
 // 新建默认"已发布"，可直接保存发布
 const form = ref({ title: '', author: '', category: '', content: '', status: 'published' })
@@ -96,7 +96,7 @@ const save = async () => {
   saving.value = true
   try {
     if (isEdit) {
-      await api.put('/admin_articles.php', { ...form.value, id })
+      await api.put('/admin_articles.php', { ...form.value, id: id.value })
       ElMessage.success('已更新')
     } else {
       await api.post('/admin_articles.php', form.value)
@@ -107,23 +107,39 @@ const save = async () => {
   saving.value = false
 }
 
+const loadArticle = async () => {
+  loading.value = true
+  try {
+    form.value = { title: '', author: '', category: '', content: '', status: 'published' }
+    if (!id.value) return
+    const row = await loadArticleById(id.value)
+    if (!row) {
+      ElMessage.error('未找到该文章')
+      goBack()
+      return
+    }
+    // 兼容旧数据 status='publish' → 统一为 'published'
+    const status = row.status === 'publish' ? 'published' : (row.status || 'draft')
+    const cat = (row.tags || '').split(',')[0] || (row.category && row.category !== 'article' ? row.category : '')
+    form.value = { title: row.title || '', author: row.author || '', category: cat, content: row.content || '', status }
+    // 当前作者不在候选列表时补一条，保证下拉显示
+    if (form.value.author && !authorOptions.value.some(u => u.username === form.value.author)) {
+      authorOptions.value = [{ username: form.value.author, nickname: '' }, ...authorOptions.value]
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 路由复用组件时（/article-edit/5 → /article-edit/6）重新加载，避免编辑错文章
+watch(() => route.params.id, (newId) => {
+  id.value = newId
+  loadArticle()
+})
+
 onMounted(async () => {
   loadAuthors()
-  if (!isEdit) return
-  const row = await loadArticleById(id)
-  if (!row) {
-    ElMessage.error('未找到该文章')
-    goBack()
-    return
-  }
-  // 兼容旧数据 status='publish' → 统一为 'published'
-  const status = row.status === 'publish' ? 'published' : (row.status || 'draft')
-  const cat = (row.tags || '').split(',')[0] || (row.category && row.category !== 'article' ? row.category : '')
-  form.value = { title: row.title || '', author: row.author || '', category: cat, content: row.content || '', status }
-  // 当前作者不在候选列表时补一条，保证下拉显示
-  if (form.value.author && !authorOptions.value.some(u => u.username === form.value.author)) {
-    authorOptions.value = [{ username: form.value.author, nickname: '' }, ...authorOptions.value]
-  }
+  await loadArticle()
 })
 </script>
 
