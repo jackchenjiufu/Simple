@@ -1,75 +1,91 @@
 <template>
-	<view class="content">
-		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
-		<view class="nav-bar">
-			<view class="nav-back" @click="goBack"><image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image></view>
-			<text class="nav-title">数据库管理</text>
-			<view class="nav-placeholder"></view>
-		</view>
-		<scroll-view class="body" scroll-y="true" show-scrollbar="false">
-			<view class="section-title">数据库概览</view>
-			<view class="info-card" v-if="info">
-				<view class="info-row"><text class="info-label">数据库</text><text class="info-value">{{ info.database }}</text></view>
-				<view class="info-row"><text class="info-label">MySQL</text><text class="info-value">{{ info.version }}</text></view>
-				<view class="info-row"><text class="info-label">数据表</text><text class="info-value">{{ info.table_count }} 张</text></view>
-				<view class="info-row"><text class="info-label">数据大小</text><text class="info-value">{{ formatSize(info.total_data) }} / 索引 {{ formatSize(info.total_index) }}</text></view>
-			</view>
-			<view class="section-title">数据表（{{ tables.length }}）</view>
-			<view class="list-card" v-if="tables.length">
-				<view class="list-item" v-for="t in tables" :key="t.name" @click="viewData(t)">
-					<text class="list-main">{{ t.name }}</text>
-					<text class="list-sub">{{ t.rows }} 行 · {{ formatSize(t.data_size) }}</text>
-					<text class="list-arrow">›</text>
+	<view class="ad-page">
+		<admin-nav :title="detail ? ('表：' + detail) : '数据库管理'"></admin-nav>
+		<scroll-view class="ad-body" scroll-y="true" show-scrollbar="false" @scrolltolower="detail && loadRows(true)">
+			<template v-if="!detail">
+				<view class="ad-sec">数据库概览</view>
+				<view class="ad-card" v-if="info">
+					<view class="ad-row"><text class="ad-label">数据库</text><text class="ad-value">{{ info.database }}</text></view>
+					<view class="ad-row"><text class="ad-label">MySQL</text><text class="ad-value">{{ info.version }}</text></view>
+					<view class="ad-row"><text class="ad-label">数据表</text><text class="ad-value">{{ info.table_count }} 张</text></view>
+					<view class="ad-row"><text class="ad-label">数据 / 索引</text><text class="ad-value">{{ formatSize(info.total_data) }} / {{ formatSize(info.total_index) }}</text></view>
 				</view>
-			</view>
-			<view class="empty" v-else>暂无数据</view>
+				<text class="ad-item-action" style="margin:0 4upx 12upx;display:inline-block" @click="loadOverview">刷新</text>
+				<view class="ad-sec">数据表（{{ tables.length }}）</view>
+				<view class="ad-list" v-if="tables.length">
+					<view class="ad-item" v-for="t in tables" :key="t.name" @click="openTable(t.name)">
+						<view class="ad-item-main">
+							<text class="ad-item-title">{{ t.name }}</text>
+							<text class="ad-item-sub">{{ t.rows }} 行 · {{ formatSize(t.data_size) }}</text>
+						</view>
+						<text class="ad-item-action">查看 ›</text>
+					</view>
+				</view>
+				<view class="ad-empty" v-else>暂无数据</view>
+			</template>
+			<template v-else>
+				<text class="ad-item-action" style="margin:0 4upx 16upx;display:inline-block" @click="backList">‹ 返回表列表</text>
+				<view class="ad-sec">字段结构（{{ columns.length }}）</view>
+				<view class="ad-card">
+					<view class="ad-item" v-for="c in columns" :key="c.Field || c.name">
+						<view class="ad-item-main">
+							<text class="ad-item-title">{{ c.Field || c.name }}</text>
+							<text class="ad-item-sub">{{ c.Type || c.type || '' }}<text v-if="c.Key==='PRI'||c.Key==='PRI'"> · 主键</text></text>
+						</view>
+						<text class="ad-tag ad-tag-gray">{{ (c.Null==='NO') ? '非空' : '可空' }}</text>
+					</view>
+					<view class="ad-empty" v-if="!columns.length">加载字段中...</view>
+				</view>
+				<view class="ad-sec">数据（共 {{ rowTotal }} 行）</view>
+				<view class="ad-list" v-if="rows.length">
+					<view class="ad-item" v-for="(row, ri) in rows" :key="ri" @click="rowDetail(row)">
+						<view class="ad-item-main">
+							<text class="ad-item-sub" v-for="(v, k) in pickRow(row)" :key="k">{{ k }}: {{ v }}</text>
+						</view>
+					</view>
+					<view class="ad-loading">{{ hasMore ? '上拉加载更多' : (rows.length ? '共 ' + rowTotal + ' 行' : '') }}</view>
+				</view>
+				<view class="ad-empty" v-else>无数据</view>
+			</template>
 		</scroll-view>
 	</view>
 </template>
 <script>
 import adminApi from '../../utils/admin-api.js';
+import AdminNav from '../../components/admin/AdminNav.vue';
 export default {
-	data() { return { statusBarHeight: 0, info: null, tables: [] }; },
-	onLoad() { const si = uni.getSystemInfoSync(); this.statusBarHeight = si.statusBarHeight || 0; this.load(); },
+	components: { AdminNav },
+	data() {
+		return { info: null, tables: [], detail: '', columns: [], rows: [], rowPage: 1, rowTotal: 0, hasMore: false, loadingRows: false };
+	},
+	onLoad() { this.loadOverview(); },
 	methods: {
-		goBack() { uni.navigateBack(); },
 		formatSize(b) { if (b == null) return '-'; if (b < 1024) return b + 'B'; if (b < 1048576) return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB'; },
-		async load() { try { const r = await adminApi.getDbOverview(); if (r.code === 200) { this.info = r.data; this.tables = r.data.tables || []; } } catch(e) {} },
-		viewData(t) {
-			uni.showLoading({ title: '加载中' });
-			adminApi.getDbTables({ table: t.name, page: 1, limit: 5 }).then((r) => {
-				uni.hideLoading();
+		async loadOverview() { try { const r = await adminApi.getDbOverview(); if (r.code === 200) { this.info = r.data; this.tables = r.data.tables || []; } } catch(e) {} },
+		async openTable(name) {
+			this.detail = name; this.columns = []; this.rows = []; this.rowPage = 1; this.rowTotal = 0; this.hasMore = false;
+			try { const r = await adminApi.getDbStructure(name); if (r.code === 200 && r.data) this.columns = r.data.rows || r.data.columns || (Array.isArray(r.data) ? r.data : []); } catch(e) {}
+			this.loadRows(false);
+		},
+		backList() { this.detail = ''; this.loadOverview(); },
+		async loadRows(more) {
+			if (this.loadingRows) return;
+			if (more && !this.hasMore) return;
+			if (!more) { this.rowPage = 1; this.rows = []; }
+			this.loadingRows = true;
+			try {
+				const r = await adminApi.getDbTables({ table: this.detail, page: this.rowPage, limit: 20 });
 				if (r.code === 200 && r.data) {
-					const d = r.data;
-					const first = (d.rows && d.rows[0]) || {};
-					const lines = (d.columns || []).slice(0, 6).map((c) => c + ': ' + (first[c] != null ? String(first[c]).slice(0, 30) : ''));
-					uni.showModal({ title: t.name + '（前 5 行）', content: '共 ' + d.total + ' 行\n' + lines.join('\n'), showCancel: false });
+					this.rows = more ? this.rows.concat(r.data.rows || []) : (r.data.rows || []);
+					this.rowTotal = r.data.total || 0;
+					this.hasMore = this.rows.length < this.rowTotal;
+					if (this.hasMore) this.rowPage++;
 				}
-			}).catch(() => uni.hideLoading());
-		}
+			} catch(e) {} finally { this.loadingRows = false; }
+		},
+		pickRow(row) { const o = {}; Object.keys(row).slice(0,5).forEach(k => { o[k] = String(row[k]).slice(0,40); }); return o; },
+		rowDetail(row) { uni.showModal({ title: '行数据', content: Object.keys(row).map(k => k + ': ' + String(row[k]).slice(0,80)).join(String.fromCharCode(10)), showCancel: false }); }
 	}
 };
 </script>
-<style>
-.content { min-height: 100vh; background: #f7f8fa; }
-.status-bar { width: 100%; background: #fff; }
-.nav-bar { display: flex; align-items: center; height: 88upx; background: #fff; padding: 0 24upx; border-bottom: 1px solid #f0f0f0; }
-.nav-back { width: 64upx; height: 64upx; display: flex; align-items: center; }
-.back-icon { width: 44upx; height: 44upx; }
-.nav-title { flex: 1; text-align: center; font-size: 32upx; font-weight: 600; }
-.nav-placeholder { width: 64upx; }
-.body { height: calc(100vh - 88upx); }
-.section-title { font-size: 26upx; color: #909399; margin: 24upx 24upx 12upx; }
-.info-card { background: #fff; margin: 0 24upx; border-radius: 16upx; padding: 8upx 24upx; }
-.info-row { display: flex; justify-content: space-between; padding: 14upx 0; border-bottom: 1px solid #f7f8fa; }
-.info-row:last-child { border-bottom: none; }
-.info-label { font-size: 26upx; color: #666; }
-.info-value { font-size: 26upx; color: #333; font-weight: 500; }
-.list-card { background: #fff; margin: 0 24upx; border-radius: 16upx; overflow: hidden; }
-.list-item { display: flex; align-items: center; padding: 18upx 24upx; border-bottom: 1px solid #f7f8fa; }
-.list-item:last-child { border-bottom: none; }
-.list-main { flex: 1; font-size: 26upx; color: #333; }
-.list-sub { font-size: 22upx; color: #999; margin-right: 12upx; }
-.list-arrow { font-size: 28upx; color: #ccc; }
-.empty { text-align: center; color: #999; font-size: 26upx; padding: 40upx 0; }
-</style>
+<style>@import url('../../static/admin/admin.css');</style>

@@ -18,22 +18,26 @@
 				<button class="btn btn-primary" @click="flushAll">清空全部缓存</button>
 			</view>
 			<!-- key 列表 -->
-			<view class="section-title">缓存 Key</view>
-			<view v-if="keys.length" class="list-card">
-				<view class="list-item" v-for="k in keys" :key="k.key">
+			<view class="section-title">缓存 Key（{{ filteredKeys.length }}）</view>
+			<view style="background:#fff;margin:0 24upx 16upx;border-radius:999upx;padding:12upx 24upx;display:flex;align-items:center">
+				<text style="color:#b0b3b8;margin-right:12upx">🔍</text>
+				<input style="flex:1;font-size:26upx" v-model="kw" placeholder="按 key 搜索..." />
+			</view>
+			<view v-if="filteredKeys.length" class="list-card">
+				<view class="list-item" v-for="k in filteredKeys" :key="k.key">
 					<text class="list-main">{{ k.key }}</text>
 					<text class="list-sub">TTL {{ k.ttl < 0 ? '永久' : k.ttl + 's' }} · {{ formatSize(k.size) }}</text>
 					<text class="list-del" @click="delKey(k.key)">删除</text>
 				</view>
 			</view>
-			<view v-else class="empty">暂无缓存或未连接 Redis</view>
+			<view v-else class="empty">{{ kw ? '无匹配 key' : '暂无缓存或未连接 Redis' }}</view>
 		</scroll-view>
 	</view>
 </template>
 <script>
 import adminApi from '../../utils/admin-api.js';
 export default {
-	data() { return { statusBarHeight: 0, info: null, keys: [], connected: false }; },
+	data() { return { statusBarHeight: 0, info: null, keys: [], connected: false, kw: '' }; },
 	computed: {
 		statusText() {
 			const r = this.info && this.info.redis;
@@ -45,6 +49,11 @@ export default {
 		sizeText() {
 			const s = this.info && this.info.redis && this.info.redis.stats;
 			return s ? this.formatSize(s.total_size) : '-';
+		},
+		filteredKeys() {
+			const k = (this.kw || '').toLowerCase();
+			if (!k) return this.keys;
+			return this.keys.filter(x => x.key.toLowerCase().includes(k));
 		}
 	},
 	onLoad() { const si = uni.getSystemInfoSync(); this.statusBarHeight = si.statusBarHeight || 0; this.load(); },

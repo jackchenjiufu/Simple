@@ -1,0 +1,48 @@
+/* ===== App 后台管理公共样式（统一注入所有 admin 页面） ===== */
+.ad-page { min-height: 100vh; background: #f7f8fa; display: flex; flex-direction: column; }
+.ad-body { flex: 1; min-height: 0; padding: 24upx; box-sizing: border-box; }
+
+/* 区块标题 */
+.ad-sec { font-size: 26upx; color: #909399; margin: 24upx 4upx 16upx; font-weight: 500; }
+.ad-sec:first-child { margin-top: 0; }
+
+/* 信息卡片 */
+.ad-card { background: #fff; border-radius: 16upx; padding: 8upx 24upx; margin-bottom: 24upx; box-shadow: 0 1upx 8upx rgba(0,0,0,0.03); }
+.ad-row { display: flex; justify-content: space-between; align-items: center; padding: 18upx 0; border-bottom: 1px solid #f7f8fa; }
+.ad-row:last-child { border-bottom: none; }
+.ad-label { font-size: 28upx; color: #666; }
+.ad-value { font-size: 28upx; color: #333; font-weight: 500; text-align: right; }
+
+/* 列表卡片 */
+.ad-list { background: #fff; border-radius: 16upx; overflow: hidden; margin-bottom: 24upx; box-shadow: 0 1upx 8upx rgba(0,0,0,0.03); }
+.ad-item { display: flex; align-items: center; padding: 20upx 24upx; border-bottom: 1px solid #f7f8fa; }
+.ad-item:last-child { border-bottom: none; }
+.ad-item-main { flex: 1; min-width: 0; }
+.ad-item-title { font-size: 28upx; color: #333; word-break: break-all; }
+.ad-item-sub { font-size: 22upx; color: #999; margin-top: 6upx; }
+.ad-item-action { color: #2f6bf0; font-size: 26upx; margin-left: 20upx; flex-shrink: 0; }
+.ad-item-danger { color: #f56c6c; font-size: 26upx; margin-left: 20upx; flex-shrink: 0; }
+
+/* 按钮 */
+.ad-btn-row { display: flex; margin: 8upx 0 24upx; gap: 20upx; }
+.ad-btn { flex: 1; height: 84upx; line-height: 84upx; border-radius: 14upx; font-size: 30upx; text-align: center; }
+.ad-btn-primary { background: #2f6bf0; color: #fff; }
+.ad-btn-plain { background: #fff; color: #2f6bf0; border: 1px solid #2f6bf0; }
+.ad-btn-danger { background: #fff; color: #f56c6c; border: 1px solid #f56c6c; }
+
+/* 空态 / 加载 */
+.ad-empty { text-align: center; color: #b0b3b8; font-size: 26upx; padding: 80upx 0; }
+.ad-loading { text-align: center; color: #999; font-size: 26upx; padding: 30upx 0; }
+
+/* 骨架屏 */
+.ad-skeleton { background: #fff; border-radius: 16upx; padding: 24upx; margin-bottom: 24upx; }
+.ad-sk-line { height: 28upx; background: linear-gradient(90deg,#f0f0f0 25%,#e7e7e7 37%,#f0f0f0 63%); background-size: 400% 100%; border-radius: 8upx; margin-bottom: 16upx; animation: ad-sk 1.4s ease infinite; }
+@keyframes ad-sk { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+/* 标签 */
+.ad-tag { display: inline-block; font-size: 20upx; padding: 2upx 12upx; border-radius: 999upx; }
+.ad-tag-blue { color: #2f6bf0; background: rgba(47,107,240,0.1); }
+.ad-tag-green { color: #00a862; background: rgba(0,168,98,0.1); }
+.ad-tag-orange { color: #ff7d00; background: rgba(255,125,0,0.12); }
+.ad-tag-red { color: #f56c6c; background: rgba(245,108,108,0.12); }
+.ad-tag-gray { color: #909399; background: #f2f4f7; }
