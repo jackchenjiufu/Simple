@@ -17,6 +17,15 @@ require_once __DIR__ . '/../config/Config.php';
 require_once __DIR__ . '/../config/Database.php';
 
 /**
+ * 从请求中读取管理 token（优先 X-Admin-Token 头，兼容旧版 query 参数）
+ * 说明：token 放进 URL query 会进入访问/代理日志，新调用方应使用请求头。
+ */
+function adminTokenFromRequest(): string {
+    $t = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? ($_GET['admin_token'] ?? '');
+    return is_string($t) ? trim($t) : '';
+}
+
+/**
  * 获取当前认证用户（admin 登录 session 或 App 端 token+uid）
  * @return array|null 用户行（id/username/role）或 null
  */
@@ -27,9 +36,11 @@ function getAuthUser($db) {
         $uid = $_SESSION['admin_id'];
     } elseif (isset($_GET['admin_uid']) && ctype_digit((string)$_GET['admin_uid'])) {
         $uid = intval($_GET['admin_uid']);
+    } elseif (isset($_SERVER['HTTP_X_ADMIN_UID']) && ctype_digit((string)$_SERVER['HTTP_X_ADMIN_UID'])) {
+        $uid = intval($_SERVER['HTTP_X_ADMIN_UID']);
     }
     if ($uid) {
-        $adminToken = $_GET['admin_token'] ?? '';
+        $adminToken = adminTokenFromRequest();
         // 安全：经 admin_uid 参数识别用户且带用户级 auth_token 时，
         // 必须校验 token 与 uid 属于同一用户，防止用他人 uid 冒充高权限账号。
         // （session 模式 / 全局 admin_token 不受此限制）
@@ -49,13 +60,16 @@ function getAuthUser($db) {
         }
     }
     // 用户级 auth_token 识别（旧版 App 请求带自身登录 token）
-    if (isset($_GET['admin_token']) && strlen($_GET['admin_token']) >= 32 && ctype_xdigit($_GET['admin_token'])) {
+    $userLevelToken = adminTokenFromRequest();
+    if ($userLevelToken !== '' && strlen($userLevelToken) >= 32 && ctype_xdigit($userLevelToken)) {
         $stmt = $db->prepare("SELECT id, username, role FROM users WHERE auth_token = ? LIMIT 1");
-        $stmt->execute([$_GET['admin_token']]);
+        $stmt->execute([$userLevelToken]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($user) {
+        // 安全修复：仅后台角色可被识别为管理员；普通用户返回 null
+        if ($user && in_array($user['role'], ['super_admin', 'admin', 'editor'], true)) {
             return $user;
         }
+        return null;
     }
     return null;
 }
@@ -84,7 +98,8 @@ function hasPermission($db, $perm) {
     if (!$user) {
         // 兼容旧客户端：全局 admin_token（仅发给 admin/super_admin）且未带 admin_uid 无法识别用户时，
         // 维持旧行为放行；用户级 auth_token 会被识别出角色，严格按 RBAC 校验
-        if (isset($_GET['admin_token']) && $_GET['admin_token'] === (getenv("ADMIN_TOKEN") ?: Config::get("api.admin_token", ""))) {
+        $globalToken = getenv("ADMIN_TOKEN") ?: Config::get("api.admin_token", "");
+        if ($globalToken !== '' && adminTokenFromRequest() === $globalToken) {
             return true;
         }
         return false;
@@ -105,18 +120,22 @@ function checkAdminAuth($requiredPerm = null) {
     if (isset($_SESSION['is_admin']) && $_SESSION['is_admin']) {
         $authed = true;
     }
-    if (!$authed && isset($_GET['admin_token'])) {
-        $tk = $_GET['admin_token'];
+    $tk = adminTokenFromRequest();
+    if (!$authed && $tk !== '') {
         // 模式2：全局 admin_token
-        if ($tk === (getenv("ADMIN_TOKEN") ?: Config::get("api.admin_token", ""))) {
+        $globalToken = getenv("ADMIN_TOKEN") ?: Config::get("api.admin_token", "");
+        if ($globalToken !== '' && $tk === $globalToken) {
             $authed = true;
         }
         // 模式3：用户级 auth_token（旧版 App 使用自身登录 token 请求）
         elseif (strlen($tk) >= 32 && ctype_xdigit($tk)) {
             $dbCheck = (new Database())->getConnection();
-            $stmt = $dbCheck->prepare("SELECT id FROM users WHERE auth_token = ? LIMIT 1");
+            $stmt = $dbCheck->prepare("SELECT id, role FROM users WHERE auth_token = ? LIMIT 1");
             $stmt->execute([$tk]);
-            if ($stmt->fetch()) {
+            $u = $stmt->fetch(PDO::FETCH_ASSOC);
+            // 安全修复：仅后台角色（super_admin/admin/editor）的 auth_token 可用于管理接口，
+            // 普通用户（role=user 等）自带登录 token 一律拒绝，防止越权访问管理与 SQL 接口。
+            if ($u && in_array($u['role'], ['super_admin', 'admin', 'editor'], true)) {
                 $authed = true;
             }
         }

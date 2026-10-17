@@ -1,0 +1,18 @@
+node.exe : file:///E:/poo/doo/probe-pcb/schematic.mjs:76
+At line:5 char:1
++ & node probe-pcb/schematic.mjs 2>&1 | Out-String -Width 300 | Set-Con ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (file:///E:/poo/...chematic.mjs:76:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+      wires.push(`  (wire (pts (xy ${wx} ${wy}) (xy ${tx} ${ty = y + ly})) (stroke (width 0) (type default)) (uuid ${U()}))`);
+                                                               ^
+
+ReferenceError: ty is not defined
+    at file:///E:/poo/doo/probe-pcb/schematic.mjs:76:64
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:633:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.16.0
+

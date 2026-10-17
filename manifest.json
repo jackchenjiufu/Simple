@@ -2,8 +2,8 @@
     "name" : "Simple",
     "appid" : "__UNI__F3BE11F",
     "description" : "一个禅意构造的APP",
-    "versionName" : "2.5.5",
-    "versionCode" : 553,
+    "versionName" : "2.8.6",
+    "versionCode" : 586,
     "transformPx" : false,
     "compatConfig" : {
         "MODE" : 2

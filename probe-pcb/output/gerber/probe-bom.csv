@@ -1,0 +1,36 @@
+Comment,Designator,Footprint,LCSC Part #,Qty,3D匹配方式
+typec,J1,TYPE-C-16P,C2765186,1,嘉立创3D库自动匹配(按LCSC编号)
+5.1k,RCC1 RCC2,0603,N/A,2,按型号/封装搜通用3D
+dc005,J2,DC005,N/A,1,按型号/封装搜通用3D
+ss34,D1 D2,SMA,C83961,2,嘉立创3D库自动匹配(按LCSC编号)
+22uF/25V,CVIN,0805,N/A,1,按型号/封装搜通用3D
+soic8,U1 U5 U6,SOIC-8,C15724,3,嘉立创3D库自动匹配(按LCSC编号)
+100nF,CBST CEN CHUB33 CVBG CAV1 CAV2 CAV3,0603,N/A,7,按型号/封装搜通用3D
+ind6x6,L1,电感6x6,N/A,1,按型号/封装搜通用3D
+75k,RFBT,0603,N/A,1,按型号/封装搜通用3D
+10k,RFBB REN RBOOT RPM0 RPM1 RPM2,0603,N/A,6,按型号/封装搜通用3D
+22nF,CCOMP,0603,N/A,1,按型号/封装搜通用3D
+10uF 0805,CV5A CV5B C33A C33B CHUB5,0805,N/A,5,按型号/封装搜通用3D
+100uF/16V 电解,CV5C,电解 8x11.5,N/A,1,按型号/封装搜通用3D
+sot223,U2,SOT-223,C6186,1,嘉立创3D库自动匹配(按LCSC编号)
+s3,U3,SMD 四边模块,C2913206,1,嘉立创3D库自动匹配(按LCSC编号)
+sw6x6,SW1 SW2,6x6按键,N/A,2,按型号/封装搜通用3D
+4.7k,RP_I1 RP_I2,0603,N/A,2,按型号/封装搜通用3D
+hub16,U4,SOP-16,C192893,1,嘉立创3D库自动匹配(按LCSC编号)
+1uF,CV18 CV12,0603,N/A,2,按型号/封装搜通用3D
+x49,X1 X2,DIP-2 4.88间距,N/A,2,按型号/封装搜通用3D
+22pF,CX1A CX1B CX2A CX2B,0603,N/A,4,按型号/封装搜通用3D
+r1206,RS1 RS2,1206,N/A,2,按型号/封装搜通用3D
+usb3a,J3 J4,USB3.0-A 9P,N/A,2,按型号/封装搜通用3D
+hdr1x4,J5 J6 J7 J8,排针1x4,N/A,4,按型号/封装搜通用3D
+led0603,LED1 LED2 LED3,0603 LED,N/A,3,按型号/封装搜通用3D
+2k,RLED1,0603,N/A,1,按型号/封装搜通用3D
+1k,RLED2 RLED3 RLEDG RLEDY,0603,N/A,4,按型号/封装搜通用3D
+w55,U7,LQFP-48,C32843,1,嘉立创3D库自动匹配(按LCSC编号)
+12.4k,REX,0603,N/A,1,按型号/封装搜通用3D
+8pF,CTOC,0603,N/A,1,按型号/封装搜通用3D
+r0805,FB1,0805,N/A,1,按型号/封装搜通用3D
+4.7uF 0805,CAVB,0805,N/A,1,按型号/封装搜通用3D
+1M,RX2,0603,N/A,1,按型号/封装搜通用3D
+rj45,J9,RJ45+变压器16脚,C12074,1,嘉立创3D库自动匹配(按LCSC编号)
+mount,M1 M2 M3 M4,mount,N/A,4,按型号/封装搜通用3D

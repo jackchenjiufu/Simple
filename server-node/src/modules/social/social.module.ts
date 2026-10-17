@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { SocialController } from './social.controller';
+import { SocialService } from './social.service';
+import { MessagesService } from './messages.service';
+import { AuthModule } from '../auth/auth.module';
+
+@Module({
+  imports: [AuthModule],
+  controllers: [SocialController],
+  providers: [SocialService, MessagesService],
+})
+export class SocialModule {}

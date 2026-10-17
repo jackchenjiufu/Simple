@@ -36,6 +36,12 @@
 					</view>
 					<text class="item-arrow">›</text>
 				</view>
+				<view class="settings-item" @click="goMonitorPush">
+					<view class="item-left">
+						<text class="item-text">告警推送</text>
+					</view>
+					<text class="item-arrow">›</text>
+				</view>
 				<view class="settings-item" @click="showClearCacheModal = true">
 						<view class="item-left">
 							<text class="item-text">清理缓存</text>
@@ -122,6 +128,7 @@
 
 <script>
 import apiConfig from '../../utils/api.js';
+import { applyTabPermTwice } from '../../utils/perm.js';
 import { mapActions } from 'vuex';
 export default {
 	data() {
@@ -153,6 +160,10 @@ export default {
 		} catch (e) { /* 忽略 */ }
 	},
 	methods: {
+		// 告警推送设置（监控模块）
+		goMonitorPush() {
+			uni.navigateTo({ url: '/pages/monitor/push' });
+		},
 		// 加载站点信息（公开接口）
 		loadSiteInfo() {
 			try {
@@ -188,14 +199,19 @@ export default {
 			uni.navigateTo({ url: '/pages/info/system-permissions' });
 		},
 		goAdmin() {
-			// 直达 App 原生管理页
-			uni.navigateTo({ url: '/pages/admin/index' });
+			// 后台改为 web-view 嵌入网页版后台（admin-vue，手机卡片模式）
+			// 必须传管理员 token（adminToken 优先，兼容旧 storage token）+ uid
+			const token = uni.getStorageSync('adminToken') || uni.getStorageSync('token') || '';
+			uni.navigateTo({ url: '/pages/info/admin-webview?token=' + encodeURIComponent(token) });
 		},
 		confirmLogout() {
 			// 统一走 Vuex user 模块登出（清理 token/userInfo/登录态）
 			this.logout();
 			this.isLoggedIn = false;
 			this.showLogoutModal = false;
+			// 身份已丢失：监控页签跟着收起来，等下次登录再按角色判定
+			uni.removeStorageSync('isSuperAdmin');
+			applyTabPermTwice();
 			uni.showToast({ title: '已退出登录', icon: 'success' });
 			setTimeout(() => uni.reLaunch({ url: '/pages/auth/login' }), 1500);
 		},

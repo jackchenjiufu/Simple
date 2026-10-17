@@ -107,7 +107,7 @@ curl http://localhost/server/api/reset_admin.php        # 管理员 → REDACTED
 **后端**: PHP + MySQL + PDO + PHPMailer + Node.js (WebSocket)  
 **前端**: uni-app (Vue 3) + Vite + Capacitor 6 → Android APK  
 **后台**: Vue 3 SPA + 原生 HTML/JS/CSS 双版本  
-**管理入口**: http://139.196.185.197:7070/admin  
+**管理入口**: http://139.196.185.197:7070/doo/admin-vue/  
 **配置**: `E:/poo/doo/server/config/`
 
 ## License

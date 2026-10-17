@@ -23,17 +23,21 @@ function getAdminToken() {
  */
 function adminRequest(endpoint, options = {}) {
   const { method = 'GET', data = {}, query = {}, timeout = 15000 } = options
+  // 鉴权信息走请求头（X-Admin-Token / X-Admin-Uid），避免 token 出现在 URL
+  // （URL query 会进入访问日志/代理日志）。后端 admin_auth.php / upload*.php 均支持头读取。
   const token = getAdminToken()
-  if (token) query.admin_token = token
+  const header = {}
+  if (token) header['X-Admin-Token'] = token
   // 附带用户 ID：后端按用户角色查权限表校验
   const uid = uni.getStorageSync('userId')
-  if (uid) query.admin_uid = uid
+  if (uid) header['X-Admin-Uid'] = String(uid)
 
   return request(endpoint, {
     method,
     data,
     query,
     timeout,
+    header,
     retry: 0,
     onUnauthorized: () => {
       uni.showToast({ title: '未授权，请重新登录', icon: 'none' })
@@ -151,10 +155,18 @@ const adminApi = {
   getRecommendFingerprints: () => adminRequest('admin_recommend.php', { query: { action: 'fingerprints' } }),
   dedupFingerprintGroup: (groupId) =>
     adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'dedup', group_id: groupId } }),
+  dedupFingerprintGroups: (groupIds) =>
+    adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'dedup', group_ids: groupIds } }),
+  dedupFingerprintAll: () =>
+    adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'dedup', all: 1 } }),
   toggleRecommend: (id, recommended) =>
     adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'toggle', id, recommended } }),
+  pinContent: (id, pinned) =>
+    adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'pin', id, pinned } }),
   tagContent: (id) =>
     adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'tag_one', id } }),
+  getAlgoConfig: () => adminRequest('admin_recommend.php', { query: { action: 'algo_config' } }),
+  saveAlgoConfig: (data) => adminRequest('admin_recommend.php', { method: 'POST', data: { action: 'save_algo_config', ...data } }),
 
   // ===== 数据库管理 =====
   getDbOverview: () => adminRequest('admin_database.php'),
@@ -175,6 +187,36 @@ const adminApi = {
   changeAdminPassword: (oldPwd, newPwd) =>
     adminRequest('admin_system_config.php', { method: 'POST', data: { action: 'password', old_password: oldPwd, new_password: newPwd } }),
   flushSystemCache: () => adminRequest('admin_system_config.php', { method: 'POST', data: { action: 'flush' } }),
+
+  // ===== AI 代理（GLM 识图） =====
+  getAiConfig: () => adminRequest('ai_proxy.php', { method: 'POST', data: { action: 'get_config' } }),
+  saveAiConfig: (data) => adminRequest('ai_proxy.php', { method: 'POST', data: { action: 'save_config', ...data } }),
+  testAiVision: (data) => adminRequest('ai_proxy.php', { method: 'POST', data: { action: 'test', mode: 'vision', ...data } }),
+
+  // ===== 启动页管理 =====
+  getSplashConfig: () => adminRequest('splash_config.php'),
+  saveSplashConfig: (data) => adminRequest('splash_config.php', { method: 'POST', data }),
+
+  // ===== 内容管理（admin_content.php） =====
+  getContentList: (params = {}) => adminRequest('admin_content.php', { query: params }),
+  updateContentMeta: (data) => adminRequest('admin_content.php', { method: 'POST', query: { action: 'update_meta' }, data }),
+  restoreContent: (id) => adminRequest('admin_content.php', { method: 'POST', query: { action: 'restore' }, data: { id } }),
+  setContentModeration: (id, moderationStatus) => adminRequest('admin_content.php', { method: 'POST', query: { action: 'set_moderation' }, data: { id, moderation_status: moderationStatus } }),
+  deleteContent: (id, hard = false) => adminRequest('admin_content.php', { method: 'DELETE', query: { id, ...(hard ? { hard: '1' } : {}) } }),
+  batchContent: (ids, op) => adminRequest('admin_content.php', { method: 'POST', query: { action: 'batch' }, data: { ids, op } }),
+
+  // ===== API 管理 =====
+  getApiDocs: () => adminRequest('admin_apis.php'),
+  getVersionDocs: () => adminRequest('admin_api_docs.php', { query: { action: 'list' } }),
+  getV2Apis: () => adminRequest('admin_v2api.php'),
+  createV2Api: (file) => adminRequest('admin_v2api.php', { method: 'POST', data: { action: 'create', file } }),
+  deleteV2Api: (file) => adminRequest('admin_v2api.php', { method: 'POST', data: { action: 'delete', file } }),
+  getApiVersion: () => adminRequest('admin_api_version.php'),
+  switchApiVersion: (version) => adminRequest('admin_api_version.php', { method: 'POST', data: { action: 'switch', version } }),
+
+  // ===== 系统维护 =====
+  getSystemMonitor: () => adminRequest('system_monitor.php', { query: { type: 'overview' } }),
+  migrateFeedback: () => adminRequest('migrate_feedback.php', { timeout: 60000 }),
 }
 
 // 导出 baseUrl 供需要直接拼 URL 的场景使用（如手动触发热搜）

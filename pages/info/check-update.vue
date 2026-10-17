@@ -2,97 +2,158 @@
 	<view class="content">
 		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
-		<!-- 深蓝色头部 -->
-		<view class="header-section">
-			<view class="nav-bar">
+		<!-- 头部：只讲「我现在是哪一版」 -->
+		<view class="hdr">
+			<view class="nav">
 				<view class="nav-back" @click="goBack">
 					<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
 				</view>
-				<text class="nav-title">检查更新</text>
+				<text class="nav-title">版本更新</text>
 				<view class="nav-placeholder"></view>
 			</view>
-			<view class="header-content">
-				<text class="header-title">版本检查</text>
-				<text class="header-subtitle">保持应用最新状态</text>
+			<view class="hero">
+				<text class="hero-lbl">{{ downloading ? '正在下载' : '当前版本' }}</text>
+				<view class="hero-vrow">
+					<text class="hero-ver">{{ downloading ? updateInfo.latestVersion : currentVersion }}</text>
+					<text class="hero-chip" :class="{ 'chip-ok': status === 'latest' && !downloading }">{{ heroChip }}</text>
+				</view>
+				<text class="hero-meta">{{ heroMeta }}</text>
 			</view>
-			<view class="deco-dot dot-1"></view>
-			<view class="deco-dot dot-2"></view>
+			<view class="deco d1"></view>
+			<view class="deco d2"></view>
 		</view>
 
 		<scroll-view class="body" scroll-y="true">
-			<view class="info-card">
-				<text class="card-title">版本信息</text>
-				<view class="version-row">
-					<text class="row-label">当前版本</text>
-					<text class="row-value">{{ currentVersion }}</text>
-				</view>
-				<button class="btn-check-update" @click="checkUpdate">检查更新</button>
-				<!-- 检查中 -->
-				<view class="version-row" v-show="status === 'checking'">
-					<view class="loading-spinner"></view>
-					<text class="status-text status-inline">正在检查更新...</text>
-				</view>
-				<!-- 已是最新 -->
-				<view class="version-row" v-show="status === 'latest'">
-					<view class="checkmark-circle">
-						<text class="checkmark">✓</text>
-					</view>
-					<text class="status-text success-text status-inline">已是最新版本</text>
-				</view>
-				<!-- 有更新 -->
-				<view class="version-row" v-show="status === 'available'" @click="showUpdateDetail = !showUpdateDetail" style="cursor:pointer;">
-					<view class="update-badge"><text class="badge-text">NEW</text></view>
-					<text class="status-text update-text status-inline">发现新版本 {{ updateInfo.latestVersion }}</text>
-					<text class="status-arrow">{{ showUpdateDetail ? '收起' : '查看' }}</text>
-				</view>
-				<!-- 更新详情 -->
-				<view class="update-detail-card" v-if="status === 'available' && showUpdateDetail">
-					<view class="version-compare">
-						<view class="version-item">
-							<text class="version-label">当前版本</text>
-							<text class="version-num old">{{ currentVersion }}</text>
-						</view>
-						<text class="version-arrow-icon">→</text>
-						<view class="version-item">
-							<text class="version-label">最新版本</text>
-							<text class="version-num new">{{ updateInfo.latestVersion }}</text>
-						</view>
-					</view>
-					<text class="update-desc">{{ updateInfo.description || '新版本已准备就绪' }}</text>
-					<button class="btn-update" @click.stop="startDownload" v-if="!downloading"><text>立即更新</text></button>
-					<view class="download-area" v-else>
-						<text class="download-text">下载中... {{ downloadProgress }}%</text>
-						<view class="progress-track">
-							<view class="progress-fill" :style="{ width: downloadProgress + '%' }"></view>
-						</view>
-						<text class="cancel-link" @click.stop="cancelDownload">取消下载</text>
-					</view>
-				</view>
-				<!-- 检查失败 -->
-				<view class="version-row" v-show="status === 'error'">
-					<view class="error-circle">
-						<text class="error-x">✕</text>
-					</view>
-					<text class="status-text error-text status-inline">检查更新失败</text>
+			<!-- 检查中 -->
+			<view class="card" v-if="status === 'checking'">
+				<view class="state">
+					<view class="spin"></view>
+					<text class="state-t">正在检查更新…</text>
 				</view>
 			</view>
 
-			<view class="info-card">
-				<text class="card-title">更新日志</text>
-				<view class="log-item" v-for="(item, index) in changelog.slice(0, 5)" :key="index">
-					<view class="log-head">
-						<text class="log-version">v{{ item.version }}</text>
-						<text class="log-date">{{ formatDate(item.created_at) }}</text>
-					</view>
-					<text class="log-desc">{{ item.description || '无说明' }}</text>
+			<!-- 检查失败 -->
+			<view class="card" v-else-if="status === 'error'">
+				<view class="state">
+					<view class="dot dot-x">✕</view>
+					<text class="state-t t-err">检查失败，可能是网络不通</text>
 				</view>
-				<view class="empty-log" v-if="!changelog || changelog.length === 0">
-					<text class="empty-text">暂无更新记录</text>
+				<view class="btn-line" @click="checkUpdate">重新检查</view>
+			</view>
+
+			<!-- 有新版本 -->
+			<block v-else-if="status === 'available'">
+				<view class="card">
+					<view class="cmp">
+						<view class="cmp-side">
+							<text class="cmp-k">当前</text>
+							<text class="cmp-n old">{{ currentVersion }}</text>
+						</view>
+						<text class="cmp-arw">›››</text>
+						<view class="cmp-side">
+							<text class="cmp-k">可更新</text>
+							<text class="cmp-n new">{{ updateInfo.latestVersion }}</text>
+						</view>
+					</view>
+					<view class="hr"></view>
+					<view class="grid">
+						<view class="g">
+							<text class="g-k">更新类型</text>
+							<text class="g-v">{{ isApk ? '完整安装包' : '热更新包' }}</text>
+						</view>
+						<view class="g">
+							<text class="g-k">预计大小</text>
+							<text class="g-v">{{ isApk ? '约 47 MB' : '约 0.5 MB' }}</text>
+						</view>
+						<view class="g">
+							<text class="g-k">发布时间</text>
+							<text class="g-v">{{ publishDate }}</text>
+						</view>
+					</view>
+					<view class="lan-row">
+						<view class="lan-dot" :class="{ 'lan-on': lanOk }"></view>
+						<text class="lan-t">{{ lanOk
+							? '已识别内网，从 ' + lanHost + ' 直连下载（更快、不走公网）'
+							: '未连内网，走公网下载' }}</text>
+					</view>
+				</view>
+
+				<view class="card">
+					<view class="sec-h">
+						<text class="sec-t">更新内容</text>
+						<text class="sec-m">{{ items.length }} 项</text>
+					</view>
+					<view class="item" v-for="(it, i) in showItems" :key="i">
+						<text class="tag" :class="'tag-' + it.cls">{{ it.tag }}</text>
+						<text class="item-t">{{ it.text }}</text>
+					</view>
+					<view class="more" v-if="items.length > 3" @click="expanded = !expanded">
+						{{ expanded ? '收起' : '展开全部 ' + items.length + ' 项' }}
+					</view>
+				</view>
+
+				<view class="hint">
+					<text class="hint-i">i</text>
+					<text class="hint-t">{{ isApk
+						? '本次含原生代码改动，需要安装完整包（支持断点续传）。装完请手动打开一次。'
+						: '热更新包很小，下载完会自动安装并重启，不用你动手。' }}</text>
+				</view>
+			</block>
+
+			<!-- 已是最新 -->
+			<view class="card" v-else-if="status === 'latest'">
+				<view class="state">
+					<view class="dot dot-ok">✓</view>
+					<text class="state-t t-ok">已是最新版本</text>
+				</view>
+				<text class="state-sub">上次检查 {{ lastCheck }} · 官方渠道</text>
+				<view class="btn-line" @click="checkUpdate">重新检查</view>
+			</view>
+
+			<!-- 下载中 -->
+			<view class="card" v-if="downloading">
+				<view class="prog">
+					<view class="ring" :style="ringStyle">
+						<text class="pc">{{ downloadProgress }}<text class="pcu">%</text></text>
+					</view>
+					<view class="pinfo">
+						<text class="p1">下载中 · {{ speedText }}</text>
+						<text class="p2">{{ etaText }}</text>
+						<view class="track">
+							<view class="fill" :style="{ width: downloadProgress + '%' }"></view>
+						</view>
+						<text class="cancel" @click="cancelDownload">取消下载</text>
+					</view>
 				</view>
 			</view>
 
-			<text class="footer-text">Simple V{{ currentVersion }}</text>
+			<!-- 版本历史 -->
+			<view class="card">
+				<view class="sec-h">
+					<text class="sec-t">版本历史</text>
+					<text class="sec-m">近 {{ history.length }} 个版本</text>
+				</view>
+				<view class="tl" v-if="history.length">
+					<view class="tli" v-for="(h, i) in history" :key="i" :class="{ on: i === 0 }">
+						<view class="tv">
+							<text class="tv-n">v{{ h.version }}</text>
+							<text class="tv-d">{{ formatDate(h.created_at) }}<text v-if="i === 0"> · 最新</text></text>
+						</view>
+						<text class="td">{{ h.description || '无说明' }}</text>
+					</view>
+				</view>
+				<text class="empty" v-else>暂无更新记录</text>
+			</view>
+
+			<text class="foot-text">Simple V{{ currentVersion }}</text>
 		</scroll-view>
+
+		<!-- 底部操作区：只在「有新版本 / 下载中」出现 -->
+		<view class="foot" v-if="status === 'available' || downloading">
+			<button class="btn" v-if="!downloading" @click="startDownload(false)">立即更新</button>
+			<button class="btn btn-dis" v-else>下载中，可继续使用 App</button>
+			<text class="later" v-if="!downloading" @click="goBack">稍后再说</text>
+		</view>
 	</view>
 </template>
 
@@ -103,19 +164,103 @@ export default {
 		return {
 			statusBarHeight: 0,
 			status: 'checking',
-			showUpdateDetail: false,
+			expanded: false,
 			currentVersion: '1.0.0',
-				changelog: [],
+			changelog: [],
 			updateInfo: {
 				latestVersion: '',
 				downloadUrl: '',
 				apkDownloadUrl: '',
+				downloadUrlLan: '',
 				description: ''
 			},
+			lastCheck: '刚刚',
+			lanOk: false,
+			lanBase: 'http://192.168.1.32',
 			downloading: false,
 			downloadProgress: 0,
+			downloadSpeed: 0,
+			downloadTotal: 0,
 			downloadTask: null,
-			_progressTimer: null
+			_progressTimer: null,
+			_lastTick: 0,
+			_lastBytes: 0
+		};
+	},
+	computed: {
+		/** 完整的安装包 / 只有前端资源，决定文案和大小预估 */
+		isApk() {
+			var u = this.updateInfo.downloadUrl || this.updateInfo.apkDownloadUrl || '';
+			return u.indexOf('.apk') > 0;
+		},
+		/** 只显示主机部分，别在手机上糊一长串 URL */
+		lanHost() {
+			return String(this.lanBase || '').replace(/^https?:\/\//, '');
+		},
+		/** 真正要下的地址：内网可达且后端给了内网地址就走内网 */
+		dlUrl() {
+			if (this.lanOk && this.updateInfo.downloadUrlLan) return this.updateInfo.downloadUrlLan;
+			return this.updateInfo.downloadUrl;
+		},
+		/** 把 description 拆成分条：支持「【新增】…；【修复】…」，没标签就按关键词猜 */
+		items() {
+			var desc = String(this.updateInfo.description || '').trim();
+			if (!desc) return [{ tag: '更新', cls: 'add', text: '新版本已准备就绪' }];
+			return desc.split(/[；;\n]+/).map(function (s) {
+				return s.trim();
+			}).filter(Boolean).map(function (s) {
+				var m = /^【(.+?)】\s*(.*)$/.exec(s);
+				var tag = '', text = s;
+				if (m) { tag = m[1]; text = m[2]; }
+				if (!tag) {
+					if (/修复|修掉|解决|崩溃|闪退/.test(s)) tag = '修复';
+					else if (/优化|调整|提速|精简/.test(s)) tag = '优化';
+					else tag = '新增';
+				}
+				var cls = tag.indexOf('修') >= 0 ? 'fix' : (tag.indexOf('优') >= 0 ? 'opt' : 'add');
+				return { tag: tag, cls: cls, text: text };
+			});
+		},
+		showItems() {
+			return this.expanded ? this.items : this.items.slice(0, 3);
+		},
+		history() {
+			return Array.isArray(this.changelog) ? this.changelog.slice(0, 3) : [];
+		},
+		publishDate() {
+			if (!this.history.length || !this.history[0].created_at) return '—';
+			return this.formatDate(this.history[0].created_at).slice(5);
+		},
+		heroChip() {
+			if (this.downloading) return '下载中';
+			if (this.status === 'available') return '有新版本';
+			if (this.status === 'latest') return '已最新';
+			if (this.status === 'error') return '检查失败';
+			return '检查中';
+		},
+		heroMeta() {
+			if (this.downloading) {
+				return this.downloadTotal
+					? '已下载 ' + this.sizeText(this.downloadTotal * this.downloadProgress / 100) + ' / ' + this.sizeText(this.downloadTotal)
+					: '准备中…';
+			}
+			if (this.status === 'available') return '可更新到 ' + this.updateInfo.latestVersion + ' · 官方渠道';
+			return '安装版本 ' + this.currentVersion + ' · 官方渠道';
+		},
+		speedText() {
+			if (!this.downloadSpeed) return '连接中…';
+			return this.sizeText(this.downloadSpeed) + '/s';
+		},
+		etaText() {
+			if (!this.downloadTotal || !this.downloadSpeed) return '正在获取文件大小…';
+			var left = (this.downloadTotal - this.downloadTotal * this.downloadProgress / 100) / this.downloadSpeed;
+			if (left < 1) return '即将完成 · 断点续传已开启';
+			if (left < 60) return '剩余约 ' + Math.round(left) + ' 秒 · 断点续传已开启';
+			return '剩余约 ' + Math.round(left / 60) + ' 分钟 · 断点续传已开启';
+		},
+		ringStyle() {
+			var p = Math.max(0, Math.min(100, this.downloadProgress));
+			return 'background: conic-gradient(#3071f6 0% ' + p + '%, #eef1f6 ' + p + '% 100%);';
 		}
 	},
 	onLoad() {
@@ -123,8 +268,8 @@ export default {
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
 		var apkVer = systemInfo.appVersion || '1.0.0';
 		var wgtVer = uni.getStorageSync('wgtVersion') || '';
-		this.currentVersion = wgtVer && compareVersion(wgtVer, apkVer) > 0
-			? wgtVer : apkVer;
+		this.currentVersion = wgtVer && compareVersion(wgtVer, apkVer) > 0 ? wgtVer : apkVer;
+		this.probeLan();
 		this.checkUpdate();
 	},
 	onUnload() {
@@ -133,6 +278,36 @@ export default {
 	},
 	methods: {
 		goBack() { uni.navigateBack(); },
+		/**
+		 * 探一下内网：/dl/ping.txt 是个 2 字节小文件，几百毫秒就能判断。
+		 * 探不到就当不在家，走公网，不影响任何功能。
+		 */
+		probeLan() {
+			var self = this;
+			try {
+				uni.request({
+					url: this.lanBase + '/dl/ping.txt',
+					method: 'GET',
+					timeout: 1500,
+					success: function (r) { self.lanOk = r.statusCode === 200; },
+					fail: function () { self.lanOk = false; }
+				});
+			} catch (e) {
+				this.lanOk = false;
+			}
+		},
+		sizeText(bytes) {
+			var n = Number(bytes) || 0;
+			if (!n) return '—';
+			if (n < 1024) return n + ' B';
+			if (n < 1048576) return (n / 1024).toFixed(0) + ' KB';
+			return (n / 1048576).toFixed(1) + ' MB';
+		},
+		stamp() {
+			var d = new Date();
+			var p = function (v) { return v < 10 ? '0' + v : '' + v; };
+			return p(d.getHours()) + ':' + p(d.getMinutes());
+		},
 		async checkUpdate() {
 			this.status = 'checking';
 			try {
@@ -147,19 +322,22 @@ export default {
 				});
 				if (res.statusCode === 200) {
 					const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
-					if (result?.code === 200 && result.data?.hasUpdate) {
+					if (result && result.code === 200 && result.data && result.data.hasUpdate) {
+						if (result.data.lanBase) this.lanBase = result.data.lanBase;
+						var lanUrl = result.data.downloadUrlLan
+							|| (result.data.hotUpdate && result.data.hotUpdate.downloadUrlLan) || '';
 						this.updateInfo = {
 							latestVersion: result.data.latestVersion,
 							downloadUrl: result.data.downloadUrl,
 							apkDownloadUrl: result.data.apkDownloadUrl || '',
+							downloadUrlLan: lanUrl,
 							description: result.data.description
 						};
 						this.status = 'available';
 					} else {
 						this.status = 'latest';
 					}
-					// 更新日志不管有无更新都从后端获取
-					if (result?.data?.changelog) {
+					if (result && result.data && result.data.changelog) {
 						this.changelog = result.data.changelog;
 					}
 				} else {
@@ -168,15 +346,21 @@ export default {
 			} catch (e) {
 				this.status = 'error';
 			}
+			this.lastCheck = this.stamp();
 		},
-		startDownload() {
+		startDownload(forcePublic) {
 			if (!this.updateInfo.downloadUrl && !this.updateInfo.apkDownloadUrl) {
 				uni.showToast({ title: '下载地址无效', icon: 'none' });
 				return;
 			}
 			this.downloading = true;
 			this.downloadProgress = 0;
-			var url = this.updateInfo.downloadUrl;
+			this.downloadSpeed = 0;
+			this.downloadTotal = 0;
+			this._lastTick = Date.now();
+			this._lastBytes = 0;
+			var url = (forcePublic === true) ? this.updateInfo.downloadUrl : this.dlUrl;
+			var usingLan = !forcePublic && this.lanOk && !!this.updateInfo.downloadUrlLan && url === this.updateInfo.downloadUrlLan;
 			var apkUrl = this.updateInfo.apkDownloadUrl;
 			var latestVersion = this.updateInfo.latestVersion;
 			if (typeof plus === 'undefined') return;
@@ -186,97 +370,139 @@ export default {
 			var isWgt = url && url.indexOf('.wgt') > 0;
 			var isApk = url && url.indexOf('.apk') > 0;
 			if (isApk) {
-				self._downloadAndInstallApk(url);
+				self._downloadAndInstallApk(url, usingLan);
 				return;
 			}
 
 			// === WGT更新：下载 → 安装 → 重启 ===
 			if (isWgt) {
-				uni.showToast({ title: '正在下载更新包...', icon: 'loading', duration: 15000 });
-				var dtask = plus.downloader.createDownload(url, { filename: '_doc/update/' }, function(d, status) {
-					uni.hideToast();
+				var dtask = plus.downloader.createDownload(url, { filename: '_doc/update/' }, function (d, status) {
 					if (status === 200) {
-						uni.showToast({ title: '正在安装WGT...', icon: 'loading', duration: 5000 });
-						plus.runtime.install(d.filename, { force: true }, function() {
+						uni.showToast({ title: '正在安装…', icon: 'loading', duration: 5000 });
+						plus.runtime.install(d.filename, { force: true }, function () {
 							uni.hideToast();
 							uni.setStorageSync('wgtVersion', latestVersion);
 							uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
-							setTimeout(function() {
-								plus.runtime.restart();
-							}, 1500);
-						}, function(e) {
+							setTimeout(function () { plus.runtime.restart(); }, 1500);
+						}, function (e) {
 							uni.hideToast();
 							// WGT安装失败 → 降级到APK下载安装
-							if (apkUrl) {
-								self._downloadAndInstallApk(apkUrl);
+							if (apkUrl && apkUrl.indexOf('.apk') > 0) {
+								self._downloadAndInstallApk(apkUrl, false);
 							} else {
-								uni.showToast({ title: '安装失败: ' + (e.message || ''), icon: 'none' });
+								uni.showToast({ title: '安装失败: ' + ((e && e.message) || ''), icon: 'none' });
 								self.downloading = false;
 							}
 						});
-					} else {
+					} else if (usingLan) {
+						// 内网下载失败（换了 WiFi / 家里没开机）→ 自动改走公网再来一次
+						uni.showToast({ title: '内网下载失败，改走公网', icon: 'none' });
+						self.startDownload(true);
+					} else if (apkUrl && apkUrl.indexOf('.apk') > 0) {
 						// WGT下载失败 → 降级到APK下载安装
-						if (apkUrl) {
-							self._downloadAndInstallApk(apkUrl);
-						} else {
-							uni.showToast({ title: '下载失败', icon: 'none' });
-							self.downloading = false;
-						}
+						self._downloadAndInstallApk(apkUrl, false);
+					} else {
+						uni.showToast({ title: '下载失败', icon: 'none' });
+						self.downloading = false;
 					}
 				});
+				self.downloadTask = dtask;
+				self._bindProgress(dtask);
 				dtask.start();
-				dtask.addEventListener('statechanged', function(task, status) {
-					if (task.state === 3 && task.totalSize > 0) {
-						self.downloadProgress = parseInt(task.downloadedSize / task.totalSize * 100);
-					}
-				});
 				return;
 			}
 
 			// === APK更新：下载 → 安装 ===
-			if (apkUrl) {
-				self._downloadAndInstallApk(apkUrl);
+			if (apkUrl && apkUrl.indexOf('.apk') > 0) {
+				self._downloadAndInstallApk(apkUrl, false);
 			}
 		},
-		_downloadAndInstallApk(apkUrl) {
+		/** 进度 / 速度 / 总大小：statechanged 是唯一数据源 */
+		_bindProgress(task) {
 			var self = this;
-			uni.showToast({ title: '正在下载APK...', icon: 'loading', duration: 10000 });
-			var dtask = plus.downloader.createDownload(apkUrl, { filename: '_doc/update/' }, function(d, status) {
-				uni.hideToast();
+			task.addEventListener('statechanged', function (t) {
+				if (t.totalSize > 0) self.downloadTotal = t.totalSize;
+				if (t.state === 3 && t.totalSize > 0) {
+					self.downloadProgress = Math.min(100, parseInt(t.downloadedSize / t.totalSize * 100));
+					var now = Date.now();
+					var dt = (now - self._lastTick) / 1000;
+					if (dt >= 0.4) {
+						var db = t.downloadedSize - self._lastBytes;
+						if (db >= 0) self.downloadSpeed = db / dt;
+						self._lastTick = now;
+						self._lastBytes = t.downloadedSize;
+					}
+				}
+				if (t.state === 4) self.downloadTask = null;
+			});
+		},
+		_downloadAndInstallApk(apkUrl, isLan) {
+			var self = this;
+			var dtask = plus.downloader.createDownload(apkUrl, { filename: '_doc/update/' }, function (d, status) {
 				if (status === 200) {
-					uni.showToast({ title: '下载完成，正在安装...', icon: 'none', duration: 3000 });
-					// 拉起系统安装器安装本地 APK（不带 force，避免静默安装失败）
-					plus.runtime.install(d.filename, {}, function() {
+					// 转成绝对本地路径（_doc/ 前缀的路径部分设备 install 无法识别）
+					var localPath = d.filename;
+					try { localPath = plus.io.convertLocalFileSystemURL(d.filename); } catch (e) {}
+					self.downloadProgress = 100;
+					uni.showToast({ title: '下载完成，正在安装…', icon: 'none', duration: 3000 });
+					// 拉起系统安装器（HBuilder 内部 FileProvider，Android 7+ 兼容）
+					plus.runtime.install(localPath, {}, function () {
 						uni.showToast({ title: '安装成功', icon: 'none' });
 						self.downloading = false;
-					}, function(e) {
-						// install 失败 → 用系统 Intent 打开本地 APK 调起安装器
+					}, function () {
+						// install 失败 → 用 FileProvider 显式调起系统安装器（Android 7.0+ 禁止 file:// 直开）
 						try {
 							var main = plus.android.runtimeMainActivity();
 							var Intent = plus.android.importClass('android.content.Intent');
-							var Uri = plus.android.importClass('android.net.Uri');
 							var File = plus.android.importClass('java.io.File');
+							var Uri = plus.android.importClass('android.net.Uri');
+							// Android 8.0+ 未开启"安装未知应用"权限时安装器不会弹出 → 引导去设置
+							try {
+								if (plus.os.name === 'Android' && !main.getPackageManager().canRequestPackageInstalls()) {
+									var permIntent = new Intent('android.settings.MANAGE_UNKNOWN_APP_SOURCES', Uri.parse('package:' + main.getPackageName()));
+									permIntent.addFlags(0x01000000);
+									main.startActivity(permIntent);
+									uni.showToast({ title: '请开启"允许安装未知应用"后重试', icon: 'none', duration: 3000 });
+									self.downloading = false;
+									return;
+								}
+							} catch (permErr) {}
+							var uri = null;
+							try {
+								var FileProvider = plus.android.importClass('androidx.core.content.FileProvider');
+								uri = FileProvider.getUriForFile(main, main.getPackageName() + '.dc.fileprovider', new File(localPath));
+							} catch (fpErr) {
+								try {
+									var SupportFP = plus.android.importClass('android.support.v4.content.FileProvider');
+									uri = SupportFP.getUriForFile(main, main.getPackageName() + '.dc.fileprovider', new File(localPath));
+								} catch (fpErr2) {
+									uri = Uri.fromFile(new File(localPath));
+								}
+							}
 							var intent = new Intent('android.intent.action.VIEW');
-							intent.setDataAndType(Uri.fromFile(new File(d.filename)), 'application/vnd.android.package-archive');
+							intent.setDataAndType(uri, 'application/vnd.android.package-archive');
+							intent.addFlags(0x00000001);
+							intent.addFlags(0x01000000);
 							main.startActivity(intent);
 							uni.showToast({ title: '请在弹出的安装器中完成安装', icon: 'none' });
 						} catch (e2) {
 							plus.runtime.openURL(apkUrl);
-							uni.showToast({ title: '安装失败，已打开浏览器下载', icon: 'none' });
+							uni.showToast({ title: '未弹出安装器，已打开下载链接', icon: 'none' });
 						}
 						self.downloading = false;
 					});
+				} else if (isLan) {
+					// 内网拉不动就退回公网，别让用户卡在「下载失败」
+					uni.showToast({ title: '内网下载失败，改走公网', icon: 'none' });
+					self.startDownload(true);
 				} else {
 					uni.showToast({ title: '下载失败，请稍后重试', icon: 'none' });
 					self.downloading = false;
 				}
 			});
+			self.downloadTask = dtask;
+			self._bindProgress(dtask);
 			dtask.start();
-			dtask.addEventListener('statechanged', function(task, status) {
-				if (task.state === 3 && task.totalSize > 0) {
-					self.downloadProgress = parseInt(task.downloadedSize / task.totalSize * 100);
-				}
-			});
 		},
 		cancelDownload() {
 			if (this.downloadTask) {
@@ -289,17 +515,19 @@ export default {
 			}
 			this.downloading = false;
 			this.downloadProgress = 0;
+			this.downloadSpeed = 0;
+			this.downloadTotal = 0;
 		},
 		formatDate(dateStr) {
 			if (!dateStr) return '';
-			return dateStr.substring(0, 10);
+			return String(dateStr).substring(0, 10);
 		}
 	}
 }
 
 function compareVersion(v1, v2) {
-	var a1 = v1.split('.').map(Number);
-	var a2 = v2.split('.').map(Number);
+	var a1 = String(v1 || '').split('.').map(Number);
+	var a2 = String(v2 || '').split('.').map(Number);
 	for (var i = 0; i < Math.max(a1.length, a2.length); i++) {
 		var n1 = a1[i] || 0;
 		var n2 = a2[i] || 0;
@@ -314,70 +542,110 @@ function compareVersion(v1, v2) {
 .content { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: #ffffff; display: flex; flex-direction: column; }
 .status-bar { width: 100%; background: #1b44a6; flex-shrink: 0; }
 
-.header-section { position: relative; background: #1b44a6; border-radius: 0 0 48upx 48upx; padding-bottom: 60upx; overflow: hidden; flex-shrink: 0; }
-.nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 12upx 24upx 0; position: relative; z-index: 2; }
+/* ---------- 头部 ---------- */
+.hdr { position: relative; background: linear-gradient(160deg, #1b44a6 0%, #2a5cc4 100%); border-radius: 0 0 44upx 44upx; padding-bottom: 76upx; overflow: hidden; flex-shrink: 0; }
+.nav { display: flex; align-items: center; justify-content: space-between; padding: 12upx 24upx 0; position: relative; z-index: 2; height: 72upx; }
 .nav-back { width: 72upx; height: 72upx; display: flex; align-items: center; justify-content: center; }
 .back-icon { width: 48upx; height: 48upx; }
-.nav-title { font-size: 32upx; font-weight: 600; color: #ffffff; letter-spacing: 2upx; }
+.nav-title { font-size: 26upx; font-weight: 600; color: #ffffff; letter-spacing: 1upx; }
 .nav-placeholder { width: 72upx; }
-.header-content { position: relative; z-index: 2; padding: 20upx 40upx 0; text-align: left; padding-left: 48upx; }
-.header-title { font-size: 34upx; font-weight: 700; color: #ffffff; display: block; margin-bottom: 8upx; }
-.header-subtitle { font-size: 24upx; color: rgba(255,255,255,0.65); display: block; }
-.deco-dot { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.08); z-index: 1; }
-.dot-1 { width: 200upx; height: 200upx; top: -60upx; right: -40upx; }
-.dot-2 { width: 120upx; height: 120upx; bottom: 20upx; left: -30upx; }
+.hero { position: relative; z-index: 2; padding: 16upx 34upx 0; }
+.hero-lbl { font-size: 21upx; color: rgba(255,255,255,0.62); letter-spacing: 1upx; }
+.hero-vrow { display: flex; align-items: flex-end; margin-top: 6upx; }
+.hero-ver { font-size: 62upx; font-weight: 700; color: #ffffff; line-height: 1; letter-spacing: 1upx; }
+.hero-chip { margin-left: 16upx; margin-bottom: 6upx; padding: 5upx 14upx; border-radius: 10upx; font-size: 19upx; color: #ffffff; background: rgba(255,255,255,0.18); border: 1upx solid rgba(255,255,255,0.24); }
+.chip-ok { background: rgba(16,185,129,0.22); border-color: rgba(16,185,129,0.5); }
+.hero-meta { display: block; margin-top: 14upx; font-size: 21upx; color: rgba(255,255,255,0.6); }
+.deco { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.07); z-index: 1; }
+.d1 { width: 380upx; height: 380upx; top: -144upx; right: -128upx; }
+.d2 { width: 220upx; height: 220upx; bottom: -112upx; left: -92upx; background: rgba(255,255,255,0.05); }
 
-.body { flex: 1; min-height: 0; background: #ffffff; padding: 0 40upx; margin-top: -40upx; box-sizing: border-box; }
+/* ---------- 主体 ---------- */
+.body { flex: 1; min-height: 0; background: #f5f7fb; padding: 0 28upx; margin-top: -52upx; box-sizing: border-box; position: relative; z-index: 3; }
+.card { background: #ffffff; border-radius: 28upx; padding: 28upx 26upx 30upx; margin-bottom: 22upx; box-shadow: 0 8upx 32upx rgba(23,38,74,0.09); }
 
-.info-card { background: #ffffff; border-radius: 16upx; padding: 28upx 24upx; margin-bottom: 16upx; box-shadow: 0 2upx 12upx rgba(0,0,0,0.06); }
-.card-title { display: block; font-size: 28upx; font-weight: 600; color: #303132; margin-bottom: 16upx; }
-.version-row { display: flex; align-items: center; padding: 10upx 0; gap: 12upx; }
-.row-label { font-size: 26upx; color: #6b7280; }
-.row-value { font-size: 26upx; color: #303132; font-weight: 500; }
+/* 版本对比 */
+.cmp { display: flex; align-items: center; justify-content: space-between; }
+.cmp-side { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.cmp-k { font-size: 19upx; color: #9ca3af; }
+.cmp-n { font-size: 34upx; font-weight: 700; margin-top: 6upx; }
+.cmp-n.old { color: #9aa1ac; }
+.cmp-n.new { color: #3071f6; }
+.cmp-arw { font-size: 26upx; color: #c8ced8; padding: 0 8upx; margin-top: 20upx; letter-spacing: 2upx; }
+.hr { height: 1upx; background: #edf0f4; margin: 24upx 0 22upx; }
+.grid { display: flex; }
+.g { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+.g + .g:before { content: ""; position: absolute; left: 0; top: 6upx; bottom: 6upx; width: 1upx; background: #edf0f4; }
+.g-k { font-size: 19upx; color: #9ca3af; }
+.g-v { font-size: 23upx; font-weight: 600; color: #374151; margin-top: 6upx; }
+.lan-row { display: flex; align-items: center; margin-top: 22upx; padding-top: 20upx; border-top: 1upx solid #edf0f4; }
+.lan-dot { width: 12upx; height: 12upx; border-radius: 50%; background: #c8ced8; margin-right: 12upx; flex-shrink: 0; }
+.lan-on { background: #10b981; }
+.lan-t { flex: 1; font-size: 20upx; line-height: 1.5; color: #6b7280; }
 
-.btn-check-update { width: 100%; height: 80upx; line-height: 80upx; background: #1b44a6; color: #ffffff; font-size: 28upx; font-weight: 600; border-radius: 16upx; border: none; margin: 12upx 0; text-align: center; }
-.btn-check-update:active { background: #3071f6; }
+/* 更新内容 */
+.sec-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10upx; }
+.sec-t { font-size: 25upx; font-weight: 700; color: #0f172a; letter-spacing: 1upx; }
+.sec-m { font-size: 20upx; color: #9ca3af; }
+.item { display: flex; align-items: flex-start; padding: 10upx 0; }
+.tag { flex-shrink: 0; font-size: 19upx; font-weight: 700; line-height: 1.6; padding: 3upx 12upx; border-radius: 10upx; margin-right: 14upx; }
+.tag-add { color: #1d4ed8; background: #e8efff; }
+.tag-fix { color: #b45309; background: #fef3c7; }
+.tag-opt { color: #0f766e; background: #dcfce7; }
+.item-t { flex: 1; font-size: 23upx; line-height: 1.62; color: #3f4756; }
+.more { display: flex; align-items: center; justify-content: center; font-size: 21upx; color: #3071f6; padding-top: 16upx; margin-top: 8upx; border-top: 1upx dashed #edf0f4; }
 
-.status-inline { flex: 1; }
-.loading-spinner { width: 32upx; height: 32upx; border: 3upx solid #e5e7eb; border-top-color: #3071f6; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+/* 说明条 */
+.hint { display: flex; align-items: flex-start; background: #f3f7ff; border: 1upx solid #e2ebff; border-radius: 22upx; padding: 18upx 22upx; margin-bottom: 22upx; }
+.hint-i { flex-shrink: 0; width: 26upx; height: 26upx; line-height: 26upx; text-align: center; border-radius: 50%; background: #3071f6; color: #ffffff; font-size: 17upx; font-weight: 700; margin-right: 14upx; margin-top: 2upx; }
+.hint-t { flex: 1; font-size: 20upx; line-height: 1.6; color: #4c5a75; }
+
+/* 状态卡 */
+.state { display: flex; align-items: center; }
+.state-t { font-size: 27upx; color: #303132; font-weight: 600; margin-left: 16upx; }
+.t-ok { color: #10b981; }
+.t-err { color: #ef4444; }
+.state-sub { display: block; font-size: 21upx; color: #9ca3af; margin: 14upx 0 0 62upx; }
+.dot { width: 46upx; height: 46upx; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22upx; font-weight: 700; flex-shrink: 0; }
+.dot-ok { background: #ecfdf5; color: #10b981; }
+.dot-x { background: #fef2f2; color: #ef4444; }
+.spin { width: 36upx; height: 36upx; border: 3upx solid #e5e7eb; border-top-color: #3071f6; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.checkmark-circle { width: 40upx; height: 40upx; border-radius: 50%; background: #ecfdf5; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.checkmark { font-size: 20upx; color: #10b981; font-weight: 700; }
-.error-circle { width: 40upx; height: 40upx; border-radius: 50%; background: #fef2f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.error-x { font-size: 20upx; color: #ef4444; font-weight: 700; }
-.update-badge { background: #ef4444; border-radius: 8upx; padding: 4upx 12upx; flex-shrink: 0; }
-.badge-text { font-size: 20upx; color: #ffffff; font-weight: 600; }
-.status-text { font-size: 26upx; color: #6b7280; flex: 1; }
-.success-text { color: #10b981; font-weight: 500; }
-.error-text { color: #ef4444; font-weight: 500; }
-.update-text { color: #3071f6; font-weight: 500; }
-.status-arrow { font-size: 24upx; color: #9ca3af; }
+.btn-line { margin-top: 22upx; height: 68upx; line-height: 68upx; text-align: center; border-radius: 18upx; background: #f1f5fb; color: #3071f6; font-size: 24upx; font-weight: 600; }
 
-.update-detail-card { margin-top: 16upx; padding-top: 16upx; border-top: 1px solid #f3f4f6; }
-.version-compare { display: flex; align-items: center; justify-content: center; gap: 24upx; margin-bottom: 20upx; }
-.version-item { display: flex; flex-direction: column; align-items: center; }
-.version-label { font-size: 22upx; color: #9ca3af; margin-bottom: 4upx; }
-.version-num { font-size: 30upx; font-weight: 600; }
-.version-num.old { color: #909398; text-decoration: line-through; }
-.version-num.new { color: #3071f6; }
-.version-arrow-icon { font-size: 24upx; color: #c0c4cc; }
-.update-desc { display: block; font-size: 24upx; color: #6b7280; line-height: 1.6; margin-bottom: 20upx; text-align: center; }
-.btn-update { width: 100%; height: 80upx; line-height: 80upx; background: #3071f6; color: #ffffff; font-size: 28upx; font-weight: 600; border-radius: 16upx; border: none; }
-.btn-update:active { background: #285ed4; }
-.download-area { display: flex; flex-direction: column; align-items: center; gap: 12upx; }
-.download-text { font-size: 24upx; color: #909398; }
-.progress-track { width: 100%; height: 8upx; background: #f0f0f0; border-radius: 4upx; overflow: hidden; }
-.progress-fill { height: 100%; background: #3071f6; border-radius: 4upx; transition: width 0.3s ease; }
-.cancel-link { font-size: 22upx; color: #9ca3af; text-decoration: underline; }
+/* 下载进度 */
+.prog { display: flex; align-items: center; }
+.ring { position: relative; width: 148upx; height: 148upx; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ring:before { content: ""; position: absolute; width: 122upx; height: 122upx; border-radius: 50%; background: #ffffff; }
+.pc { position: relative; z-index: 2; font-size: 34upx; font-weight: 700; color: #3071f6; }
+.pcu { font-size: 19upx; color: #9ca3af; font-weight: 600; }
+.pinfo { flex: 1; margin-left: 26upx; }
+.p1 { display: block; font-size: 25upx; font-weight: 600; color: #0f172a; }
+.p2 { display: block; font-size: 21upx; color: #6b7280; margin: 6upx 0 14upx; }
+.track { height: 12upx; background: #eef1f6; border-radius: 6upx; overflow: hidden; }
+.fill { height: 100%; border-radius: 6upx; background: linear-gradient(90deg, #3071f6, #5b93ff); transition: width 0.3s ease; }
+.cancel { display: block; text-align: right; font-size: 20upx; color: #9ca3af; text-decoration: underline; margin-top: 14upx; }
 
-.log-item { padding: 14upx 0; border-bottom: 1px solid #f5f5f5; }
-.log-head { display: flex; align-items: center; gap: 16upx; margin-bottom: 4upx; }
-.log-version { font-size: 26upx; font-weight: 600; color: #3071f6; }
-.log-desc { font-size: 24upx; color: #6b7280; }
-.log-date { font-size: 20upx; color: #c0c4cc; flex-shrink: 0; }
-.empty-log { padding: 24upx 0; text-align: center; }
-.empty-text { font-size: 24upx; color: #c0c4cc; }
+/* 版本历史时间线 */
+.tl { position: relative; padding-left: 30upx; }
+.tl:before { content: ""; position: absolute; left: 7upx; top: 10upx; bottom: 12upx; width: 1upx; background: #edf0f4; }
+.tli { position: relative; padding-bottom: 24upx; }
+.tli:last-child { padding-bottom: 0; }
+.tli:before { content: ""; position: absolute; left: -30upx; top: 8upx; width: 15upx; height: 15upx; border-radius: 50%; background: #ffffff; border: 3upx solid #cdd6e6; box-sizing: border-box; }
+.tli.on:before { border-color: #3071f6; background: #3071f6; }
+.tv { display: flex; align-items: baseline; }
+.tv-n { font-size: 23upx; font-weight: 700; color: #0f172a; }
+.tv-d { font-size: 19upx; color: #9ca3af; margin-left: 12upx; }
+.td { display: block; font-size: 21upx; color: #6b7280; line-height: 1.55; margin-top: 6upx; }
+.empty { display: block; text-align: center; font-size: 21upx; color: #c0c4cc; padding: 24upx 0; }
 
-.footer-text { display: block; text-align: center; font-size: 22upx; color: #c0c4cc; padding: 24upx 0 40upx; }
+.foot-text { display: block; text-align: center; font-size: 20upx; color: #c0c4cc; padding: 20upx 0 44upx; }
+
+/* ---------- 底部按钮 ---------- */
+.foot { padding: 14upx 28upx 30upx; background: #f5f7fb; flex-shrink: 0; }
+.btn { width: 100%; height: 88upx; line-height: 88upx; border-radius: 24upx; border: none; background: #3071f6; color: #ffffff; font-size: 27upx; font-weight: 600; letter-spacing: 1upx; box-shadow: 0 14upx 30upx rgba(48,113,246,0.28); }
+.btn:active { background: #285ed4; }
+.btn-dis { background: #e6ebf3; color: #9aa1ac; box-shadow: none; }
+.later { display: block; text-align: center; font-size: 21upx; color: #9aa1ac; margin-top: 18upx; }
 ::-webkit-scrollbar { width: 0; height: 0; display: none; }
 </style>

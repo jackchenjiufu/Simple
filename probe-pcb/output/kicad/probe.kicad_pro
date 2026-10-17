@@ -1,0 +1,221 @@
+{
+ "board": {
+  "design_settings": {
+   "rules": {
+    "min_clearance": 0.2,
+    "min_track_width": 0.1
+   }
+  },
+  "layer_presets": [],
+  "viewports": []
+ },
+ "meta": {
+  "filename": "probe.kicad_pro",
+  "version": 1
+ },
+ "project": {
+  "boards": [],
+  "libraries": {
+   "pcm": []
+  },
+  "nets": [
+   {
+    "name": ""
+   },
+   {
+    "name": "GND"
+   },
+   {
+    "name": "ACTN"
+   },
+   {
+    "name": "AV33"
+   },
+   {
+    "name": "BOOTN"
+   },
+   {
+    "name": "BST"
+   },
+   {
+    "name": "CC1"
+   },
+   {
+    "name": "CC2"
+   },
+   {
+    "name": "COMP"
+   },
+   {
+    "name": "DC_IN"
+   },
+   {
+    "name": "EN"
+   },
+   {
+    "name": "ENN"
+   },
+   {
+    "name": "ETH_RXN"
+   },
+   {
+    "name": "ETH_RXP"
+   },
+   {
+    "name": "ETH_TXN"
+   },
+   {
+    "name": "ETH_TXP"
+   },
+   {
+    "name": "EXRES"
+   },
+   {
+    "name": "FB"
+   },
+   {
+    "name": "H1_DM"
+   },
+   {
+    "name": "H1_DP"
+   },
+   {
+    "name": "H2_DM"
+   },
+   {
+    "name": "H2_DP"
+   },
+   {
+    "name": "H3_DM"
+   },
+   {
+    "name": "H3_DP"
+   },
+   {
+    "name": "H4_DM"
+   },
+   {
+    "name": "H4_DP"
+   },
+   {
+    "name": "HUB_DM"
+   },
+   {
+    "name": "HUB_DP"
+   },
+   {
+    "name": "LED1A"
+   },
+   {
+    "name": "LED2A"
+   },
+   {
+    "name": "LED2K"
+   },
+   {
+    "name": "LED3A"
+   },
+   {
+    "name": "LED3K"
+   },
+   {
+    "name": "LEDG_A"
+   },
+   {
+    "name": "LEDY_A"
+   },
+   {
+    "name": "LINKN"
+   },
+   {
+    "name": "NC"
+   },
+   {
+    "name": "PM0"
+   },
+   {
+    "name": "PM1"
+   },
+   {
+    "name": "PM2"
+   },
+   {
+    "name": "RAW"
+   },
+   {
+    "name": "RAW_L"
+   },
+   {
+    "name": "SCL"
+   },
+   {
+    "name": "SDA"
+   },
+   {
+    "name": "SW"
+   },
+   {
+    "name": "TOCAPN"
+   },
+   {
+    "name": "URX"
+   },
+   {
+    "name": "UTX"
+   },
+   {
+    "name": "V12O"
+   },
+   {
+    "name": "V18N"
+   },
+   {
+    "name": "V33"
+   },
+   {
+    "name": "V5"
+   },
+   {
+    "name": "VBGN"
+   },
+   {
+    "name": "VU1"
+   },
+   {
+    "name": "VU2"
+   },
+   {
+    "name": "W_CS"
+   },
+   {
+    "name": "W_INT"
+   },
+   {
+    "name": "W_MISO"
+   },
+   {
+    "name": "W_MOSI"
+   },
+   {
+    "name": "W_RST"
+   },
+   {
+    "name": "W_SCLK"
+   },
+   {
+    "name": "X1A"
+   },
+   {
+    "name": "X1B"
+   },
+   {
+    "name": "X2A"
+   },
+   {
+    "name": "X2B"
+   }
+  ],
+  "sheets": []
+ },
+ "sheets": []
+}

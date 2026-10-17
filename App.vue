@@ -3,7 +3,7 @@
 		<slot />
 
 		<!-- 更新提示弹窗（左右按钮布局） -->
-		<view class="update-overlay" v-if="showUpdateModal" @click="cancelUpdate">
+		<view class="update-overlay" v-if="showUpdateModal" @click="onOverlayClick">
 			<view class="update-modal" @click.stop>
 				<view class="update-icon-wrap">
 					<text class="update-icon-text">↑</text>
@@ -11,7 +11,7 @@
 				<text class="update-modal-title">{{ updateModalTitle }}</text>
 				<text class="update-modal-desc">{{ updateModalDesc }}</text>
 				<view class="update-modal-actions">
-					<button class="update-btn cancel" @click="cancelUpdate">稍后再说</button>
+					<button class="update-btn cancel" v-if="!updateForce" @click="cancelUpdate">稍后再说</button>
 					<button class="update-btn confirm" @click="confirmUpdate">立即更新</button>
 				</view>
 			</view>
@@ -22,6 +22,7 @@
 <script>
 import apiConfig from './utils/api.js';
 import { compareVersion } from './utils/version.js';
+import { applyTabPermTwice } from './utils/perm.js';
 
 export default {
 	globalData: { userInfo: null },
@@ -30,6 +31,7 @@ export default {
 			showUpdateModal: false,
 			updateModalTitle: '',
 			updateModalDesc: '',
+			updateForce: false,
 			_updateInfo: null,
 		};
 	},
@@ -92,10 +94,14 @@ export default {
 		});
 		this.installPendingWgt();
 		this.silentCheckWgt();
+		// 「监控」页签仅超级管理员可见
+		applyTabPermTwice();
 	},
 	onShow: function() {
 		this.installPendingWgt();
 		this.silentCheckWgt();
+		// 登录/切换账号后角色可能变化，每次回前台重新算一次
+		applyTabPermTwice();
 		// 在线时长心跳（等级成长值：每10分钟 +1）
 		this.startHeartbeat();
 	},
@@ -124,6 +130,11 @@ export default {
 		cancelUpdate() {
 			this.showUpdateModal = false;
 			this._updateInfo = null;
+			this.updateForce = false;
+		},
+		onOverlayClick() {
+			// 强制更新时不允许点遮罩关闭，必须点击“立即更新”
+			if (!this.updateForce) this.cancelUpdate();
 		},
 		// ===== 在线时长心跳 =====
 		startHeartbeat() {
@@ -154,10 +165,115 @@ export default {
 			this.showUpdateModal = false;
 			var info = this._updateInfo;
 			this._updateInfo = null;
+			this.updateForce = false;
 			if (!info) return;
 			this._downloadUpdate(info.targetUrl, info.isWgt, info.newVer);
 		},
+		// 断点续传：原生 Dl 用 HTTP Range 从「已下载的字节」接着下。
+		// plus.downloader 一旦中断就从头再来，46MB 的包在弱网下几乎下不完。
 		_downloadUpdate(targetUrl, isWgt, newVer) {
+			// #ifdef APP-PLUS
+			var that = this;
+			var dir = '_doc/update/';
+			try {
+				plus.io.resolveLocalFileSystemURL('_doc/', function(entry) {
+					entry.getDirectory('update', { create: true }, function() {}, function() {});
+				}, function() {});
+			} catch(e) {}
+
+			var Dl = null;
+			try { Dl = plus.android.importClass('com.simple.app.Dl'); } catch(e) { Dl = null; }
+			if (!Dl) { this._legacyDownload(targetUrl, isWgt, newVer); return; }
+
+			// 文件名带版本号：不同版本互不干扰，同版本中断后能接着下
+			var fileName = 'pkg_' + String(newVer).replace(/\./g, '_') + (isWgt ? '.wgt' : '.apk');
+			var localPath = dir + fileName;
+			var absPath = '';
+			try { absPath = plus.io.convertLocalFileSystemURL(localPath); } catch(e) {}
+			if (!absPath) { this._legacyDownload(targetUrl, isWgt, newVer); return; }
+
+			var tag = 'upd' + (isWgt ? 'w' : 'a');
+			uni.showLoading({ title: '正在下载更新…', mask: true });
+			try {
+				Dl.start(targetUrl, absPath, tag);
+			} catch(e) {
+				uni.hideLoading();
+				this._legacyDownload(targetUrl, isWgt, newVer);
+				return;
+			}
+
+			var timer = setInterval(function() {
+				var st = '', sz = '';
+				try { st = String(Dl.state(tag)); sz = String(Dl.size(tag)); } catch(e) {}
+				if (st === 'running') {
+					var p = sz.split('/');
+					var got = parseInt(p[0], 10) || 0;
+					var all = parseInt(p[1], 10) || 0;
+					var pct = all > 0 ? Math.floor(got * 100 / all) : 0;
+					var g = (got / 1048576).toFixed(1);
+					var a = all > 0 ? (all / 1048576).toFixed(1) : '?';
+					uni.showLoading({ title: '下载中 ' + pct + '%  ' + g + '/' + a + 'MB', mask: true });
+					return;
+				}
+				clearInterval(timer);
+				uni.hideLoading();
+				if (st === 'done') {
+					that._installPackage(absPath, isWgt, newVer);
+					return;
+				}
+				// 中断：已下载的部分保留在本地，点重试会从断点继续
+				uni.showModal({
+					title: '下载中断',
+					content: '已下载的部分已保存，点「重试」会从断点接着下，不会从头再来。',
+					confirmText: '重试',
+					cancelText: '稍后',
+					success: function(r) {
+						if (r.confirm) that._downloadUpdate(targetUrl, isWgt, newVer);
+					}
+				});
+			}, 700);
+			// #endif
+		},
+		// 安装下载好的包：wgt 静默安装，apk 拉起系统安装器
+		_installPackage(path, isWgt, newVer) {
+			// #ifdef APP-PLUS
+			if (isWgt) {
+				plus.runtime.install(path, { force: true }, function() {
+					uni.setStorageSync("wgtVersion", newVer);
+					uni.showToast({ title: '更新成功，即将重启', icon: 'none' });
+					setTimeout(function() { plus.runtime.restart(); }, 800);
+				}, function(e) {
+					uni.setStorageSync("pendingWgtPath", path);
+					uni.setStorageSync("pendingWgtVersion", newVer);
+					uni.showToast({ title: '安装失败，重启后自动重试', icon: 'none' });
+				});
+				return;
+			}
+			uni.setStorageSync("pendingApkPath", path);
+			uni.setStorageSync("pendingWgtVersion", newVer);
+			plus.runtime.install(path, {}, function() {
+				uni.setStorageSync("wgtVersion", newVer);
+				uni.removeStorageSync("pendingApkPath");
+				uni.removeStorageSync("pendingWgtVersion");
+				uni.showToast({ title: '更新成功', icon: 'none' });
+			}, function(e) {
+				console.error("APK安装失败:", e);
+				// 兜底：用系统 Intent 拉起安装器
+				try {
+					var main = plus.android.runtimeMainActivity();
+					var Intent = plus.android.importClass('android.content.Intent');
+					var Uri = plus.android.importClass('android.net.Uri');
+					var File = plus.android.importClass('java.io.File');
+					var intent = new Intent('android.intent.action.VIEW');
+					intent.setDataAndType(Uri.fromFile(new File(path)), 'application/vnd.android.package-archive');
+					main.startActivity(intent);
+					uni.removeStorageSync("pendingApkPath");
+				} catch(e2) {}
+			});
+			// #endif
+		},
+		// 老版本 APK 里没有 Dl 类，退回整体下载
+		_legacyDownload(targetUrl, isWgt, newVer) {
 			// #ifdef APP-PLUS
 			uni.showLoading({ title: '正在下载更新...', mask: true });
 			// 确保下载目录存在
@@ -242,9 +358,73 @@ export default {
 									var self = that;
 									self.updateModalTitle = '发现新版本 v' + newVer;
 									self.updateModalDesc = (result.data.description || '新版本已发布') + (isWgt ? '' : '\n\n更新包约十几 MB，请在网络良好时更新');
-									self._updateInfo = { targetUrl: targetUrl, isWgt: isWgt, newVer: newVer };
+									var isForce = parseInt(result.data.forceUpdate || 0, 10) === 1;
+									if (isForce) self.updateModalDesc += '\n\n此版本为强制更新，更新后将重启应用';
+									self._updateInfo = { targetUrl: targetUrl, isWgt: isWgt, newVer: newVer, force: isForce };
+									self.updateForce = isForce;
 									self.showUpdateModal = true;
 									// #endif
+								}
+							}
+						}
+						// 静默热更新（wgt）：不弹窗、不进版本控制、不写 wgtVersion，无感知下载安装
+						var wgtLog = function(msg) {
+							try { uni.request({ url: apiConfig.baseUrl + 'wgt_log.php', method: 'POST', data: { msg: msg } }); } catch(e4) {}
+						};
+						var wgtReport = function(wgtName, st, extra) {
+							try {
+								var sys = uni.getSystemInfoSync();
+								var devId = uni.getStorageSync('wgtDeviceId') || '';
+								if (!devId) {
+									devId = (typeof plus !== 'undefined' && plus.device && plus.device.uuid) ? plus.device.uuid : ('dev-' + Date.now());
+									uni.setStorageSync('wgtDeviceId', devId);
+								}
+								uni.request({
+									url: apiConfig.baseUrl + 'wgt_report.php',
+									method: 'POST',
+									data: { device: devId, wgt: wgtName, status: st, ver: (sys.appVersion || ''), model: (sys.model || ''), sysVersion: (sys.system || ''), msg: (extra || '') }
+								});
+							} catch(e5) {}
+						};
+						if (result && result.code === 200 && result.data && result.data.hotUpdate) {
+							var hot = result.data.hotUpdate;
+							var hotUrl = hot.downloadUrl || '';
+							if (hotUrl.indexOf('.wgt') > 0) {
+								var hotName = hotUrl.split('/').pop();
+								var installedName = uni.getStorageSync('silentWgtInstalled') || '';
+								wgtLog('发现热更新: ' + hotName + ', 已安装: ' + (installedName || '无'));
+								if (installedName !== hotName) {
+									try {
+										plus.io.resolveLocalFileSystemURL('_doc/', function(entry) {
+											entry.getDirectory('update', { create: true }, function() {}, function() {});
+										}, function() {});
+									} catch(e2) {}
+									var dt2 = plus.downloader.createDownload(hotUrl, { filename: '_doc/update/' }, function(dl2, s2) {
+										if (s2 === 200) {
+											wgtLog('下载完成，开始安装: ' + hotName);
+											plus.runtime.install(dl2.filename, { force: true }, function() {
+												uni.setStorageSync('silentWgtInstalled', hotName);
+												wgtLog('安装成功: ' + hotName + '（即将自动重启）');
+												wgtReport(hotName, 'ok', '');
+												// 必须重启：新包里的 app.css 只有重启后才会被 WebView 重新加载，
+												// 否则用户会看到「只有文字、没有样式」的页面，且新页面的 class 也全部失效
+												setTimeout(function() {
+													try { plus.runtime.restart(); } catch(e6) {}
+												}, 1200);
+											}, function(e3) {
+												var errMsg = JSON.stringify(e3);
+												wgtLog('安装失败: ' + hotName + ' | ' + errMsg);
+												wgtReport(hotName, 'fail', errMsg);
+												console.error('静默热更新安装失败:', e3);
+											});
+										} else {
+											wgtLog('下载失败: ' + hotName + ' | status=' + s2);
+										}
+									});
+									dt2.start();
+									wgtLog('开始下载: ' + hotUrl);
+								} else {
+									wgtLog('已安装过，跳过: ' + hotName);
 								}
 							}
 						}

@@ -358,9 +358,41 @@ export default {
 			});
 		},
 		handleBan(u) { this.showDurationPicker(u, 'ban'); },
-		handleUnban(u) { this.setUserStatus(u, 0, '解封'); },
+		handleUnban(u) {
+			uni.showModal({
+				title: '解封',
+				content: `确定解封用户「${u.username}」？`,
+				confirmColor: '#e64340',
+				success: (r) => {
+					if (r.confirm) {
+						// 同步清空到期时间，避免旧值残留导致封禁判断异常
+						adminApi.updateUser(u.id, { status: 0, ban_expire: null }).then(() => {
+							uni.showToast({ title: '解封成功', icon: 'success' });
+							this.detail = null;
+							this.loadUsers(true);
+						}).catch(() => {});
+					}
+				},
+			});
+		},
 		handleMute(u) { this.showDurationPicker(u, 'mute'); },
-		handleUnmute(u) { this.setUserStatus(u, 0, '解除禁言'); },
+		handleUnmute(u) {
+			uni.showModal({
+				title: '解除禁言',
+				content: `确定解除用户「${u.username}」的禁言？`,
+				confirmColor: '#e64340',
+				success: (r) => {
+					if (r.confirm) {
+						// 同步清空到期时间（评论端按 mute_expire 拦截，必须一并清掉）
+						adminApi.updateUser(u.id, { status: 0, mute_expire: null }).then(() => {
+							uni.showToast({ title: '解除成功', icon: 'success' });
+							this.detail = null;
+							this.loadUsers(true);
+						}).catch(() => {});
+					}
+				},
+			});
+		},
 		openRoleAssign(u) {
 			this.roleUser = u;
 			this.showRoleAssign = true;

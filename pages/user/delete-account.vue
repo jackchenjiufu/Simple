@@ -93,13 +93,18 @@ export default {
 				url: apiConfig.baseUrl + 'delete_account.php',
 				method: 'POST',
 				data: { user_id: userInfo.id },
-				header: { 'Content-Type': 'application/json' },
+				header: {
+					'Content-Type': 'application/json',
+					// 显式带登录 token（后端按 auth_token 鉴权），不依赖全局拦截器注入时机
+					'Authorization': 'Bearer ' + (uni.getStorageSync('token') || '')
+				},
 				success: (res) => {
 					uni.hideLoading();
 					const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
 					if (result.code === 200) {
 						uni.clearStorageSync();
-						uni.showToast({ title: '账号已注销', icon: 'success' });
+						// 注销进入 3 天冷静期：期间登录即自动取消
+						uni.showToast({ title: result.message || '已申请注销，3天内登录可取消', icon: 'none', duration: 2500 });
 						setTimeout(() => uni.redirectTo({ url: '/pages/auth/login' }), 2000);
 					} else {
 						this.loading = false;

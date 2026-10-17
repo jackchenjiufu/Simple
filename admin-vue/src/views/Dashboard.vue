@@ -1,138 +1,254 @@
 <template>
   <div>
-    <!-- 页面问候（克制排版，无装饰） -->
-    <div class="page-greeting">
-      <h2 class="greet-title">{{ greeting }}，{{ adminName }}</h2>
-      <p class="greet-sub">{{ today }} · DOO 后台总览</p>
-    </div>
+    <!-- ==================== 移动端卡片式（App web-view/窄屏） ==================== -->
+    <div v-if="isMobile" class="mc-wrap">
+      <div class="mc-toolbar" style="display:block;margin:12px 12px 6px">
+        <div style="font-weight:700;font-size:17px;color:#1a1a2e">{{ greeting }}，{{ adminName }}</div>
+        <div style="font-size:12px;color:#909399;margin-top:2px">{{ today }} · DOO 后台总览</div>
+      </div>
 
-    <!-- 顶部统计卡片 -->
-    <el-row :gutter="16">
-      <el-col :span="4" v-for="s in visibleStatItems" :key="s.label" class="stat-col">
-        <div class="stat-card" :class="{ 'is-link': !!s.path }" @click="s.path && router.push(s.path)">
-          <div class="stat-icon" :style="{ background: s.grad }">
-            <el-icon :size="20"><component :is="s.icon" /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ s.value }}</div>
-            <div class="stat-label">
-              {{ s.label }}
-              <el-badge v-if="s.badge" :value="s.badge" :hidden="!s.badge" class="stat-badge" />
-              <el-icon v-if="s.path" class="go-icon"><Right /></el-icon>
+      <div class="mc-list" style="padding-top:0">
+        <!-- 统计卡（两列数字卡） -->
+        <div class="mc-grid">
+          <div
+            v-for="s in visibleStatItems"
+            :key="s.label"
+            class="mc-card mc-stat"
+            :class="{ 'is-link': !!s.path }"
+            @click="s.path && router.push(s.path)"
+          >
+            <div class="mc-stat-icon" :style="{ background: s.grad }">
+              <el-icon :size="18"><component :is="s.icon" /></el-icon>
+            </div>
+            <div class="mc-stat-info">
+              <div class="mc-stat-value">{{ s.value }}</div>
+              <div class="mc-stat-label">
+                {{ s.label }}
+                <el-badge v-if="s.badge" :value="s.badge" :hidden="!s.badge" class="stat-badge" />
+              </div>
             </div>
           </div>
         </div>
-      </el-col>
-    </el-row>
 
-    <el-row :gutter="16">
-      <!-- 左列：趋势 + 最近动态（editor 不显示） -->
-      <el-col :span="16" v-if="!isEditor">
-        <!-- 7日注册趋势 -->
-        <el-card shadow="never" class="panel-card">
-          <template #header>
-            <div class="card-head"><span class="head-dot" style="background:#3071f6"></span>近 7 日注册趋势</div>
-          </template>
-          <div v-if="userGrowth.length" class="chart-wrap">
-            <el-tooltip v-for="d in userGrowth" :key="d.date" :content="d.date + '：' + d.count + ' 人'" placement="top">
-              <div class="bar-col">
-                <span class="bar-num">{{ d.count }}</span>
-                <div class="bar" :style="{ height: Math.max(d.count * 30, 4) + 'px' }"></div>
-                <span class="bar-date">{{ d.date.slice(5) }}</span>
+        <template v-if="!isEditor">
+          <!-- 近 7 日注册趋势 -->
+          <div class="mc-sec">近 7 日注册趋势</div>
+          <div class="mc-card">
+            <div v-if="userGrowth.length" class="mc-bars">
+              <div v-for="d in userGrowth" :key="d.date" class="mc-bar">
+                <div class="mc-bar-val">{{ d.count }}</div>
+                <div class="mc-bar-track"><div class="mc-bar-fill" :style="{ background: '#2f6bf0', height: Math.max((Number(d.count) || 0) * 40, 4) + 'px' }"></div></div>
+                <div class="mc-bar-label">{{ (d.date || '').slice(5) }}</div>
               </div>
-            </el-tooltip>
-          </div>
-          <div v-else class="empty-tip">暂无数据</div>
-        </el-card>
-
-        <!-- 7日版本下载量 -->
-        <el-card shadow="never" class="panel-card">
-          <template #header>
-            <div class="card-head"><span class="head-dot" style="background:#00a862"></span>近 7 日版本下载量</div>
-          </template>
-          <div v-if="versionDownloads.length" class="chart-wrap">
-            <el-tooltip v-for="d in versionDownloads" :key="d.date" :content="d.date + '：' + d.count + ' 次'" placement="top">
-              <div class="bar-col">
-                <span class="bar-num">{{ d.count }}</span>
-                <div class="bar bar-green" :style="{ height: Math.max(d.count * 30, 4) + 'px' }"></div>
-                <span class="bar-date">{{ d.date.slice(5) }}</span>
-              </div>
-            </el-tooltip>
-          </div>
-          <div v-else class="empty-tip">暂无数据</div>
-        </el-card>
-
-        <!-- 图片分类分布 -->
-        <el-card shadow="never" class="panel-card">
-          <template #header>
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div class="card-head"><span class="head-dot" style="background:#7c3aed"></span>图片分类分布（内容）</div>
-              <el-button size="small" text @click="loadCategoryDist">刷新</el-button>
             </div>
-          </template>
-          <div v-if="categoryDist.length" style="display:flex;flex-direction:column;gap:10px;padding:4px 0">
-            <div v-for="c in categoryDist" :key="c.category">
-              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-                <span>{{ c.category }}</span>
-                <span style="font-weight:600;color:#6d28d9">
-                  {{ c.count }} 张
-                  <el-tag v-if="c.recommended > 0" size="small" type="success" style="margin-left:6px">推荐 {{ c.recommended }}</el-tag>
-                </span>
-              </div>
-              <el-progress :percentage="Math.round(c.count / categoryDistMax * 100)" :stroke-width="8" color="#7c3aed" />
-            </div>
+            <div v-else class="mc-tip">暂无数据</div>
           </div>
-          <div v-else class="empty-tip">暂无图片数据</div>
-        </el-card>
 
-        <!-- 最近动态 -->
-        <el-card shadow="never" class="panel-card">
-          <template #header>
-            <div class="card-head"><span class="head-dot" style="background:#8b5cf6"></span>最近动态</div>
-          </template>
-          <div v-if="recentLogs.length">
-            <div v-for="log in recentLogs.slice(0,8)" :key="log.id" class="log-row">
-              <el-tag :type="log.type==='admin'?'danger':log.type==='login'?'warning':'info'" size="small" effect="light" round>{{ log.type }}</el-tag>
-              <span class="log-time">{{ log.created_at?.substring(0,16) }}</span>
-              <span class="log-msg">{{ log.message || log.action || '-' }}</span>
+          <!-- 近 7 日版本下载量 -->
+          <div class="mc-sec">近 7 日版本下载量</div>
+          <div class="mc-card">
+            <div v-if="versionDownloads.length" class="mc-bars">
+              <div v-for="d in versionDownloads" :key="d.date" class="mc-bar">
+                <div class="mc-bar-val">{{ d.count }}</div>
+                <div class="mc-bar-track"><div class="mc-bar-fill" :style="{ background: '#0aa26b', height: Math.max((Number(d.count) || 0) * 40, 4) + 'px' }"></div></div>
+                <div class="mc-bar-label">{{ (d.date || '').slice(5) }}</div>
+              </div>
+            </div>
+            <div v-else class="mc-tip">暂无数据</div>
+          </div>
+
+          <!-- 图片分类分布 -->
+          <div class="mc-sec">图片分类分布（内容）</div>
+          <div class="mc-card">
+            <div v-if="categoryDist.length" class="mc-cat">
+              <div v-for="c in categoryDist" :key="c.category" class="mc-cat-row">
+                <div class="mc-cat-label">{{ c.category }}</div>
+                <div class="mc-cat-count">
+                  {{ Number(c.count) || 0 }} 张<span v-if="(Number(c.recommended) || 0) > 0" style="color:#7c3aed"> · 推荐 {{ Number(c.recommended) || 0 }}</span>
+                </div>
+                <div class="mc-cat-progress"><div class="mc-cat-progress-fill" :style="{ width: Math.round((Number(c.count) || 0) / categoryDistMax * 100) + '%', background: '#7c3aed' }"></div></div>
+              </div>
+            </div>
+            <div v-else class="mc-tip">暂无图片数据</div>
+          </div>
+
+          <!-- 服务器状态 -->
+          <div class="mc-sec">服务器状态</div>
+          <div class="mc-card">
+            <div v-if="serverInfo" class="mc-svr">
+              <div class="mc-svr-row"><span class="mc-svr-label">PHP</span><span class="mc-svr-val">{{ serverInfo.php_version }}</span></div>
+              <div class="mc-svr-row"><span class="mc-svr-label">数据库</span><span class="mc-svr-val">{{ serverInfo.db_version || 'MySQL' }}</span></div>
+              <div class="mc-svr-row"><span class="mc-svr-label">连接数</span><span class="mc-svr-val">{{ serverInfo.db_connections || '-' }}</span></div>
+              <div class="mc-svr-row"><span class="mc-svr-label">内存</span><span class="mc-svr-val">{{ serverInfo.memory_current }}</span></div>
+              <div class="mc-svr-row"><span class="mc-svr-label">磁盘</span><span class="mc-svr-val">{{ serverInfo.disk_usage }}</span></div>
+              <div class="mc-svr-row"><span class="mc-svr-label">数据表</span><span class="mc-svr-val">{{ serverInfo.table_count }} 张</span></div>
+            </div>
+            <div v-else class="mc-tip">加载中...</div>
+          </div>
+
+          <!-- 最近动态 -->
+          <div class="mc-sec">最近动态</div>
+          <div v-if="recentLogs.length" class="mc-card">
+            <div v-for="log in recentLogs.slice(0, 8)" :key="log.id" class="mc-log">
+              <span class="mc-mod" :class="log.type === 'admin' ? 'm-unsafe' : (log.type === 'login' ? 'm-pending' : 'm-safe')">{{ log.type }}</span>
+              <div class="mc-log-main">
+                <div class="mc-log-msg">{{ log.message || log.action || '-' }}</div>
+                <div class="mc-log-time">{{ log.created_at?.substring(0, 16) }}</div>
+              </div>
             </div>
           </div>
-          <div v-else class="empty-tip">暂无动态</div>
-        </el-card>
-      </el-col>
+          <div v-else class="mc-card"><div class="mc-tip" style="padding:16px 0">暂无动态</div></div>
 
-      <!-- 右列：服务器状态 + 快速入口（editor 不显示） -->
-      <el-col :span="8" v-if="!isEditor">
-        <el-card shadow="never" class="panel-card">
-          <template #header>
-            <div class="card-head"><span class="head-dot" style="background:#06b6d4"></span>服务器状态</div>
-          </template>
-          <div v-if="serverInfo" class="server-list">
-            <div class="server-row"><span class="sv-label">PHP</span><span class="sv-val">{{ serverInfo.php_version }}</span></div>
-            <div class="server-row"><span class="sv-label">数据库</span><span class="sv-val">{{ serverInfo.db_version || 'MySQL' }}</span></div>
-            <div class="server-row"><span class="sv-label">连接数</span><span class="sv-val">{{ serverInfo.db_connections || '-' }}</span></div>
-            <div class="server-row"><span class="sv-label">内存</span><span class="sv-val">{{ serverInfo.memory_current }}</span></div>
-            <div class="server-row"><span class="sv-label">磁盘</span><span class="sv-val">{{ serverInfo.disk_usage }}</span></div>
-            <div class="server-row"><span class="sv-label">数据表</span><span class="sv-val">{{ serverInfo.table_count }} 张</span></div>
+          <!-- 快速入口 -->
+          <div class="mc-sec">快速入口</div>
+          <div class="mc-quick">
+            <span class="mc-act pinned" @click="$router.push('/users')">用户管理</span>
+            <span class="mc-act pinned" @click="$router.push('/feedback')">反馈管理</span>
+            <span class="mc-act pinned" @click="$router.push('/logs')">系统日志</span>
+            <span class="mc-act pinned" @click="$router.push('/carousel')">轮播管理</span>
+            <span class="mc-act pinned" @click="$router.push('/version')">版本管理</span>
+            <span class="mc-act pinned" @click="$router.push('/permissions')">权限管理</span>
           </div>
-          <div v-else class="empty-tip">加载中...</div>
-        </el-card>
+        </template>
+      </div>
+    </div>
 
-        <el-card shadow="never" class="panel-card">
-          <template #header>
-            <div class="card-head"><span class="head-dot" style="background:#f59e0b"></span>快速入口</div>
-          </template>
-          <div class="quick-actions">
-            <el-button size="small" round @click="$router.push('/users')">用户管理</el-button>
-            <el-button size="small" round @click="$router.push('/feedback')">反馈管理</el-button>
-            <el-button size="small" round @click="$router.push('/logs')">系统日志</el-button>
-            <el-button size="small" round @click="$router.push('/carousel')">轮播管理</el-button>
-            <el-button size="small" round @click="$router.push('/version')">版本管理</el-button>
-            <el-button size="small" round @click="$router.push('/permissions')">权限管理</el-button>
+    <!-- ==================== 桌面端（原有，保留） ==================== -->
+    <template v-else>
+      <!-- 页面问候（克制排版，无装饰） -->
+      <div class="page-greeting">
+        <h2 class="greet-title">{{ greeting }}，{{ adminName }}</h2>
+        <p class="greet-sub">{{ today }} · DOO 后台总览</p>
+      </div>
+
+      <!-- 顶部统计卡片 -->
+      <el-row :gutter="16">
+        <el-col :span="4" v-for="s in visibleStatItems" :key="s.label" class="stat-col">
+          <div class="stat-card" :class="{ 'is-link': !!s.path }" @click="s.path && router.push(s.path)">
+            <div class="stat-icon" :style="{ background: s.grad }">
+              <el-icon :size="20"><component :is="s.icon" /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ s.value }}</div>
+              <div class="stat-label">
+                {{ s.label }}
+                <el-badge v-if="s.badge" :value="s.badge" :hidden="!s.badge" class="stat-badge" />
+                <el-icon v-if="s.path" class="go-icon"><Right /></el-icon>
+              </div>
+            </div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <!-- 左列：趋势 + 最近动态（editor 不显示） -->
+        <el-col :span="16" v-if="!isEditor">
+          <!-- 7日注册趋势 -->
+          <el-card shadow="never" class="panel-card">
+            <template #header>
+              <div class="card-head"><span class="head-dot" style="background:#3071f6"></span>近 7 日注册趋势</div>
+            </template>
+            <div v-if="userGrowth.length" class="chart-wrap">
+              <el-tooltip v-for="d in userGrowth" :key="d.date" :content="d.date + '：' + d.count + ' 人'" placement="top">
+                <div class="bar-col">
+                  <span class="bar-num">{{ Number(d.count) || 0 }}</span>
+                  <div class="bar" :style="{ height: Math.max((Number(d.count) || 0) * 30, 4) + 'px' }"></div>
+                  <span class="bar-date">{{ (d.date || '').slice(5) }}</span>
+                </div>
+              </el-tooltip>
+            </div>
+            <div v-else class="empty-tip">暂无数据</div>
+          </el-card>
+
+          <!-- 7日版本下载量 -->
+          <el-card shadow="never" class="panel-card">
+            <template #header>
+              <div class="card-head"><span class="head-dot" style="background:#00a862"></span>近 7 日版本下载量</div>
+            </template>
+            <div v-if="versionDownloads.length" class="chart-wrap">
+              <el-tooltip v-for="d in versionDownloads" :key="d.date" :content="d.date + '：' + d.count + ' 次'" placement="top">
+                <div class="bar-col">
+                  <span class="bar-num">{{ Number(d.count) || 0 }}</span>
+                  <div class="bar bar-green" :style="{ height: Math.max((Number(d.count) || 0) * 30, 4) + 'px' }"></div>
+                  <span class="bar-date">{{ (d.date || '').slice(5) }}</span>
+                </div>
+              </el-tooltip>
+            </div>
+            <div v-else class="empty-tip">暂无数据</div>
+          </el-card>
+
+          <!-- 图片分类分布 -->
+          <el-card shadow="never" class="panel-card">
+            <template #header>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div class="card-head"><span class="head-dot" style="background:#7c3aed"></span>图片分类分布（内容）</div>
+                <el-button size="small" text @click="loadCategoryDist">刷新</el-button>
+              </div>
+            </template>
+            <div v-if="categoryDist.length" style="display:flex;flex-direction:column;gap:10px;padding:4px 0">
+              <div v-for="c in categoryDist" :key="c.category">
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+                  <span>{{ c.category }}</span>
+                  <span style="font-weight:600;color:#6d28d9">
+                    {{ Number(c.count) || 0 }} 张
+                    <el-tag v-if="(Number(c.recommended) || 0) > 0" size="small" type="success" style="margin-left:6px">推荐 {{ Number(c.recommended) || 0 }}</el-tag>
+                  </span>
+                </div>
+                <el-progress :percentage="Math.round((Number(c.count) || 0) / categoryDistMax * 100)" :stroke-width="8" color="#7c3aed" />
+              </div>
+            </div>
+            <div v-else class="empty-tip">暂无图片数据</div>
+          </el-card>
+
+          <!-- 最近动态 -->
+          <el-card shadow="never" class="panel-card">
+            <template #header>
+              <div class="card-head"><span class="head-dot" style="background:#8b5cf6"></span>最近动态</div>
+            </template>
+            <div v-if="recentLogs.length">
+              <div v-for="log in recentLogs.slice(0,8)" :key="log.id" class="log-row">
+                <el-tag :type="log.type==='admin'?'danger':log.type==='login'?'warning':'info'" size="small" effect="light" round>{{ log.type }}</el-tag>
+                <span class="log-time">{{ log.created_at?.substring(0,16) }}</span>
+                <span class="log-msg">{{ log.message || log.action || '-' }}</span>
+              </div>
+            </div>
+            <div v-else class="empty-tip">暂无动态</div>
+          </el-card>
+        </el-col>
+
+        <!-- 右列：服务器状态 + 快速入口（editor 不显示） -->
+        <el-col :span="8" v-if="!isEditor">
+          <el-card shadow="never" class="panel-card">
+            <template #header>
+              <div class="card-head"><span class="head-dot" style="background:#06b6d4"></span>服务器状态</div>
+            </template>
+            <div v-if="serverInfo" class="server-list">
+              <div class="server-row"><span class="sv-label">PHP</span><span class="sv-val">{{ serverInfo.php_version }}</span></div>
+              <div class="server-row"><span class="sv-label">数据库</span><span class="sv-val">{{ serverInfo.db_version || 'MySQL' }}</span></div>
+              <div class="server-row"><span class="sv-label">连接数</span><span class="sv-val">{{ serverInfo.db_connections || '-' }}</span></div>
+              <div class="server-row"><span class="sv-label">内存</span><span class="sv-val">{{ serverInfo.memory_current }}</span></div>
+              <div class="server-row"><span class="sv-label">磁盘</span><span class="sv-val">{{ serverInfo.disk_usage }}</span></div>
+              <div class="server-row"><span class="sv-label">数据表</span><span class="sv-val">{{ serverInfo.table_count }} 张</span></div>
+            </div>
+            <div v-else class="empty-tip">加载中...</div>
+          </el-card>
+
+          <el-card shadow="never" class="panel-card">
+            <template #header>
+              <div class="card-head"><span class="head-dot" style="background:#f59e0b"></span>快速入口</div>
+            </template>
+            <div class="quick-actions">
+              <el-button size="small" round @click="$router.push('/users')">用户管理</el-button>
+              <el-button size="small" round @click="$router.push('/feedback')">反馈管理</el-button>
+              <el-button size="small" round @click="$router.push('/logs')">系统日志</el-button>
+              <el-button size="small" round @click="$router.push('/carousel')">轮播管理</el-button>
+              <el-button size="small" round @click="$router.push('/version')">版本管理</el-button>
+              <el-button size="small" round @click="$router.push('/permissions')">权限管理</el-button>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </template>
   </div>
 </template>
 
@@ -143,7 +259,9 @@ import {
   User, TrendCharts, Document, Files, ChatDotRound, Warning, Right, Picture
 } from '@element-plus/icons-vue'
 import api from '@/api'
+import { useMobile } from '@/composables/useMobile'
 
+const { isMobile } = useMobile()
 const router = useRouter()
 
 const adminInfo = JSON.parse(localStorage.getItem('adminInfo') || '{}')
@@ -172,7 +290,7 @@ const userGrowth = ref([])
 const versionDownloads = ref([])
 const serverInfo = ref(null)
 const categoryDist = ref([])
-const categoryDistMax = computed(() => Math.max(1, ...categoryDist.value.map(c => c.count)))
+const categoryDistMax = computed(() => Math.max(1, ...categoryDist.value.map(c => Number(c.count) || 0)))
 
 // 图片分类分布（后台内容按类别统计）
 const loadCategoryDist = async () => {
@@ -323,4 +441,60 @@ onMounted(async () => {
 .quick-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .empty-tip { color: #98a1b5; font-size: 13px; text-align: center; padding: 20px; }
+
+/* ================= 移动端补充样式（配合全局 mc-*） ================= */
+.mc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.mc-stat { margin-bottom: 0; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.mc-stat-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(30,50,120,.18);
+}
+.mc-stat-info { min-width: 0; }
+.mc-stat-value { font-size: 18px; font-weight: 800; color: #1a1a2e; line-height: 1.2; }
+.mc-stat-label { font-size: 12px; color: #98a1b5; margin-top: 2px; display: flex; align-items: center; white-space: nowrap; }
+
+.mc-sec { font-size: 13px; font-weight: 600; color: #5a6475; margin: 16px 4px 8px; }
+
+.mc-bars { display: flex; align-items: flex-end; gap: 8px; height: 150px; padding: 0 4px; }
+.mc-bar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+.mc-bar-val { font-size: 11px; color: #666; margin-bottom: 4px; font-weight: 600; }
+.mc-bar-track { width: 70%; display: flex; align-items: flex-end; height: 110px; justify-content: center; }
+.mc-bar-fill { width: 100%; border-radius: 3px 3px 0 0; }
+.mc-bar-label { font-size: 10px; color: #909399; margin-top: 6px; }
+
+.mc-cat { display: flex; flex-direction: column; gap: 10px; }
+.mc-cat-row { display: flex; flex-direction: column; gap: 3px; }
+.mc-cat-label { font-size: 13px; color: #555; }
+.mc-cat-count { font-size: 12px; font-weight: 600; color: #1b44a6; text-align: right; }
+.mc-cat-progress { height: 8px; background: #eef1f6; border-radius: 5px; overflow: hidden; }
+.mc-cat-progress-fill { height: 100%; border-radius: 5px; }
+
+.mc-svr { font-size: 13px; }
+.mc-svr-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed #f0f2f8; }
+.mc-svr-row:last-child { border-bottom: none; }
+.mc-svr-label { color: #98a1b5; }
+.mc-svr-val { color: #333c56; font-weight: 500; }
+
+.mc-log { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f6fa; }
+.mc-log:last-child { border-bottom: none; }
+.mc-log-main { flex: 1; min-width: 0; }
+.mc-log-msg { font-size: 13px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-log-time { font-size: 12px; color: #98a1b5; margin-top: 2px; }
+
+.mc-quick { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* 移动端适配：统计卡两列、趋势图横向滚动、面板贴边 */
+@media (max-width: 767px) {
+  .page-greeting { margin-bottom: 14px; }
+  .greet-title { font-size: 18px; }
+  .stat-col { width: 48% !important; margin-right: 4%; display: inline-block; vertical-align: top; }
+  .stat-col:nth-child(2n) { margin-right: 0; }
+  .stat-card { padding: 12px 12px; gap: 10px; }
+  .stat-value { font-size: 19px; }
+  .stat-icon { width: 34px; height: 34px; }
+  .chart-wrap { overflow-x: auto; }
+  .bar-col { flex: 0 0 40px; }
+  .quick-actions { gap: 8px; }
+}
 </style>

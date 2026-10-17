@@ -75,6 +75,7 @@ export default {
       this.$emit('switch', tab);
     },
     goBack() {
+      this.$emit('back');
       uni.navigateBack();
     }
   }

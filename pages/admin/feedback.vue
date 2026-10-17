@@ -47,6 +47,10 @@
 						<text class="reply-time">{{ (r.created_at || '').slice(11, 16) }}</text>
 					</view>
 
+					<view class="quick-replies">
+						<text class="quick-item" v-for="p in quickPresets" :key="p" @click="fillPreset(f, p)">{{ p }}</text>
+					</view>
+
 					<view class="reply-input-row">
 						<input
 							class="reply-input"
@@ -88,6 +92,7 @@ export default {
 			loading: false,
 			expanded: {},
 			replyTexts: {},
+			quickPresets: ['感谢反馈，我们会尽快处理！', '已反馈给相关同事，请留意后续更新。', '问题已修复，请升级到最新版本验证。'],
 		};
 	},
 	onLoad() {
@@ -127,6 +132,7 @@ export default {
 		toggleExpand(f) {
 			this.$set(this.expanded, f.id, !this.expanded[f.id]);
 		},
+		fillPreset(f, p) { this.replyTexts[f.id] = p; },
 		sendReply(f) {
 			const text = (this.replyTexts[f.id] || '').trim();
 			if (!text) {

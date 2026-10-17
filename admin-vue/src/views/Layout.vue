@@ -25,7 +25,7 @@
         </el-menu>
       </el-scrollbar>
       <div v-if="!collapsed" class="sidebar-footer">
-        <span class="ver-badge">v1.0</span>
+        <span class="ver-badge">v1.0{{ buildStamp ? ' · ' + buildStamp : '' }}</span>
       </div>
     </el-aside>
 
@@ -36,9 +36,9 @@
           <el-button v-if="isDesktop" class="icon-btn" text circle @click="collapsed=!collapsed">
             <el-icon size="18"><Expand v-if="collapsed" /><Fold v-else /></el-icon>
           </el-button>
-          <!-- 移动端汉堡按钮 -->
-          <el-button v-else class="icon-btn" text circle @click="drawerOpen=true">
-            <el-icon size="18"><Menu /></el-icon>
+          <!-- 移动端返回控制台按钮（替代汉堡抽屉侧边栏） -->
+          <el-button v-else class="icon-btn" text circle @click="goMobileHome">
+            <el-icon size="18"><ArrowLeft /></el-icon>
           </el-button>
           <div class="crumb-wrap">
             <span class="crumb-root">后台管理</span>
@@ -77,53 +77,27 @@
         </div>
       </el-header>
 
-      <el-main class="admin-main">
+      <el-main class="admin-main" :class="{ 'mobile-full': isMobileMode }">
         <transition name="fade-slide" mode="out-in">
-          <router-view />
+          <!-- 移动模式（App web-view mobile=1 或窄屏）下首页呈现 App 卡片式 MobileHome -->
+          <MobileHome v-if="isMobileHome" />
+          <router-view v-else />
         </transition>
       </el-main>
     </el-container>
-
-    <!-- 移动端抽屉菜单 -->
-    <el-drawer
-      v-model="drawerOpen"
-      direction="ltr"
-      size="224px"
-      :with-header="false"
-      class="mobile-drawer"
-    >
-      <div class="sidebar-logo">
-        <div class="logo-tile">{{ siteShort }}</div>
-        <span class="logo-text">{{ siteName }} 后台管理</span>
-      </div>
-      <el-scrollbar class="sidebar-scroll">
-        <div class="menu-label">导航</div>
-        <el-menu
-          :default-active="route.path"
-          router
-          class="side-menu"
-          @select="drawerOpen=false"
-        >
-          <el-menu-item v-for="item in visibleMenus" :key="item.path" :index="item.path">
-            <el-icon><component :is="item.icon" /></el-icon>
-            <template #title><span>{{ item.title }}</span></template>
-          </el-menu-item>
-        </el-menu>
-      </el-scrollbar>
-    </el-drawer>
   </el-container>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
 import {
-  Menu, User, Picture, PictureFilled, Bell, Reading, ChatDotSquare, Connection,
+  Menu, ArrowLeft, User, Picture, PictureFilled, Bell, Reading, ChatDotSquare, Connection,
   Monitor, DataAnalysis, DataLine, DocumentCopy, Setting, Tools, Timer, Odometer, Coin, Star,
-  Expand, Fold, ArrowDown, Refresh, SwitchButton
+  Expand, Fold, ArrowDown, Refresh, SwitchButton, MagicStick
 } from '@element-plus/icons-vue'
 import api, { getMyPermissions } from '@/api'
+import MobileHome from '@/views/MobileHome.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -147,8 +121,21 @@ watch(() => route.path, () => {
   loadMyPermissions()
 })
 const collapsed = ref(false)
-const drawerOpen = ref(false)
 const isMobile = ref(false)
+// 构建时间戳（构建时注入），底部显示，方便确认手机上跑的是哪一版
+const buildStamp = (() => {
+  try {
+    const t = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : ''
+    if (!t) return ''
+    const d = new Date(t)
+    const p = (n) => String(n).padStart(2, '0')
+    return `${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`
+  } catch (e) { return '' }
+})()
+// 移动模式：URL 带 mobile=1（App 内 web-view 嵌入）或窗口宽度 < 768
+const isMobileMode = computed(() => route.query.mobile === '1' || isMobile.value)
+// 移动模式下首页（/dashboard 与 /mobile-home）呈现 App 卡片式 MobileHome
+const isMobileHome = computed(() => isMobileMode.value && ['/dashboard', '/mobile-home'].includes(route.path))
 const adminInfo = JSON.parse(localStorage.getItem('adminInfo') || '{}')
 const adminName = computed(() => adminInfo.nickname || adminInfo.username || '管理员')
 const avatarText = computed(() => (adminName.value || '管').trim().charAt(0).toUpperCase())
@@ -173,6 +160,8 @@ const menus = [
   { path: '/stats', title: '数据统计', icon: DataAnalysis, permission: 'view_stats' },
   { path: '/behaviors', title: '行为分析', icon: DataLine, permission: 'view_stats' },
   { path: '/logs', title: '系统日志', icon: DocumentCopy, permission: 'manage_logs' },
+  { path: '/ai-logs', title: 'AI 审计', icon: MagicStick, permission: 'manage_logs' },
+  { path: '/api-monitor', title: '接口监控', icon: Monitor, permission: 'view_stats' },
   { path: '/permissions', title: '权限管理', icon: Setting, permission: 'manage_permissions' },
   { path: '/overtime', title: '加班管理', icon: Timer, permission: 'manage_overtime' },
   { path: '/apis', title: 'API 管理', icon: Connection, permission: 'manage_system' },
@@ -213,6 +202,9 @@ async function loadMyPermissions() {
 }
 
 const refreshPage = () => router.go(0)
+
+// 移动端返回控制台（无侧边栏，经首页卡片宫格导航）
+const goMobileHome = () => router.push({ path: '/mobile-home', query: { mobile: '1' } })
 
 onMounted(async () => {
   checkMobile()
@@ -340,6 +332,16 @@ const handleCommand = (cmd) => {
   border: 1px solid #eceff7;
   box-shadow: 0 10px 44px rgba(16, 24, 60, .10), 0 2px 10px rgba(16, 24, 60, .05);
   overflow-y: auto;
+}
+
+/* 移动卡片视图：全屏铺满，去白面板/边距/圆角/阴影，由内容区自身提供浅灰背景 */
+.admin-main.mobile-full {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: #f5f6fa;
 }
 
 /* 移动端抽屉 */

@@ -2,11 +2,50 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>DOO 后台管理</title>
+  <style>
+    /* ===== 首屏加载骨架屏（web-view 冷启动 JS 未就绪时展示，替代空白页） ===== */
+    html, body, #app { height: 100%; margin: 0; }
+    body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f6fa; -webkit-font-smoothing: antialiased; }
+    .boot-splash {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      background: linear-gradient(180deg, #f5f7fc 0%, #eef1f8 100%);
+    }
+    .bs-logo {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: linear-gradient(135deg, #1b44a6, #3071f6);
+      color: #fff; font-size: 34px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 18px rgba(48, 113, 246, .28);
+      animation: bs-breathe 1.6s ease-in-out infinite;
+    }
+    .bs-text { color: #7a849c; font-size: 13px; letter-spacing: 1px; }
+    .bs-bar { width: 120px; height: 3px; border-radius: 2px; background: #e4e9f4; overflow: hidden; }
+    .bs-bar i {
+      display: block; height: 100%; width: 40%;
+      background: linear-gradient(90deg, #1b44a6, #5b8df9);
+      border-radius: 2px;
+      animation: bs-slide 1.2s ease-in-out infinite;
+    }
+    @keyframes bs-breathe { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.94); opacity: .85; } }
+    @keyframes bs-slide { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+    <!-- 骨架屏占位：Vue mount 时自动被替换为真实内容 -->
+    <div class="boot-splash">
+      <div class="bs-logo">S</div>
+      <div class="bs-text">后台加载中…</div>
+      <div class="bs-bar"><i></i></div>
+    </div>
+  </div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

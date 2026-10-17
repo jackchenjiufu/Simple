@@ -92,6 +92,7 @@
 
 <script>
 import apiConfig from '../../utils/api.js';
+import { applyTabPermTwice } from '../../utils/perm.js';
 import { mapGetters, mapActions } from 'vuex';
 export default {
 	computed: {
@@ -210,6 +211,9 @@ export default {
 					// 管理员身份标记（有权限才显示后台管理入口）
 					const isAdminRole = userInfo.role === 'admin' || userInfo.role === 'super_admin' || userInfo.role === 'editor' || userInfo.role === '运营';
 					uni.setStorageSync('isAdmin', isAdminRole);
+					// 监控页签只给超级管理员：登录后立即重算页签可见性
+					uni.setStorageSync('isSuperAdmin', userInfo.role === 'super_admin');
+					applyTabPermTwice();
 					if (isAdminRole && responseData.admin_token) {
 						uni.setStorageSync('adminToken', responseData.admin_token);
 					} else {

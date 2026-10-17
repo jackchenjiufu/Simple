@@ -301,4 +301,43 @@ export default {
 	border-radius: 16upx; transition: background 0.15s;
 }
 .sheet-cancel:active { background: #f0f2f5; }
+/* ===== 用户主页头部卡片 ===== */
+.hero {
+	position: relative;
+	background: linear-gradient(180deg, #1b44a6, #3071f6);
+	border-radius: 20upx;
+	padding: 52upx 24upx 36upx;
+	margin-bottom: 20upx;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	box-shadow: 0 6upx 24upx rgba(48, 113, 246, 0.28);
+	overflow: hidden;
+}
+.hero-avatar-wrap { position: relative; }
+.hero-avatar {
+	width: 132upx; height: 132upx;
+	border-radius: 50%;
+	border: 4upx solid rgba(255, 255, 255, 0.55);
+	background: #fff;
+}
+.hero-camera {
+	position: absolute; right: -2upx; bottom: -2upx;
+	width: 44upx; height: 44upx; border-radius: 50%;
+	background: #ffffff; color: #1b44a6;
+	font-size: 24upx;
+	display: flex; align-items: center; justify-content: center;
+	box-shadow: 0 2upx 8upx rgba(0,0,0,0.2);
+	border: 2upx solid #1b44a6;
+}
+.hero-name { color: #ffffff; font-size: 34upx; font-weight: 700; margin-top: 22upx; }
+.hero-meta { display: flex; align-items: center; justify-content: center; gap: 14upx; margin-top: 16upx; }
+.hero-growth {
+	width: 72%; height: 12upx;
+	background: rgba(255, 255, 255, 0.28);
+	border-radius: 6upx; margin-top: 26upx; overflow: hidden;
+}
+.hero-growth-fill { height: 100%; background: #ffffff; border-radius: 6upx; transition: width 0.4s ease; }
+.hero-growth-tip { color: rgba(255, 255, 255, 0.88); font-size: 20upx; margin-top: 12upx; }
+
 </style>

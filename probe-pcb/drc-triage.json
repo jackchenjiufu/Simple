@@ -1,0 +1,17 @@
+{
+  "spacing_less_010": 487,
+  "spacing_010_013": 10,
+  "spacing_013_015": 46,
+  "spacing_015_020": 61,
+  "copper_to_edge_less_03": 2,
+  "unconnected": 27,
+  "silk_vs_pad": 0,
+  "via_to_pad_less_02": 0,
+  "drill_to_copper_less_03": 0,
+  "pad_overlap_same_net": 0,
+  "silk_near_pads": 2,
+  "via_to_pad": 11,
+  "same_net_pad_overlap": 4,
+  "total_segments": 721,
+  "total_pads": 354
+}

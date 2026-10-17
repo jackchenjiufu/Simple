@@ -11,8 +11,9 @@
 				<view class="ad-row">
 					<text class="ad-label">切换到</text>
 					<view class="ad-row" style="border:none;padding:0">
-						<text class="ad-item-action" @click="switchVer('1')">v1（无版本段）</text>
-						<text class="ad-item-action" @click="switchVer('2')">v2（/api/v2/）</text>
+						<text class="ad-item-action" @click="switchVer('v1')">v1（无版本段）</text>
+						<text class="ad-item-action" @click="switchVer('v2')">v2（/api/v2/）</text>
+						<text class="ad-item-action" @click="switchVer('v3')">v3（/api/v3/ Node）</text>
 					</view>
 				</view>
 			</view>
@@ -53,15 +54,21 @@ export default {
 		async load() {
 			try {
 				const [ver, v2r, docr] = await Promise.all([
-					adminApi.getApiVersion(), adminApi.getV2Apis(), adminApi.getApiDocs()
+					adminApi.getApiVersion(), adminApi.getV2Apis(), adminApi.getVersionDocs()
 				]);
-				if (ver && ver.code === 200) this.apiVersion = (ver.data && (ver.data.version || ver.data.api_version || '1')) || '1';
+				let verStr = 'v1';
+				if (ver && ver.code === 200) {
+					verStr = (ver.data && (ver.data.version || ver.data.api_version || 'v1')) || 'v1';
+				}
+				this.apiVersion = verStr;
 				if (v2r && v2r.code === 200) this.v2 = v2r.data || [];
-				if (docr && docr.code === 200) this.docs = (docr.data && docr.data.apis) || docr.data || [];
+				// 接口文档：按当前生效版本展示（docs/vN.json，V3 = 87 个 Node 接口）
+				const docsAll = (docr && docr.data && docr.data.docs) || {};
+				this.docs = docsAll[verStr] || [];
 			} catch(e) {}
 		},
 		switchVer(v) {
-			uni.showModal({ title: '切换版本', content: '确定切换到 API v' + v + '？切换后前端实时生效。', success: async (res) => {
+			uni.showModal({ title: '切换版本', content: '确定切换到 API ' + v + '？切换后前端实时生效。', success: async (res) => {
 				if (!res.confirm) return;
 				try { const r = await adminApi.switchApiVersion(v); if (r.code === 200) { uni.showToast({ title: r.message, icon: 'none' }); this.apiVersion = v; } } catch(e) {}
 			}});

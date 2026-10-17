@@ -79,12 +79,13 @@ export const switchApiVersion = (version) =>
 
 // 添加管理员 Token + 用户 ID（admin_auth.php 权限校验需要识别用户）
 // 必须同时带 admin_token（鉴权）+ admin_uid（识别角色查权限表），缺一即 401
+// 鉴权信息走请求头（X-Admin-Token / X-Admin-Uid），避免 token 出现在 URL（会进访问日志）。
+// 后端 admin_auth.php / upload*.php 已支持头读取；旧版 query 传参仍兼容。
 api.interceptors.request.use(config => {
-  config.params = config.params || {}
   const adminUid = localStorage.getItem('admin_uid')
-  if (adminUid) config.params.admin_uid = adminUid
   const adminToken = localStorage.getItem('admin_token')
-  if (adminToken) config.params.admin_token = adminToken
+  if (adminUid) config.headers['X-Admin-Uid'] = adminUid
+  if (adminToken) config.headers['X-Admin-Token'] = adminToken
   return config
 })
 

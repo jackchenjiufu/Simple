@@ -1,0 +1,376 @@
+/* ==========================================================
+   移动端卡片式后台通用样式（App web-view mobile=1 / 窄屏 <768px）
+   共用前缀 .mc-：每个功能管理页的移动卡片视图复用这套样式
+   ========================================================== */
+
+.mc-wrap {
+  min-height: 100%;
+  background: #f5f6fa;
+  box-sizing: border-box;
+}
+
+/* 顶部标签切换 */
+.mc-tabs {
+  display: flex;
+  background: #fff;
+  border-radius: 12px;
+  margin: 12px 12px 10px;
+  padding: 4px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+}
+.mc-tab {
+  flex: 1;
+  text-align: center;
+  padding: 9px 0;
+  font-size: 14px;
+  color: #666;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all .18s ease;
+}
+.mc-tab.active {
+  background: #2f6bf0;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 搜索 / 筛选 */
+.mc-toolbar {
+  display: flex;
+  gap: 8px;
+  margin: 0 12px 8px;
+}
+.mc-search {
+  flex: 1;
+  height: 38px;
+  border: none;
+  background: #fff;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+  outline: none;
+}
+.mc-fbtn {
+  height: 38px;
+  line-height: 38px;
+  padding: 0 18px;
+  background: #2f6bf0;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.mc-filters {
+  display: flex;
+  gap: 8px;
+  margin: 0 12px 10px;
+}
+.mc-select {
+  flex: 1;
+  height: 36px;
+  border: none;
+  background: #fff;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: #333;
+  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+  outline: none;
+}
+
+/* 列表 */
+.mc-list {
+  padding: 0 12px 20px;
+}
+.mc-tip {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  padding: 40px 0;
+}
+.mc-more {
+  text-align: center;
+  color: #bbb;
+  font-size: 12px;
+  padding: 12px 0;
+}
+
+/* 卡片 */
+.mc-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+.mc-card:active { transform: scale(.98); }
+.mc-card-top { display: flex; align-items: flex-start; gap: 10px; }
+.mc-thumb {
+  width: 64px; height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f0f2f5;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #999;
+}
+/* 无图缩略图兜底：浅底 + 居中提示文字（多个页面复用，需全局定义） */
+.mc-thumb-empty {
+  width: 56px; height: 56px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  color: #6b7cff;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.mc-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.mc-card-info { flex: 1; min-width: 0; }
+.mc-title {
+  font-size: 15px; font-weight: 600; color: #1a1a2e;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mc-meta { font-size: 12px; color: #909399; margin-top: 5px; }
+.mc-data { font-size: 12px; color: #b0b4bd; margin-top: 5px; }
+
+/* 审核标签 */
+.mc-mod {
+  flex-shrink: 0;
+  font-size: 11px;
+  border-radius: 12px;
+  padding: 2px 9px;
+  margin-left: 4px;
+}
+.mc-mod.m-safe { background: #e8f7ef; color: #00a862; }
+.mc-mod.m-unsafe, .mc-mod.m-blocked { background: #fdeef0; color: #ef4444; }
+.mc-mod.m-pending { background: #fff7e6; color: #f59e0b; }
+
+/* 标签区 */
+.mc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mc-tag {
+  font-size: 11px;
+  background: #f2f4f7;
+  color: #5a6475;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+/* 操作按钮 */
+.mc-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  border-top: 1px solid #f2f4f7;
+  padding-top: 10px;
+}
+.mc-act {
+  flex: 1;
+  text-align: center;
+  padding: 7px 0;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #f4f6fb;
+  color: #5a6475;
+  cursor: pointer;
+}
+.mc-act.ok { background: #e8f7ef; color: #00a862; }
+.mc-act.warn { background: #fff3e8; color: #f59e0b; }
+.mc-act.danger { background: #fdeef0; color: #ef4444; }
+.mc-act.pinned { background: #eef4ff; color: #2f6bf0; }
+
+/* 弹层（底部弹出 BottomSheet） */
+.mc-mask {
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, .45);
+  display: flex; align-items: flex-end;
+  z-index: 2000;
+  animation: mcFade .2s ease;
+}
+@keyframes mcFade { from { opacity: 0; } to { opacity: 1; } }
+.mc-sheet {
+  width: 100%;
+  background: #fff;
+  border-radius: 22px 22px 0 0;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  animation: mcSheetUp .28s cubic-bezier(.32, .72, 0, 1);
+  box-shadow: 0 -8px 40px rgba(16, 24, 60, .16);
+}
+@keyframes mcSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+/* 顶部拖条 */
+.mc-sheet::before {
+  content: ''; display: block;
+  width: 38px; height: 4px; border-radius: 2px;
+  background: #e1e5ef; margin: 0 auto 16px;
+}
+.mc-sheet-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 16px; font-weight: 600; color: #1a1a2e;
+  margin-bottom: 16px;
+}
+.mc-close { font-size: 18px; color: #999; cursor: pointer; }
+.mc-form-row {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: 14px;
+}
+.mc-form-row label { font-size: 13px; color: #666; }
+.mc-form-row input {
+  height: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 0 12px;
+  font-size: 14px;
+  outline: none;
+}
+.mc-switch { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333; }
+.mc-save {
+  width: 100%;
+  height: 44px;
+  background: #2f6bf0;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+/* ==========================================================
+   通用补充样式（全局兜底）：以下类被多个页面使用，
+   统一在这里定义，避免各页 scoped 重复/缺失导致的样式不完整。
+   ========================================================== */
+
+/* 统计数字卡（概览/仪表盘类页面） */
+.mc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 12px 0;
+}
+.mc-stat {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+}
+.mc-stat-num, .mc-stat-n, .mc-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222a47;
+  line-height: 1.2;
+}
+.mc-stat-label, .mc-stat-l, .mc-stat-sub, .mc-stat-info {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+.mc-stat-icon { font-size: 18px; }
+.mc-stat-cell {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+  text-align: center;
+}
+
+/* 详情弹层通用 */
+.mc-detail { max-height: 82vh; overflow-y: auto; padding: 2px 6px 8px; }
+
+/* 移动端隐藏滚动条（保留滚动），视觉更简洁 */
+.mc-detail::-webkit-scrollbar,
+.mc-longtext::-webkit-scrollbar,
+.mc-wrap *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.mc-detail, .mc-longtext, .mc-wrap * { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* 详情行（label 居左、值居右换行）——增强：label 品牌竖条分区、值加粗更醒目 */
+.mc-detail-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 11px 2px;
+  border-bottom: 1px solid #f2f4f7;
+  font-size: 13px;
+}
+.mc-detail-row:last-child { border-bottom: none; }
+.mc-detail-label {
+  width: 76px; flex-shrink: 0; color: #8a93a7; line-height: 1.55;
+  font-weight: 500; padding-left: 8px; border-left: 3px solid #dce6fd;
+}
+.mc-detail-val { flex: 1; min-width: 0; color: #1a1a2e; word-break: break-all; line-height: 1.55; font-weight: 500; }
+.mc-det-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #f2f4f7; font-size: 13px; }
+.mc-det-row label { color: #8a93a7; flex-shrink: 0; font-weight: 500; padding-left: 8px; border-left: 3px solid #e6edfb; }
+.mc-det-row span { color: #1a1a2e; font-weight: 500; word-break: break-all; text-align: right; line-height: 1.55; }
+
+/* 详情图 / 封面 */
+.mc-detail-avatar { display: flex; justify-content: center; margin-bottom: 14px; }
+.mc-detail-avatar img, .mc-detail-img { border-radius: 10px; object-fit: cover; }
+.mc-detail-avatar img { border-radius: 50%; border: 3px solid #eef1f8; box-shadow: 0 4px 14px rgba(27,68,166,.16); }
+.mc-detail-img { max-width: 100%; }
+.mc-det-cover { max-width: 100%; border-radius: 10px; margin-top: 4px; }
+.mc-det-img { max-width: 100%; border-radius: 10px; margin-top: 4px; }
+.mc-det-content { font-size: 13px; color: #1a1a2e; line-height: 1.65; background: #f7f8fc; border-radius: 10px; padding: 10px 12px; }
+
+/* 分区标题 / 区块 */
+.mc-dv { margin-top: 8px; margin-bottom: 10px; font-size: 14px; font-weight: 600; color: #1a1a2e; }
+.mc-dl { margin-bottom: 6px; font-size: 12px; color: #909399; }
+
+/* 分组配置区 */
+.mc-sec { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
+.mc-hint { font-size: 12px; color: #909399; margin-top: 4px; line-height: 1.5; }
+
+/* 配置项行（label 左 + 值/控件右） */
+.mc-cfg-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f2f4f7; }
+.mc-cfg-row:last-child { border-bottom: none; }
+.mc-cfg-label { font-size: 13px; color: #1a1a2e; flex-shrink: 0; }
+.mc-cfg-val { font-size: 13px; color: #555; text-align: right; word-break: break-all; min-width: 0; }
+
+/* 服务器/状态行 */
+.mc-svr-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 13px; }
+.mc-svr-label { color: #909399; flex-shrink: 0; }
+.mc-svr-val { color: #1a1a2e; text-align: right; word-break: break-all; }
+
+/* 横向条形图（API 响应/占比等） */
+.mc-bars { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.mc-bar { display: flex; align-items: center; gap: 8px; }
+.mc-bar-label { width: 64px; flex-shrink: 0; font-size: 12px; color: #555; }
+.mc-bar-track { flex: 1; height: 8px; background: #f0f2f5; border-radius: 4px; overflow: hidden; }
+.mc-bar-fill { height: 100%; background: #2f6bf0; border-radius: 4px; }
+.mc-bar-val { width: 40px; text-align: right; font-size: 11px; color: #666; flex-shrink: 0; }
+
+/* API 响应监控 */
+.mc-cat { display: flex; flex-direction: column; gap: 8px; }
+.mc-cat-row { display: flex; flex-direction: column; gap: 4px; }
+.mc-cat-progress { height: 6px; background: #f0f2f5; border-radius: 4px; overflow: hidden; }
+.mc-cat-progress-fill { height: 100%; background: #0aa26b; border-radius: 4px; transition: width .3s; }
+
+/* 行为类型彩色标签 */
+.mc-type { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 2px 8px; }
+.mc-t-click { background: #eef4ff; color: #2f6bf0; }
+.mc-t-view, .mc-t-page_view { background: #e8f7ef; color: #00a862; }
+.mc-t-stay, .mc-t-page_stay { background: #fff3e8; color: #f59e0b; }
+.mc-t-expo, .mc-t-rec_view, .mc-t-content_click { background: #f3efff; color: #7c3aed; }
+
+/* 长文本块 */
+.mc-longtext { font-size: 13px; color: #1a1a2e; line-height: 1.6; word-break: break-word; max-height: 160px; overflow-y: auto; }
+.mc-detail-text { font-size: 13px; color: #1a1a2e; line-height: 1.6; word-break: break-word; }
+
+/* 列表行（表格式） */
+.mc-tbl { background: #fff; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
+.mc-tbl-row { display: flex; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f2f4f7; align-items: center; }
+.mc-tbl-row:last-child { border-bottom: none; }
+.mc-tbl-name { flex: 1; min-width: 0; font-size: 13px; color: #1a1a2e; }
+
+/* 关键词 / 元信息 */
+.mc-key { font-size: 11px; color: #909399; }
+.mc-desc { font-size: 12px; color: #909399; margin-top: 2px; }
+.mc-url { font-size: 12px; color: #2f6bf0; word-break: break-all; }
+.mc-val { font-size: 13px; color: #1a1a2e; text-align: right; word-break: break-all; }
+

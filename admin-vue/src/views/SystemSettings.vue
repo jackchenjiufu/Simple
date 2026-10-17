@@ -1,5 +1,142 @@
 <template>
   <div>
+    <!-- ==================== 移动端卡片式（App web-view/窄屏） ==================== -->
+    <div v-if="isMobile" class="mc-wrap">
+      <!-- 热搜抓取管理 -->
+      <div class="mc-card">
+        <div class="mc-card-top">
+          <div class="mc-thumb mc-thumb-empty">热</div>
+          <div class="mc-card-info">
+            <div class="mc-title">热搜抓取管理</div>
+            <div class="mc-meta">触发各平台热搜抓取，成功后自动整理并发布文章</div>
+          </div>
+        </div>
+        <div class="mc-tags">
+          <span
+            v-for="p in crawlerPlatforms"
+            :key="p.key"
+            class="mc-tag"
+            :class="{ act: p.key === 'weibo' }"
+            @click="runCrawler(p.key)"
+          >{{ p.label }}</span>
+        </div>
+        <div
+          v-if="crawlResult"
+          class="mc-data"
+          :style="{ color: crawlResult.ok ? '#67c23a' : '#f56c6c' }"
+        >
+          [{{ crawlResult.platformLabel }}] {{ crawlResult.msg }}
+          <template v-if="crawlResult.ok && crawlResult.count">—— 共 {{ crawlResult.count }} 条热搜</template>
+        </div>
+      </div>
+
+      <!-- AI 代理配置 -->
+      <div class="mc-card">
+        <div class="mc-card-top">
+          <div class="mc-thumb mc-thumb-empty">AI</div>
+          <div class="mc-card-info">
+            <div class="mc-title">AI 代理配置</div>
+            <div class="mc-meta">Chat（DeepSeek 兼容）+ GLM 识图（GLM-4V 打标）</div>
+          </div>
+        </div>
+        <div class="mc-form-row"><label>Chat 接口</label><input v-model="aiConfig.base_url" placeholder="https://api.deepseek.com/v1" /></div>
+        <div class="mc-form-row"><label>Chat 模型</label><input v-model="aiConfig.model" placeholder="deepseek-chat" /></div>
+        <div class="mc-form-row"><label>API Key</label><input v-model="aiConfig.api_key" type="text" placeholder="sk-..." /></div>
+        <div class="mc-form-row"><label>GLM 接口</label><input v-model="aiConfig.glm_base_url" placeholder="https://open.bigmodel.cn/api/paas/v4/" /></div>
+        <div class="mc-form-row"><label>GLM 模型</label><input v-model="aiConfig.glm_vision_model" placeholder="glm-4v-flash" /></div>
+        <div class="mc-form-row"><label>GLM Key</label><input v-model="aiConfig.glm_api_key" type="text" placeholder="GLM API Key（用于图片自动打标）" /></div>
+        <div class="mc-actions">
+          <span class="mc-act ok" @click="saveAiConfig">保存配置</span>
+          <span class="mc-act" @click="testAiConfig('chat')">测试 Chat</span>
+          <span class="mc-act" @click="testAiConfig('vision')">测试 GLM 识图</span>
+        </div>
+        <div v-if="aiResult" class="mc-data" :style="{ color: aiResult.ok ? '#67c23a' : '#f56c6c' }">
+          {{ aiResult.msg }}
+          <span v-if="aiResult.glm_reply" style="color:#555">—— 识别结果：{{ aiResult.glm_reply }}</span>
+        </div>
+      </div>
+
+      <!-- 服务器监控概览 -->
+      <div class="mc-card" v-if="sysInfo">
+        <div class="mc-card-top">
+          <div class="mc-thumb mc-thumb-empty">服</div>
+          <div class="mc-card-info">
+            <div class="mc-title">服务器监控概览</div>
+            <div class="mc-meta">服务器软件 {{ sysInfo.server_software }} · PHP {{ sysInfo.php_version }}</div>
+          </div>
+          <span class="mc-act" @click="loadSysInfo">刷新</span>
+        </div>
+        <div class="mc-form-row"><label>服务器时间</label><span>{{ sysInfo.server_time || '—' }}</span></div>
+        <div class="mc-form-row"><label>时区</label><span>{{ sysInfo.timezone || '—' }}</span></div>
+        <div class="mc-form-row"><label>内存使用</label><span>{{ memText }}</span></div>
+        <div class="mc-form-row"><label>磁盘占用</label><span>{{ diskText }}</span></div>
+        <div class="mc-form-row"><label>CPU 负载</label><span>{{ cpuText }}</span></div>
+      </div>
+
+      <!-- API 响应时间监控 -->
+      <div class="mc-card" v-if="apiTimes && apiTimes.length">
+        <div class="mc-card-top">
+          <div class="mc-thumb mc-thumb-empty">速</div>
+          <div class="mc-card-info">
+            <div class="mc-title">API 响应时间监控</div>
+            <div class="mc-meta">核心接口单次模拟请求耗时（毫秒）</div>
+          </div>
+          <span class="mc-act" @click="loadSysInfo">刷新</span>
+        </div>
+        <div class="mc-cat">
+          <div v-for="a in apiTimes" :key="a.api" class="mc-cat-row">
+            <div class="mc-cat-head">
+              <span class="mc-cat-name">{{ (a.api || '').replace('/api/','') || '未知接口' }}</span>
+              <span class="mc-cat-ms" :style="{ color: (a.status === 'OK' ? '#00a862' : '#ef4444') }">
+                {{ a.status === 'OK' ? (Number(a.response_time_ms)||0).toFixed(1)+' ms' : '错误' }}
+              </span>
+            </div>
+            <div class="mc-cat-progress">
+              <div class="mc-cat-progress-fill" :style="{ width: Math.min(100, Number(a.response_time_ms||0)) + '%', background: a.status === 'OK' ? '#0aa26b' : '#ef4444' }"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 最近公告 -->
+      <div class="mc-card">
+        <div class="mc-card-top">
+          <div class="mc-thumb mc-thumb-empty">公</div>
+          <div class="mc-card-info">
+            <div class="mc-title">最近公告</div>
+            <div class="mc-meta">最新 5 条系统公告</div>
+          </div>
+          <span class="mc-act" @click="loadAnnouncements">刷新</span>
+        </div>
+        <div v-if="announcements.length" class="mc-list">
+          <div v-for="a in announcements.slice(0, 5)" :key="a.id" class="mc-card mc-sub">
+            <div class="mc-card-info">
+              <div class="mc-title">{{ a.title || '无标题' }}</div>
+              <div class="mc-data">{{ a.created_at || '—' }}</div>
+              <div class="mc-meta">{{ (a.content || '').replace(/\s+/g, ' ').slice(0, 60) || '暂无内容' }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="mc-data">暂无公告</div>
+      </div>
+
+      <!-- 数据库维护（迁移） -->
+      <div class="mc-card">
+        <div class="mc-card-top">
+          <div class="mc-thumb mc-thumb-empty">库</div>
+          <div class="mc-card-info">
+            <div class="mc-title">数据库维护</div>
+            <div class="mc-meta">反馈表结构迁移（自动添加缺失列）</div>
+          </div>
+        </div>
+        <div class="mc-actions">
+          <span class="mc-act pinned" :class="{ disabled: migrating }" @click="runMigration">执行迁移</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 桌面端（原有，保留） ==================== -->
+    <template v-else>
     <h2 style="margin-bottom:16px;margin-top:0">系统维护</h2>
 
     <el-row :gutter="16">
@@ -64,7 +201,7 @@
               <el-input v-model="aiConfig.model" placeholder="deepseek-chat" />
             </el-form-item>
             <el-form-item label="API Key">
-              <el-input v-model="aiConfig.api_key" type="password" show-password placeholder="sk-..." />
+              <el-input v-model="aiConfig.api_key" type="text" placeholder="sk-..." />
             </el-form-item>
             <el-divider content-position="left" style="margin:8px 0 12px">🖼 GLM 识图（AI 打标）</el-divider>
             <el-form-item label="接口地址">
@@ -74,7 +211,7 @@
               <el-input v-model="aiConfig.glm_vision_model" placeholder="glm-4v-flash" />
             </el-form-item>
             <el-form-item label="API Key">
-              <el-input v-model="aiConfig.glm_api_key" type="password" show-password placeholder="GLM API Key（用于图片自动打标）" />
+              <el-input v-model="aiConfig.glm_api_key" type="text" placeholder="GLM API Key（用于图片自动打标）" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" :loading="savingAi" @click="saveAiConfig">保存配置</el-button>
@@ -138,29 +275,6 @@
           <div v-else style="color:#909399;font-size:13px">加载中...</div>
         </el-card>
 
-        <!-- 数据库信息 -->
-        <el-card shadow="never" style="margin-bottom:16px">
-          <template #header>数据库信息</template>
-          <div v-if="dbInfo" style="font-size:13px;color:#555;line-height:2.2">
-            <div><span style="color:#999;display:inline-block;width:90px">数据库版本</span>{{ dbInfo.database_version }}</div>
-            <div><span style="color:#999;display:inline-block;width:90px">连接数</span>{{ dbInfo.connections }} <span style="color:#999">/ 查询总数 {{ dbInfo.queries }}</span></div>
-            <div><span style="color:#999;display:inline-block;width:90px">数据表</span>{{ dbInfo.tables?.count }} 张 <span style="color:#999">/ 总数据量 {{ dbDataTotal }} / 总行数 {{ dbRowsTotal.toLocaleString() }}</span></div>
-            <el-table
-              v-if="dbInfo.tables?.details?.length"
-              :data="dbInfo.tables.details"
-              size="small"
-              max-height="260"
-              style="margin-top:8px"
-            >
-              <el-table-column prop="name" label="表名" min-width="140" show-overflow-tooltip />
-              <el-table-column prop="rows" label="行数" width="90" align="right" />
-              <el-table-column prop="data_size" label="数据大小" width="100" align="right" />
-              <el-table-column prop="index_size" label="索引大小" width="100" align="right" />
-            </el-table>
-          </div>
-          <div v-else style="color:#909399;font-size:13px">加载中...</div>
-        </el-card>
-
         <!-- 最近公告 -->
         <el-card shadow="never">
           <template #header>
@@ -184,13 +298,16 @@
         </el-card>
       </el-col>
     </el-row>
+    </template>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
+import { useMobile } from '@/composables/useMobile'
+
+const { isMobile } = useMobile()
 
 const migrating = ref(false)
 const crawlingKey = ref(null)
@@ -201,7 +318,7 @@ const savingAi = ref(false)
 const testingAi = ref(false)
 const testingAiGlm = ref(false)
 const sysInfo = ref(null)
-const dbInfo = ref(null)
+const apiTimes = ref([])
 const aiConfig = ref({ base_url: '', model: '', api_key: '', glm_base_url: '', glm_vision_model: '', glm_api_key: '' })
 const aiResult = ref(null)
 const announcements = ref([])
@@ -231,7 +348,7 @@ const parsePercent = (s) => {
   return isNaN(n) ? null : Math.min(100, Math.max(0, n))
 }
 
-// 进度条数值
+// 进度条数值（桌面端）
 const memPercent = computed(() => {
   const cur = parseMB(sysInfo.value?.memory_usage?.current)
   const peak = parseMB(sysInfo.value?.memory_usage?.peak)
@@ -240,19 +357,22 @@ const memPercent = computed(() => {
 })
 const diskPercent = computed(() => parsePercent(sysInfo.value?.disk_space?.usage_percent))
 
-// 数据库统计
-const dbDataTotal = computed(() => {
-  const details = dbInfo.value?.tables?.details || []
-  let mb = 0
-  details.forEach(t => {
-    const v = parseMB(t.data_size)
-    if (v != null) mb += v
-  })
-  return mb >= 1024 ? (mb / 1024).toFixed(2) + ' GB' : mb.toFixed(2) + ' MB'
-})
-const dbRowsTotal = computed(() =>
-  (dbInfo.value?.tables?.details || []).reduce((sum, t) => sum + (Number(t.rows) || 0), 0)
+// 移动端展示文本
+const memText = computed(() =>
+  sysInfo.value?.memory_usage ? (sysInfo.value.memory_usage.current + ' / 峰值 ' + sysInfo.value.memory_usage.peak) : '—'
 )
+const diskText = computed(() => {
+  const d = sysInfo.value?.disk_space
+  if (!d) return '—'
+  if (typeof d === 'object') return `已用 ${d.used} / 共 ${d.total}，剩余 ${d.free ?? '—'}（${d.usage_percent}）`
+  if (typeof d === 'string') return d
+  return '未知'
+})
+const cpuText = computed(() => {
+  const c = sysInfo.value?.cpu_load
+  if (!c) return 'N/A'
+  return '1min ' + c['1min'] + ' / 5min ' + c['5min'] + ' / 15min ' + c['15min']
+})
 
 // 加载系统信息 & AI 配置
 const loadSysInfo = async () => {
@@ -264,7 +384,7 @@ const loadSysInfo = async () => {
     ])
     if (mr.data.code === 200) {
       sysInfo.value = mr.data.data.server_status
-      dbInfo.value = mr.data.data.database_status
+      apiTimes.value = mr.data.data.api_response_times || []
     }
     if (ac.data.code === 200) {
       aiConfig.value = ac.data.data || aiConfig.value
@@ -376,3 +496,52 @@ onMounted(() => {
   loadAnnouncements()
 })
 </script>
+
+<style scoped>
+/* ===== 移动端卡片样式修正（仅作用于本页 isMobile 分支，沿用全局 .mc-* 类名） ===== */
+/* 文本缩略图：小尺寸 + 品牌蓝底（原 .mc-thumb 默认 64px 灰底对纯文字卡过大） */
+.mc-thumb.mc-thumb-empty {
+  width: 40px;
+  height: 40px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  background: #3370ff;
+  border-radius: 10px;
+}
+/* 卡片头部垂直居中，标题/描述间距紧凑统一 */
+.mc-card-top { align-items: center; }
+.mc-card-info .mc-meta { margin-top: 3px; }
+/* 表单类卡片去掉点击缩放/手型（避免输入时整卡跳动） */
+.mc-card { cursor: default; }
+.mc-card:active { transform: none; }
+
+/* 服务器监控：值文本加深，行距统一 */
+.mc-form-row span { font-size: 13px; color: #333; }
+
+/* API 响应时间：进度条样式（.mc-cat* 原定义在其他页面 scoped，此处补齐） */
+.mc-cat { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.mc-cat-row { display: flex; flex-direction: column; gap: 4px; }
+.mc-cat-head { display: flex; justify-content: space-between; align-items: center; }
+.mc-cat-name {
+  font-size: 12px; color: #555; font-family: monospace;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mc-cat-ms { font-size: 12px; font-weight: 600; flex-shrink: 0; margin-left: 8px; }
+.mc-cat-progress { height: 8px; background: #eef1f6; border-radius: 5px; overflow: hidden; }
+.mc-cat-progress-fill { height: 100%; border-radius: 5px; }
+
+/* 卡片内嵌子卡（最近公告）：去阴影、浅底区分、内边距统一 */
+.mc-card.mc-sub {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #f7f8fa;
+  box-shadow: none;
+  border-radius: 10px;
+  cursor: default;
+}
+.mc-card.mc-sub:active { transform: none; }
+.mc-card.mc-sub .mc-title { font-size: 14px; }
+/* 子卡列表位于父卡内，不再叠加全局 .mc-list 的 12px 左右外边距 */
+.mc-list { padding: 2px 0 0; }
+</style>

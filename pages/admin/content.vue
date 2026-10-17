@@ -19,6 +19,13 @@
 				<view class="c-filter" :class="{act: category===c}" v-for="c in categories" :key="c" @click="category=c;reload()">{{ c }}</view>
 			</view>
 
+			<!-- 排序：置顶固定顶部，其余正序/倒序 -->
+			<view class="c-filters" style="margin-top:6rpx">
+				<view class="c-filter" :class="{act: sortOrder==='desc'}" @click="sortOrder='desc';reload()">倒序 ▾</view>
+				<view class="c-filter" :class="{act: sortOrder==='asc'}" @click="sortOrder='asc';reload()">正序 ▴</view>
+				<text style="font-size:20rpx;color:#999;margin-left:auto;line-height:56rpx">置顶内容固定顶部</text>
+			</view>
+
 			<!-- 批量操作 -->
 			<view class="c-toolbar">
 				<text class="c-tool-btn" :class="{on: batchMode}" @click="toggleBatch">{{ batchMode ? '取消批量' : '批量' }}</text>
@@ -41,6 +48,7 @@
 						<text class="ad-item-sub">{{ (row.nickname || row.username || '用户#'+row.user_id) }} · {{ row.category || '未分类' }} · 赞{{ row.likes||0 }}</text>
 						<view class="c-tags" v-if="tagList(row).length"><text class="ad-tag ad-tag-gray" v-for="t in tagList(row)" :key="t">{{ t }}</text></view>
 					</view>
+					<text v-if="row.is_pinned == 1" class="ad-tag ad-tag-red">置顶</text>
 					<text class="ad-tag" :class="modClass(row.moderation_status)">{{ modLabel(row.moderation_status) }}</text>
 					<view class="c-row-actions">
 						<template v-if="activeTab==='trash'">
@@ -48,6 +56,7 @@
 							<text class="ad-item-danger" @click.stop="hardDel(row)">删除</text>
 						</template>
 						<template v-else>
+							<text class="ad-item-action" :class="row.is_pinned == 1 ? 'ad-item-danger' : ''" @click.stop="pinContent(row)">{{ row.is_pinned == 1 ? '取消置顶' : '置顶' }}</text>
 							<text class="ad-item-action" @click.stop="editMeta(row)">编辑</text>
 							<text class="ad-item-action" @click.stop="setMod(row, row.moderation_status==='safe'?'unsafe':'safe')">{{ row.moderation_status==='safe'?'驳回':'通过' }}</text>
 							<text class="ad-item-danger" @click.stop="softDel(row)">删除</text>
@@ -79,7 +88,7 @@ export default {
 		return {
 			tabs: [{key:'image',name:'图片'},{key:'video',name:'视频'},{key:'trash',name:'回收站'}],
 			activeTab: 'image', list: [], total: 0, page: 1, pageSize: 20,
-			hasMore: false, loading: false, searchKey: '', category: '', categories: [],
+			hasMore: false, loading: false, searchKey: '', category: '', categories: [], sortOrder: 'desc',
 			batchMode: false, batchIds: [], allSel: false,
 			metaDlg: false, metaRow: null, metaTagsText: '', metaCategoryText: ''
 		};
@@ -88,7 +97,7 @@ export default {
 		async load() {
 			this.loading = true;
 			try {
-				const params = { type: this.activeTab, page: this.page, limit: this.pageSize };
+				const params = { type: this.activeTab, page: this.page, limit: this.pageSize, sort: this.sortOrder };
 				if (this.category) params.category = this.category;
 				if (this.searchKey) params.search = this.searchKey;
 				const r = await adminApi.getContentList(params);
@@ -115,6 +124,21 @@ export default {
 			try { const r = await adminApi.batchContent(this.batchIds, op); uni.hideLoading(); if (r.code===200) { uni.showToast({title:(r.message)||'完成',icon:'none'}); this.batchMode=false; this.batchIds=[]; this.reload(); } else uni.showToast({title:r.message,icon:'none'}); } catch(e){ uni.hideLoading(); }
 		},
 		editMeta(row) { this.metaRow = row; this.metaTagsText = this.tagList(row).join(','); this.metaCategoryText = row.category || ''; this.metaDlg = true; },
+		pinContent(row) {
+			const pinned = row.is_pinned == 1 ? 0 : 1;
+			uni.showModal({
+				title: pinned ? '置顶主推' : '取消置顶',
+				content: pinned ? `将 #${row.id}「${row.title || ''}」置顶到推荐流最前（所有用户可见）。确定？` : `取消 #${row.id} 的置顶？`,
+				success: async (res) => {
+					if (!res.confirm) return;
+					try {
+						const r = await adminApi.pinContent(row.id, pinned);
+						if (r.code === 200) { uni.showToast({ title: r.message || (pinned ? '已置顶' : '已取消置顶'), icon: 'none' }); this.reload(); }
+						else uni.showToast({ title: r.message || '操作失败', icon: 'none' });
+					} catch(e) { uni.showToast({ title: '操作失败', icon: 'none' }); }
+				}
+			});
+		},
 		async saveMeta() {
 			if (!this.metaRow) return;
 			try { const r = await adminApi.updateContentMeta({ id: this.metaRow.id, tags: this.metaTagsText, category: this.metaCategoryText, recommended: this.metaRow.recommended }); if (r.code===200) { uni.showToast({title:'已保存',icon:'none'}); this.metaDlg=false; this.reload(); } } catch(e) {}

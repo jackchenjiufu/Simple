@@ -2,15 +2,25 @@
 	<view class="content">
  <NavBar mode="back" title="详情" />
 
-		<!-- 图片显示区域 -->
+		<!-- 图片显示区域（视频时渲染播放器） -->
 		<view class="image-container">
+			<video
+				v-if="videoUrl"
+				:src="videoUrl"
+				:poster="imageUrl || ''"
+				controls
+				autoplay
+				object-fit="contain"
+				style="width:100%;border-radius:12upx;background:#000"
+			></video>
 			<image 
+				v-else
 				:src="imageUrl" 
 				mode="widthFix"
 				@load="onImageLoad"
 				@error="onImageError"
 				@longpress="longPressImage"
-			></image>
+				></image>
 		</view>
 		
 
@@ -40,7 +50,10 @@ export default {
 		};
 	},
 	computed: {
-			imageUrl() {
+		videoUrl() {
+			return this.cardData.video_url || '';
+		},
+		imageUrl() {
 				// 尝试多个字段获取图片URL，适配后端返回的数据结构
 				let url = this.cardData.image_url || this.cardData.url || this.cardData.image || this.cardData.cover;
 				
@@ -86,7 +99,8 @@ export default {
 			this.cardData = {
 				id: Number(options.id) || 0,
 				title: decodeURIComponent(options.title || ''),
-				image_url: decodeURIComponent(options.image_url)
+				image_url: decodeURIComponent(options.image_url),
+				video_url: options.video_url ? decodeURIComponent(options.video_url) : ''
 			};
 		} else if (eventChannel) {
 			eventChannel.on('setCard', (data) => {

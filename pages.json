@@ -88,6 +88,12 @@
 			}
 		},
 		{
+			"path": "pages/content/video-player",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/content/announcement-detail",
 			"style": {
 				"navigationStyle": "custom"
@@ -155,6 +161,40 @@
 		},
 		{
 			"path": "pages/info/system-permissions",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/monitor/index",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true,
+				"backgroundTextStyle": "dark"
+			}
+		},
+		{
+			"path": "pages/monitor/push",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/monitor/service",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true,
+				"backgroundTextStyle": "dark"
+			}
+		},
+		{
+			"path": "pages/monitor/player",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/monitor/detail",
 			"style": {
 				"navigationStyle": "custom"
 			}
@@ -283,6 +323,30 @@
 					"style": {
 						"navigationStyle": "custom"
 					}
+				},
+				{
+					"path": "apis",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "content",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "splash",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "system",
+					"style": {
+						"navigationStyle": "custom"
+					}
 				}
 			]
 		}
@@ -310,6 +374,12 @@
 				"iconPath": "static/img/tabbar/guanzhu.png",
 				"selectedIconPath": "static/img/tabbar/guanzhuactive.png",
 				"text": "工时"
+			},
+			{
+				"pagePath": "pages/monitor/index",
+				"iconPath": "static/img/tabbar/monitor.png",
+				"selectedIconPath": "static/img/tabbar/monitoractive.png",
+				"text": "监控"
 			},
 			{
 				"pagePath": "pages/tabbar/tabbar-4/tabbar-4",

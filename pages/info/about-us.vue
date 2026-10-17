@@ -48,14 +48,17 @@
 					<text class="row-label">当前版本</text>
 					<text class="row-value">{{ currentVersion }}</text>
 				</view>
-				<view class="version-row" v-if="latestVersion !== currentVersion">
+				<view class="version-row">
 					<text class="row-label">最新版本</text>
-					<text class="row-value new-version">{{ latestVersion }}</text>
+					<text class="row-value" :class="{ 'new-version': hasNewer }">{{ latestVersion }}</text>
 				</view>
 			</view>
 
 			<view class="form-card fade-up">
 				<text class="form-subtitle">联系我们</text>
+				<view class="contact-row" @click="openWebsite">
+					<text class="contact-text">官方网站：simpleboat.cc</text>
+				</view>
 				<view class="contact-row">
 					<text class="contact-text">邮箱：chensauce@qq.com</text>
 				</view>
@@ -84,8 +87,14 @@ export default {
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
 		this.loadVersion();
 	},
+	computed: {
+		hasNewer() {
+			return compareVersion(this.latestVersion, this.currentVersion) > 0;
+		}
+	},
 	methods: {
 		goBack() { uni.navigateBack(); },
+		openWebsite() { uni.setClipboardData({ data: 'https://simpleboat.cc' }); },
 		async loadVersion() {
 				try {
 					const info = uni.getSystemInfoSync();
@@ -188,13 +197,14 @@ function compareVersion(v1, v2) {
 .app-desc { display: block; text-align: center; font-size: 24upx; color: #9ca3af; }
 
 /* ========== 版本信息 ========== */
-.version-row { display: flex; justify-content: space-between; align-items: center; padding: 10upx 0; }
+.version-row { display: flex; justify-content: space-between; align-items: center; padding: 14upx 0; border-bottom: 1upx solid #f3f4f6; }
+.version-row:last-child { border-bottom: none; }
 .row-label { font-size: 26upx; color: #6b7280; }
 .row-value { font-size: 26upx; color: #303132; font-weight: 500; }
 .new-version { color: #3071f6; font-weight: 600; }
 
 /* ========== 联系我们 ========== */
-.contact-row { display: flex; align-items: center; gap: 12upx; margin-bottom: 12upx; }
+.contact-row { display: flex; align-items: center; gap: 12upx; padding: 12upx 0; }
 .contact-row:last-child { margin-bottom: 0; }
 .contact-icon { font-size: 28upx; }
 .contact-text { font-size: 26upx; color: #6b7280; }

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>服务器状态监控</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="dot ok" id="status-dot" title="数据连接状态"></span>
+    <h1>服务器状态监控</h1>
+    <span class="host" id="hostname">-</span>
+  </div>
+  <div class="topmeta">
+    <span class="meta-item">系统 <b id="platform">-</b></span>
+    <span class="meta-item">运行时间 <b id="uptime">-</b></span>
+    <button id="toggle" class="btn" type="button">暂停</button>
+    <span class="meta-item meta-time" id="updated">-</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- 概览卡片 -->
+  <section class="cards">
+    <div class="card">
+      <div class="card-head"><h2>温度</h2><span class="sub" id="temp-sub">-</span></div>
+      <div class="ring-row">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+            <circle class="ring-fg" id="temp-ring-fg" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="ring-center" id="temp-ring-text">-</div>
+        </div>
+        <div class="ring-info">
+          <div class="kv"><span>当前</span><b id="temp-current">-</b></div>
+          <div class="kv"><span>传感器</span><b id="temp-zones">-</b></div>
+          <div class="kv"><span>状态</span><b id="temp-state" class="state-ok">-</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>CPU</h2><span class="sub" id="cpu-model">-</span></div>
+      <div class="ring-row">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+            <circle class="ring-fg" id="cpu-ring-fg" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="ring-center" id="cpu-ring-text">0%</div>
+        </div>
+        <div class="ring-info">
+          <div class="kv"><span>核心数</span><b id="cpu-count">-</b></div>
+          <div class="kv"><span>负载 1/5/15</span><b id="cpu-load">-</b></div>
+          <div class="kv"><span>状态</span><b id="cpu-state" class="state-ok">正常</b></div>
+        </div>
+      </div>
+      <div class="cores" id="cpu-cores"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>内存</h2><span class="sub" id="mem-sub">-</span></div>
+      <div class="ring-row">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+            <circle class="ring-fg" id="mem-ring-fg" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="ring-center" id="mem-ring-text">0%</div>
+        </div>
+        <div class="ring-info">
+          <div class="kv"><span>已用</span><b id="mem-used">-</b></div>
+          <div class="kv"><span>空闲</span><b id="mem-free">-</b></div>
+          <div class="kv"><span>Swap</span><b id="mem-swap">-</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>磁盘</h2><span class="sub" id="disk-sub">-</span></div>
+      <div class="ring-row">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+            <circle class="ring-fg" id="disk-ring-fg" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="ring-center" id="disk-ring-text">0%</div>
+        </div>
+        <div class="ring-info">
+          <div class="kv"><span>分区数</span><b id="disk-count">-</b></div>
+          <div class="kv"><span>已用</span><b id="disk-used">-</b></div>
+          <div class="kv"><span>可用</span><b id="disk-free">-</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>系统</h2><span class="sub" id="sys-arch">-</span></div>
+      <div class="sys-block">
+        <div class="sys-big" id="sys-uptime">-</div>
+        <div class="sys-meta">
+          <div class="kv"><span>启动时间</span><b id="sys-boot">-</b></div>
+          <div class="kv"><span>Node 版本</span><b id="sys-node">-</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 历史曲线(鼠标悬停可查看数值) -->
+  <section class="charts">
+    <div class="card chart-card">
+      <div class="card-head"><h2>CPU 使用率</h2><span class="sub" id="chart-cpu-last">-</span></div>
+      <canvas id="chart-cpu"></canvas>
+    </div>
+    <div class="card chart-card">
+      <div class="card-head"><h2>内存使用率</h2><span class="sub" id="chart-mem-last">-</span></div>
+      <canvas id="chart-mem"></canvas>
+    </div>
+    <div class="card chart-card">
+      <div class="card-head"><h2>网络吞吐</h2><span class="sub" id="chart-net-last">-</span></div>
+      <canvas id="chart-net"></canvas>
+    </div>
+    <div class="card chart-card">
+      <div class="card-head"><h2>温度趋势</h2><span class="sub" id="chart-temp-last">-</span></div>
+      <canvas id="chart-temp"></canvas>
+    </div>
+  </section>
+
+  <!-- 明细 -->
+  <section class="detail">
+    <div class="card">
+      <div class="card-head"><h2>每核使用率</h2></div>
+      <div id="core-detail" class="core-detail"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>磁盘分区</h2></div>
+      <div id="disk-detail" class="rows"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>网络接口</h2><span class="sub" id="net-rates">-</span></div>
+      <div id="net-detail" class="rows"></div>
+    </div>
+  </section>
+
+  <!-- 进程 -->
+  <section class="card">
+    <div class="card-head"><h2>进程 (按 CPU 排序 · Top 15)</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>PID</th><th>名称</th><th class="num">CPU%</th><th class="num">内存%</th><th class="num">RSS</th><th>命令行</th></tr></thead>
+        <tbody id="proc-body"><tr><td colspan="6" class="empty">等待数据…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  数据每 2 秒自动刷新 · <span id="foot-node">-</span> · <a href="/api/stats" target="_blank" rel="noopener">查看 JSON 接口</a>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

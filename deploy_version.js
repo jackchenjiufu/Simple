@@ -27,13 +27,11 @@ if (!fs.existsSync(APK_PATH)) {
 }
 const apkSizeMB = (fs.statSync(APK_PATH).size / 1048576).toFixed(1);
 
-const DESCRIPTION = `2.5.1 更新内容：
-1. 修复首页切换Tab重复请求、日期排序在iOS上失效
-2. 修复工时页重复请求、五险一金比例显示错误
-3. 工时页导航栏固定、卡片宽度与样式统一
-4. 修复文章详情页在App端报错、XSS过滤加固
-5. 修复详情页返回导航按钮不可见
-6. 登录成功后跳转提速、首页缓存秒开、新增加载骨架屏`;
+const DESCRIPTION = `2.7.0 更新内容：
+1. 新增静默热更新系统：前端改版无感升级，无需下载安装包
+2. 修复 SDK 版本不匹配提示弹窗
+3. 关于我们页面优化：版本信息展示完善
+4. 后台新增 WGT 热更新管理与安装统计`;
 
 // 写入版本记录：download_url 存文件名；update_type 列存在则置为 apk（不存在自动跳过）
 const SQL_PHP = `<?php
@@ -75,4 +73,4 @@ conn.on('ready', () => {
   });
 });
 conn.on('error', e => { console.log('SSH err:', e.message); process.exit(1); });
-conn.connect({ host: HOST, port: 22, username: 'root', privateKey: fs.readFileSync(KEY) });
+conn.connect({ host: HOST, port: 2341, username: 'root', privateKey: fs.readFileSync(KEY) });

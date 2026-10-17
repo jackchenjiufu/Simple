@@ -13,9 +13,17 @@ const PING_INTERVAL = 8000; // 8秒心跳
 const userConnections = new Map();
 const pendingMessages = new Map();
 
+// 数据库配置：从环境变量读取，避免把真实密码提交到源码。
+// 启动示例（Linux）：
+//   DB_HOST=localhost DB_USER=root DB_PASS=your_pass DB_NAME=doo-app node ws-server.js
+// Windows PowerShell：
+//   $env:DB_PASS='your_pass'; node ws-server.js
 const dbConfig = {
-    host: 'localhost', user: 'root', password: 'REDACTED_DB_PASSWORD',
-    database: 'doo-app', charset: 'utf8mb4'
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASS || 'REDACTED_DB_PASSWORD', // TODO: 生产环境务必改用环境变量注入，移除该默认值
+    database: process.env.DB_NAME || 'doo-app',
+    charset: 'utf8mb4'
 };
 
 const wss = new WebSocket.Server({ port: WS_PORT });

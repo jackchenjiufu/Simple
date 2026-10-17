@@ -60,9 +60,17 @@
 							<view class="waterfall">
 								<view class="wf-col" v-for="(col, ci) in wfCols" :key="ci">
 									<view class="wf-item" v-for="img in col" :key="img.id" @click="openImage(img)">
-										<image class="wf-img" :src="img.image_url" mode="widthFix" lazy-load></image>
+										<image v-if="!img.video_url" class="wf-img" :src="img.image_url" mode="widthFix" lazy-load></image>
+										<!-- 视频卡片：封面 + 播放角标，点击进播放页 -->
+										<view v-else class="wf-video" @click.stop="openVideo(img)">
+											<image class="wf-img" :src="img.image_url || defaultVideoCover" mode="widthFix" lazy-load></image>
+											<view class="wf-play">
+												<text class="wf-play-icon">▶</text>
+											</view>
+											<text class="wf-video-tag">视频</text>
+										</view>
 										<view class="wf-mask"></view>
-										<text class="wf-title">{{ img.title || '图片' }}</text>
+										<text class="wf-title">{{ img.title || (img.video_url ? '视频' : '图片') }}</text>
 									</view>
 								</view>
 							</view>
@@ -207,6 +215,7 @@ export default {
 			homeRefreshing: false,
 			recItems: [],
 			recTitle: '图片推荐',
+			defaultVideoCover: apiConfig.getServerUrl('/server/uploads/default_avatar.png'),
 			defaultAvatarUrl: apiConfig.getServerUrl('/server/uploads/default_avatar.png'),
 			articleList: [],
 			articleTotal: 0,
@@ -401,6 +410,26 @@ export default {
 				'&image_url=' + encodeURIComponent(img.image_url || '') +
 				'&title=' + encodeURIComponent(img.title || '');
 			uni.navigateTo({ url: '/pages/content/card-detail?' + q });
+		},
+		// 点击视频卡片：上报行为并进入视频播放页
+		openVideo(img) {
+			if (!img || !img.id) return;
+			const token = uni.getStorageSync('token');
+			const uid = uni.getStorageSync('userId') || 0;
+			if (token && uid) {
+				uni.request({
+					url: apiConfig.baseUrl + 'user_behavior.php?token=' + token,
+					method: 'POST',
+					data: { type: 'content_click', content_id: img.id, duration: 0 },
+					header: { 'Content-Type': 'application/json' },
+					fail: () => {}
+				});
+			}
+			const q = 'id=' + img.id +
+				'&video_url=' + encodeURIComponent(img.video_url || '') +
+				'&image_url=' + encodeURIComponent(img.image_url || '') +
+				'&title=' + encodeURIComponent(img.title || '视频');
+			uni.navigateTo({ url: '/pages/content/video-player?' + q });
 		},
 		goMoreImages() {
 			uni.showToast({ title: '更多图片敬请期待', icon: 'none' });
@@ -853,6 +882,11 @@ export default {
 .wf-col:first-child { margin-right: 14upx; }
 .wf-item { position: relative; margin-bottom: 14upx; border-radius: 14upx; overflow: hidden; }
 .wf-img { width: 100%; display: block; border-radius: 14upx; }
+/* 视频卡片：居中播放角标 + 左上角标签 */
+.wf-video { position: relative; }
+.wf-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 72upx; height: 72upx; border-radius: 50%; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 2; }
+.wf-play-icon { color: #fff; font-size: 30upx; margin-left: 6upx; }
+.wf-video-tag { position: absolute; left: 10upx; top: 10upx; z-index: 2; background: rgba(0,0,0,.55); color: #fff; font-size: 20upx; padding: 2upx 12upx; border-radius: 8upx; }
 .wf-mask { position: absolute; left: 0; right: 0; bottom: 0; height: 60upx; background: linear-gradient(transparent, rgba(0,0,0,.45)); border-radius: 0 0 14upx 14upx; }
 .wf-title { position: absolute; left: 12upx; bottom: 8upx; right: 12upx; color: #fff; font-size: 22upx; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 

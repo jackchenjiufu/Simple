@@ -9,7 +9,6 @@ vendor/
 .env
 *.ipa
 .hermes/
-server/api/check_update_patched.php
 server/
 admin-web/
 
@@ -25,3 +24,27 @@ cleanup_final.py
 *.hermes-tmp.*
 keystore/
 *.bak*
+
+# ===== 2026-10-18 上传 GitHub 前补充 =====
+# 大文件 / 生成物（仓库体积）
+probe-pcb.zip
+probe-pcb/research/
+admin-vue-dist.tar.gz
+server-node/dist/
+server-node/node_modules/
+_backup/
+_tmp/
+__pycache__/
+*.pyc
+*.pem
+*.jks
+
+# 一次性调试脚本（含测试账号口令 / 服务器 IP）
+test_login*.js
+verify_recommend_page.js
+backup_fetch.js
+list_admin.js
+deploy_admin_vue_pwd.js
+deploy_admin_vue_clean.js
+deploy_admin_vue_only.js
+deploy_recommend_backend.js
