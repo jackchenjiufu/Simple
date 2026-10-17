@@ -17,6 +17,7 @@
 				<view class="ad-row"><text class="ad-label">DeepSeek 模型</text><text class="ad-value">{{ ai.model || '-' }}</text></view>
 				<view class="ad-row"><text class="ad-label">GLM 识图模型</text><text class="ad-value">{{ ai.glm_vision_model || '-' }}</text></view>
 				<view class="ad-row"><text class="ad-label">GLM Key</text><text class="ad-value">{{ ai.glm_api_key || '未配置' }}</text></view>
+				<view class="ad-row"><text class="ad-label">说明</text><text class="ad-value" style="font-size:22upx;color:#909399">Key 已脱敏，仅显示前后各 4 位</text></view>
 				<view class="ad-btn-row">
 					<text class="ad-btn ad-btn-primary" @click="testVision">测试识图</text>
 					<text class="ad-btn ad-btn-plain" @click="loadAi">刷新</text>

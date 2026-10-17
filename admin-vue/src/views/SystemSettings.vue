@@ -41,10 +41,29 @@
         </div>
         <div class="mc-form-row"><label>Chat 接口</label><input v-model="aiConfig.base_url" placeholder="https://api.deepseek.com/v1" /></div>
         <div class="mc-form-row"><label>Chat 模型</label><input v-model="aiConfig.model" placeholder="deepseek-chat" /></div>
-        <div class="mc-form-row"><label>API Key</label><input v-model="aiConfig.api_key" type="text" placeholder="sk-..." /></div>
+        <div class="mc-form-row"><label>API Key</label>
+          <template v-if="!keyEdit.chat">
+            <input :value="aiConfig.api_key" readonly placeholder="未配置" />
+            <span class="mc-key-btn" @click="startKeyEdit('chat')">{{ keySet.chat ? '更换' : '填写' }}</span>
+          </template>
+          <template v-else>
+            <input v-model="newKey.chat" placeholder="粘贴新的 Key" />
+            <span class="mc-key-btn" @click="cancelKeyEdit('chat')">取消</span>
+          </template>
+        </div>
         <div class="mc-form-row"><label>GLM 接口</label><input v-model="aiConfig.glm_base_url" placeholder="https://open.bigmodel.cn/api/paas/v4/" /></div>
         <div class="mc-form-row"><label>GLM 模型</label><input v-model="aiConfig.glm_vision_model" placeholder="glm-4v-flash" /></div>
-        <div class="mc-form-row"><label>GLM Key</label><input v-model="aiConfig.glm_api_key" type="text" placeholder="GLM API Key（用于图片自动打标）" /></div>
+        <div class="mc-form-row"><label>GLM Key</label>
+          <template v-if="!keyEdit.glm">
+            <input :value="aiConfig.glm_api_key" readonly placeholder="未配置" />
+            <span class="mc-key-btn" @click="startKeyEdit('glm')">{{ keySet.glm ? '更换' : '填写' }}</span>
+          </template>
+          <template v-else>
+            <input v-model="newKey.glm" placeholder="粘贴新的 GLM Key" />
+            <span class="mc-key-btn" @click="cancelKeyEdit('glm')">取消</span>
+          </template>
+        </div>
+        <div class="mc-key-tip">Key 只回显前 4 位和后 4 位，不点「更换」直接保存不会改动原 Key。</div>
         <div class="mc-actions">
           <span class="mc-act ok" @click="saveAiConfig">保存配置</span>
           <span class="mc-act" @click="testAiConfig('chat')">测试 Chat</span>
@@ -201,7 +220,16 @@
               <el-input v-model="aiConfig.model" placeholder="deepseek-chat" />
             </el-form-item>
             <el-form-item label="API Key">
-              <el-input v-model="aiConfig.api_key" type="text" placeholder="sk-..." />
+              <div style="display:flex;gap:8px;width:100%;align-items:center">
+                <template v-if="!keyEdit.chat">
+                  <el-input :model-value="aiConfig.api_key" readonly placeholder="未配置" style="flex:1" />
+                  <el-button @click="startKeyEdit('chat')">{{ keySet.chat ? '更换' : '填写' }}</el-button>
+                </template>
+                <template v-else>
+                  <el-input v-model="newKey.chat" placeholder="粘贴新的 DeepSeek Key（sk-...）" clearable style="flex:1" />
+                  <el-button @click="cancelKeyEdit('chat')">取消</el-button>
+                </template>
+              </div>
             </el-form-item>
             <el-divider content-position="left" style="margin:8px 0 12px">🖼 GLM 识图（AI 打标）</el-divider>
             <el-form-item label="接口地址">
@@ -211,8 +239,20 @@
               <el-input v-model="aiConfig.glm_vision_model" placeholder="glm-4v-flash" />
             </el-form-item>
             <el-form-item label="API Key">
-              <el-input v-model="aiConfig.glm_api_key" type="text" placeholder="GLM API Key（用于图片自动打标）" />
+              <div style="display:flex;gap:8px;width:100%;align-items:center">
+                <template v-if="!keyEdit.glm">
+                  <el-input :model-value="aiConfig.glm_api_key" readonly placeholder="未配置" style="flex:1" />
+                  <el-button @click="startKeyEdit('glm')">{{ keySet.glm ? '更换' : '填写' }}</el-button>
+                </template>
+                <template v-else>
+                  <el-input v-model="newKey.glm" placeholder="粘贴新的 GLM Key" clearable style="flex:1" />
+                  <el-button @click="cancelKeyEdit('glm')">取消</el-button>
+                </template>
+              </div>
             </el-form-item>
+            <div style="margin:-6px 0 10px;font-size:12px;color:#909399;line-height:1.6">
+              Key 只回显前 4 位和后 4 位，明文仅保存在服务器 .env；不点「更换」直接保存不会改动原 Key。
+            </div>
             <el-form-item>
               <el-button type="primary" :loading="savingAi" @click="saveAiConfig">保存配置</el-button>
               <el-button :loading="testingAi" @click="testAiConfig('chat')" style="margin-left:8px">测试 Chat</el-button>
@@ -378,17 +418,12 @@ const cpuText = computed(() => {
 const loadSysInfo = async () => {
   loadingSys.value = true
   try {
-    const [mr, ac] = await Promise.all([
-      api.get('/system_monitor.php', { params: { type: 'overview' } }),
-      api.post('/ai_proxy.php', { action: 'get_config' })
-    ])
+    const mr = await api.get('/system_monitor.php', { params: { type: 'overview' } })
     if (mr.data.code === 200) {
       sysInfo.value = mr.data.data.server_status
       apiTimes.value = mr.data.data.api_response_times || []
     }
-    if (ac.data.code === 200) {
-      aiConfig.value = ac.data.data || aiConfig.value
-    }
+    await loadAiConfig()
   } catch (e) { /* ignore */ }
   loadingSys.value = false
 }
@@ -443,21 +478,51 @@ const runCrawler = async (key) => {
   crawlingKey.value = null
 }
 
+// ===== 密钥展示：后端只回掩码，默认只读；点「更换」才能输入新 Key =====
+const keyEdit = ref({ chat: false, glm: false })
+const newKey = ref({ chat: '', glm: '' })
+const keySet = ref({ chat: false, glm: false })
+const startKeyEdit = (k) => { keyEdit.value[k] = true; newKey.value[k] = '' }
+const cancelKeyEdit = (k) => { keyEdit.value[k] = false; newKey.value[k] = '' }
+
+// 拉取 AI 配置（Key 为掩码，明文只在服务器 .env 里）
+const loadAiConfig = async () => {
+  try {
+    const ac = await api.post('/ai_proxy.php', { action: 'get_config' })
+    if (ac.data.code === 200) {
+      const d = ac.data.data || {}
+      aiConfig.value = { ...aiConfig.value, ...d }
+      keySet.value = { chat: !!d.api_key_set, glm: !!d.glm_api_key_set }
+      keyEdit.value = { chat: false, glm: false }
+      newKey.value = { chat: '', glm: '' }
+    }
+  } catch (e) { /* ignore */ }
+}
+
 // 保存 AI 配置
 const saveAiConfig = async () => {
   savingAi.value = true
   try {
-    const r = await api.post('/ai_proxy.php', {
+    const payload = {
       action: 'save_config',
       base_url: aiConfig.value.base_url,
       model: aiConfig.value.model,
-      api_key: aiConfig.value.api_key,
       glm_base_url: aiConfig.value.glm_base_url,
-      glm_vision_model: aiConfig.value.glm_vision_model,
-      glm_api_key: aiConfig.value.glm_api_key
-    })
-    if (r.data.code === 200) { ElMessage.success('已保存'); aiResult.value = null }
-    else ElMessage.error(r.data.message || '保存失败')
+      glm_vision_model: aiConfig.value.glm_vision_model
+    }
+    // 只有点过「更换」并真的填了新值才提交 Key，避免把空值/掩码写回 .env
+    const nc = newKey.value.chat.trim()
+    const ng = newKey.value.glm.trim()
+    if (keyEdit.value.chat && nc) payload.api_key = nc
+    if (keyEdit.value.glm && ng) payload.glm_api_key = ng
+    const r = await api.post('/ai_proxy.php', payload)
+    if (r.data.code === 200) {
+      ElMessage.success(keyEdit.value.chat || keyEdit.value.glm ? '已保存，Key 已更新' : '已保存')
+      aiResult.value = null
+      await loadAiConfig()   // 刷新为新的掩码
+    } else {
+      ElMessage.error(r.data.message || '保存失败')
+    }
   } catch (e) { ElMessage.error('保存失败') }
   savingAi.value = false
 }
@@ -498,6 +563,21 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ===== 密钥脱敏：只读回显 + 「更换」小按钮 ===== */
+.mc-key-btn {
+  flex: none;
+  font-size: 12px;
+  color: #3370ff;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.mc-key-btn:active { opacity: .6; }
+.mc-key-tip {
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.6;
+  padding: 0 2px 10px;
+}
 /* ===== 移动端卡片样式修正（仅作用于本页 isMobile 分支，沿用全局 .mc-* 类名） ===== */
 /* 文本缩略图：小尺寸 + 品牌蓝底（原 .mc-thumb 默认 64px 灰底对纯文字卡过大） */
 .mc-thumb.mc-thumb-empty {
