@@ -610,6 +610,7 @@
         </view>
       </view>
     </block>
+    <update-sheet />
   </view>
 </template>
 
