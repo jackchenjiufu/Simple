@@ -250,7 +250,7 @@ header('X-API-Version: v' . $apiVersion);
 
 ```js
 const config = {
-  host: '139.196.185.197',
+  host: 'your-domain.com',
   port: '7070',
   sitePath: '/doo',
   /** 0=不启用版本段(现状) / 2=走 /api/v2/ */

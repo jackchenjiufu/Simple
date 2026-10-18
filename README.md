@@ -55,7 +55,7 @@ mysql -u root -p < server/sql/doo-app.sql
 ```bash
 # 初始化
 curl http://localhost/server/api/init_database.php
-curl http://localhost/server/api/reset_admin.php        # 管理员 → REDACTED_ADMIN_PASSWORD
+curl http://localhost/server/api/reset_admin.php        # 重置管理员密码（部署后自行设定，勿用示例值）
 ```
 
 ## API 概览（80+ 接口）
@@ -78,7 +78,7 @@ curl http://localhost/server/api/reset_admin.php        # 管理员 → REDACTED
 
 ### WebSocket（服务端）
 
-- `websocket/ws-server.js`：Node.js 推送服务（ws://139.196.185.197:1884）
+- `websocket/ws-server.js`：Node.js 推送服务（ws://your-domain.com:1884）
 - ⚠️ App 端当前**未接入** WebSocket，私聊走轮询（chat.vue 5s / conversations.vue 10s）
 
 ## 响应格式
@@ -107,7 +107,7 @@ curl http://localhost/server/api/reset_admin.php        # 管理员 → REDACTED
 **后端**: PHP + MySQL + PDO + PHPMailer + Node.js (WebSocket)  
 **前端**: uni-app (Vue 3) + Vite + Capacitor 6 → Android APK  
 **后台**: Vue 3 SPA + 原生 HTML/JS/CSS 双版本  
-**管理入口**: http://139.196.185.197:7070/doo/admin-vue/  
+**管理入口**: http://your-domain.com:7070/doo/admin-vue/  
 **配置**: `E:/poo/doo/server/config/`
 
 ## License

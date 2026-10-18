@@ -13,15 +13,20 @@ const PING_INTERVAL = 8000; // 8秒心跳
 const userConnections = new Map();
 const pendingMessages = new Map();
 
-// 数据库配置：从环境变量读取，避免把真实密码提交到源码。
+// 数据库配置：一律从环境变量读取，不在源码里留任何默认密码。
 // 启动示例（Linux）：
 //   DB_HOST=localhost DB_USER=root DB_PASS=your_pass DB_NAME=doo-app node ws-server.js
 // Windows PowerShell：
 //   $env:DB_PASS='your_pass'; node ws-server.js
+const DB_PASS = process.env.DB_PASS;
+if (!DB_PASS) {
+    console.error('[ws-server] 缺少环境变量 DB_PASS，拒绝启动。请先设置后重试。');
+    process.exit(1);
+}
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || 'REDACTED_DB_PASSWORD', // TODO: 生产环境务必改用环境变量注入，移除该默认值
+    password: DB_PASS,
     database: process.env.DB_NAME || 'doo-app',
     charset: 'utf8mb4'
 };
