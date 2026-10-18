@@ -4,11 +4,16 @@
 # 与 pack-app.sh 共用同一套 5.15 离线编译器：热更新包也必须带正确的 compilerVersion，
 # 否则装进 App 后运行时仍会比对版本并弹窗告警。
 #
-# 版本号：直接取 manifest.json 当前值（不升号）。wgt 的 versionCode 与已装 APK 相同，
-# plus.runtime.install(force:true) 可正常覆盖安装，用户无需卸载重装。
+# 版本号规则（2026-10-18 起）：
+#   版本号只属于 APK。wgt 不单独升号，而是「当前 APK 版本 + '.' + 构建时分」，
+#   例如 APK 2.9.4 上打的热更新包版本是 2.9.4.1855。
+#   原因：wgt 抢号和 APK 同号会导致两个问题 —— APK 号被跳空，
+#   以及同号的热更新包因为「版本没变大」装不进去。
+#   wgt 的 versionCode 与已装 APK 相同，plus.runtime.install(force:true) 可覆盖安装。
 #
 # 用法: bash build/pack-wgt.sh
 # 产物: /c/Users/chenj/app_wgt_v<版本>_<时间戳>.wgt
+#       版本号写在 /c/Users/chenj/app_wgt_version.txt
 
 set -euo pipefail
 
@@ -24,7 +29,10 @@ echo "== SDK 版本: $SDK_VER"
 
 VN=$(python -c "import json,io;print(json.load(io.open(r'E:\\poo\\doo\\manifest.json',encoding='utf-8'))['versionName'])")
 VC=$(python -c "import json,io;print(json.load(io.open(r'E:\\poo\\doo\\manifest.json',encoding='utf-8'))['versionCode'])")
-echo "== wgt 版本: $VN ($VC)  [不升号]"
+STAMP_NAME=$(date +%Y%m%d%H%M)
+# wgt 版本 = APK 版本 + 构建时分（保证同号 APK 上多次热更新也能按版本递增装进去）
+WGT_VER="$VN.${STAMP_NAME:8:4}"
+echo "== wgt 版本: $WGT_VER （APK $VN / $VC，不升 APK 号）"
 
 echo "== 编译前端资源（compilerVersion=$SDK_VER）"
 rm -rf "$OUT"
@@ -105,8 +113,8 @@ else
   echo "!! 产物里没有超管权限守卫，说明 perm.js 没被编进来，终止"; exit 1
 fi
 
-STAMP_NAME=$(date +%Y%m%d%H%M)
 WGT="/c/Users/chenj/app_wgt_v${VN//./_}_${STAMP_NAME}.wgt"
+echo "$WGT_VER" > /c/Users/chenj/app_wgt_version.txt
 
 # wgt 就是 app-plus 产物的 zip（根目录直接是 manifest.json / app-service.js）
 # 必须写入目录条目：plus.runtime.install 的解压器不会自动创建父目录，

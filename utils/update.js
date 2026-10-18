@@ -11,10 +11,19 @@ let _forVer = ''
 /** 本次运行内已点「稍后再说」的版本号 */
 const _dismissed = {}
 
-/** 当前实际运行版本：热更新装过就用 wgtVersion，否则用 APK 版本 */
+/**
+ * 当前运行版本（用于展示）：装过热更新就显示资源包版本，否则显示安装包版本。
+ * 注意：**不能用它判断要不要装全量包** —— 热更新过的设备这里会比安装包版本高，
+ * 用它判断会让这些设备永远收不到 APK。判断全量包请用 apkVersion()。
+ */
 export function currentVersion() {
 	const stored = uni.getStorageSync('wgtVersion') || ''
 	if (stored) return stored
+	return apkVersion()
+}
+
+/** 安装包（APK）版本：来自 manifest 的 versionName，热更新不改变它 */
+export function apkVersion() {
 	try {
 		const sys = uni.getSystemInfoSync()
 		return sys.appVersion || '1.0.0'
@@ -23,13 +32,22 @@ export function currentVersion() {
 	}
 }
 
+/** 已安装的热更新资源包版本，没装过返回空串 */
+export function wgtVersion() {
+	return uni.getStorageSync('wgtVersion') || ''
+}
+
 /**
  * 拉取更新信息（带缓存，同一次运行同版本只请求一次）
+ * 同时上报两个版本号：服务端用 appVersion 判断要不要推全量包，
+ * 用 wgtVersion 判断资源包是否已是最新，两者互不干扰。
  * @param {boolean} force 忽略缓存重新请求
  * @returns {Promise<object|null>} check_update.php 的 data 字段
  */
 export function fetchUpdateInfo(force) {
 	const cur = currentVersion()
+	const apk = apkVersion()
+	const wgt = wgtVersion()
 	if (!force && _data && _forVer === cur) return Promise.resolve(_data)
 	if (!force && _promise && _forVer === cur) return _promise
 	_forVer = cur
@@ -37,7 +55,7 @@ export function fetchUpdateInfo(force) {
 		uni.request({
 			url: apiConfig.baseUrl + 'check_update.php',
 			method: 'POST',
-			data: { currentVersion: cur },
+			data: { currentVersion: cur, appVersion: apk, wgtVersion: wgt },
 			success: function(res) {
 				try {
 					const r = typeof res.data === 'string' ? JSON.parse(res.data) : res.data

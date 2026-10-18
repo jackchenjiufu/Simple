@@ -172,6 +172,8 @@ export default {
 			status: 'checking',
 			expanded: false,
 			currentVersion: '1.0.0',
+			/** 已装资源包版本（热更新），仅供展示，不参与版本比较 */
+			wgtVersion: '',
 			changelog: [],
 			updateInfo: {
 				latestVersion: '',
@@ -251,7 +253,11 @@ export default {
 					: '准备中…';
 			}
 			if (this.status === 'available') return '可更新到 ' + this.updateInfo.latestVersion + ' · 官方渠道';
-			return '安装版本 ' + this.currentVersion + ' · 官方渠道';
+			var meta = '安装版本 ' + this.currentVersion;
+			if (this.wgtVersion && compareVersion(this.wgtVersion, this.currentVersion) > 0) {
+				meta += ' · 资源包 ' + this.wgtVersion;
+			}
+			return meta + ' · 官方渠道';
 		},
 		speedText() {
 			if (!this.downloadSpeed) return '连接中…';
@@ -272,9 +278,9 @@ export default {
 	onLoad() {
 		const systemInfo = uni.getSystemInfoSync();
 		this.statusBarHeight = systemInfo.statusBarHeight || 0;
-		var apkVer = systemInfo.appVersion || '1.0.0';
-		var wgtVer = uni.getStorageSync('wgtVersion') || '';
-		this.currentVersion = wgtVer && compareVersion(wgtVer, apkVer) > 0 ? wgtVer : apkVer;
+		// 「当前版本」= 安装包版本。热更新只改资源，不算版本升级，单独一行展示
+		this.currentVersion = systemInfo.appVersion || '1.0.0';
+		this.wgtVersion = uni.getStorageSync('wgtVersion') || '';
 		this.probeLan();
 		this.checkUpdate();
 	},
@@ -318,12 +324,13 @@ export default {
 			this.status = 'checking';
 			try {
 				var wgtVersion = uni.getStorageSync('wgtVersion') || '';
+				// currentVersion 仅为兼容旧后端；新后端按 appVersion 判断全量包
 				var ver = wgtVersion && compareVersion(wgtVersion, this.currentVersion) > 0
 					? wgtVersion : this.currentVersion;
 				const res = await uni.request({
 					url: apiConfig.baseUrl + 'check_update.php',
 					method: 'POST',
-					data: { currentVersion: ver },
+					data: { currentVersion: ver, appVersion: this.currentVersion, wgtVersion: wgtVersion },
 					header: { 'Content-Type': 'application/json' }
 				});
 				if (res.statusCode === 200) {

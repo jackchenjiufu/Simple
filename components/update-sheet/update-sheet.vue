@@ -40,7 +40,7 @@
  */
 import { compareVersion } from '../../utils/version.js';
 import {
-	currentVersion,
+	apkVersion,
 	fetchUpdateInfo,
 	splitUpdateDesc,
 	dismissVersion,
@@ -68,8 +68,10 @@ export default {
 			const self = this;
 			fetchUpdateInfo().then(function(d) {
 				if (!d || !d.hasUpdate) return;
-				const cur = currentVersion();
-				if (compareVersion(d.latestVersion, cur) <= 0) return;
+				// 比对安装包版本，不是运行版本：热更新过的设备 wgt 号可能已高于 APK 号，
+				// 拿 currentVersion 比会把它们误判成「已最新」，永远收不到全量包。
+				const apk = apkVersion();
+				if (compareVersion(d.latestVersion, apk) <= 0) return;
 				const url = d.downloadUrl || d.apkDownloadUrl || '';
 				if (!url) return;
 				const force = parseInt(d.forceUpdate || 0, 10) === 1;
