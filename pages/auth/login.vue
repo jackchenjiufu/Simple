@@ -87,6 +87,7 @@
 				</view>
 			</view>
 		</view>
+		<update-sheet />
 	</view>
 </template>
 

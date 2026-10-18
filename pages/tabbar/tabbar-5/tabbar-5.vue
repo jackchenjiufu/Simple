@@ -93,6 +93,7 @@
 				<text class="guest-tx">登录后可以换封面、看自己的动态</text>
 			</view>
 		</view>
+		<update-sheet />
 	</view>
 </template>
 

@@ -14,15 +14,15 @@ import apiConfig from '../../utils/api.js';
 export default {
 	data() {
 		return {
-			enabled: false,
+			enabled: true,
 			title: '',
 			subtitle: '',
 			logoUrl: '',
-			imageUrl: '',
-			bgColor: '#ffffff',
+			imageUrl: '/static/img/splash-default.png',
+			bgColor: '#FFFFFF',
 			titleColor: '#ffffff',
 			subtitleColor: 'rgba(255,255,255,0.7)',
-			delayMs: 300
+			delayMs: 900
 		};
 	},
 	onLoad() {
@@ -45,9 +45,12 @@ export default {
 						this.bgColor = d.bg_color || '#ffffff';
 						this.titleColor = d.title_color || '#ffffff';
 						this.subtitleColor = d.subtitle_color || 'rgba(255,255,255,0.7)';
-						this.delayMs = typeof d.delay_ms === 'number' ? d.delay_ms : 300;
+						this.delayMs = typeof d.delay_ms === 'number' ? d.delay_ms : this.delayMs;
 						this.logoUrl = d.logo_url ? apiConfig.getServerUrl(d.logo_url) : '';
-						this.imageUrl = d.image_url ? apiConfig.getServerUrl(d.image_url) : '';
+						// 内置图兜底：后台没配 image_url 时继续用包内的 static/img/splash-default.png
+						if (d.image_url) {
+							this.imageUrl = apiConfig.getServerUrl(d.image_url);
+						}
 					}
 				}
 			} catch (e) {}

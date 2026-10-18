@@ -181,6 +181,18 @@
 			</swiper-item>
 		</swiper>
 
+		<!-- 生日祝福卡片（生日当天首启弹一次） -->
+		<view class="bday-mask" v-if="bday.show" @click="closeBday">
+			<view class="bday-card" :style="{ background: 'linear-gradient(160deg,' + bday.from + ',' + bday.to + ')' }" @click.stop>
+				<text class="bday-emoji">{{ bday.emoji }}</text>
+				<text class="bday-title">{{ bday.title }}</text>
+				<text class="bday-msg">{{ bday.message }}</text>
+				<text class="bday-sub" v-if="bday.sub">{{ bday.sub }}</text>
+				<view class="bday-btn" @click="closeBday">{{ bday.button }}</view>
+			</view>
+		</view>
+
+		<update-sheet />
 	</view>
 </template>
 
@@ -228,7 +240,9 @@ export default {
 			agentInput: '',
 			agentMsgs: [],
 			agentLoading: false,
-			agentScrl: ''
+			agentScrl: '',
+			// 生日祝福卡片（当天首启弹一次）
+			bday: { show: false, emoji: '🎂', title: '', message: '', sub: '', button: '谢谢', from: '#2E6BF0', to: '#8B5CF6' }
 		};
 	},
 	computed: {
@@ -278,6 +292,7 @@ export default {
 	onShow() {
 		// 回到页面优先读缓存秒开；下拉刷新/切分类可强制获取最新
 		if (this.activeTab === 'articles') this.loadArticles(true);
+		this.checkBirthday();
 	},
 	onUnload() {
 		// 移除键盘监听，防止内存泄漏
@@ -287,6 +302,45 @@ export default {
 		}
 	},
 	methods: {
+		// ===== 生日祝福 =====
+		checkBirthday() {
+			if (!uni.getStorageSync('isLoggedIn')) return;
+			const todayKey = localDateString();
+			if (uni.getStorageSync('bdayCardShown') === todayKey) return;
+			if (this._bdayChecking) return;
+			this._bdayChecking = true;
+			const token = uni.getStorageSync('token') || '';
+			uni.request({
+				url: API_BASE + 'birthday.php',
+				method: 'GET',
+				header: token ? { 'Authorization': 'Bearer ' + token } : {},
+				timeout: 8000,
+				success: (res) => {
+					const d = res.data && res.data.data;
+					if (!d || !d.is_birthday || !Number(d.enabled)) return;
+					this.bday = {
+						show: true,
+						emoji: d.emoji || '🎂',
+						title: this.bdayText(d.title || '生日快乐', d.name),
+						message: this.bdayText(d.message || '', d.name),
+						sub: this.bdayText(d.sub_message || '', d.name),
+						button: d.button_text || '谢谢',
+						from: d.bg_from || '#2E6BF0',
+						to: d.bg_to || '#8B5CF6'
+					};
+					uni.setStorageSync('bdayCardShown', todayKey);
+				},
+				complete: () => { this._bdayChecking = false; }
+			});
+		},
+		bdayText(tpl, name) {
+			const n = name || '';
+			return String(tpl || '').replace(/\{name\}/g, n);
+		},
+		closeBday() {
+			this.bday.show = false;
+		},
+
 		// ===== 首页（轮播 + 公告）=====
 		// 下拉刷新：重新加载轮播 + 公告 + 推荐（绕开 Redis 缓存，强制取最新）
 		onHomeRefresh() {
@@ -901,4 +955,15 @@ export default {
 .notice-icon { font-size: 26upx; }
 .notice-text { flex: 1; font-size: 24upx; color: #374151; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .notice-arrow { font-size: 28upx; color: #9ca3af; }
+
+/* ===== 生日祝福卡片 ===== */
+.bday-mask { position: fixed; left: 0; right: 0; top: 0; bottom: 0; background: rgba(12, 22, 48, .55); display: flex; align-items: center; justify-content: center; z-index: 9998; animation: bdayFade .22s ease; }
+@keyframes bdayFade { from { opacity: 0 } to { opacity: 1 } }
+.bday-card { width: 600upx; border-radius: 32upx; padding: 56upx 40upx 36upx; display: flex; flex-direction: column; align-items: center; box-shadow: 0 24upx 60upx rgba(10, 24, 60, .35); animation: bdayUp .3s cubic-bezier(.32, .72, 0, 1); }
+@keyframes bdayUp { from { transform: translateY(40upx) scale(.94); opacity: 0 } to { transform: none; opacity: 1 } }
+.bday-emoji { font-size: 84upx; line-height: 1; }
+.bday-title { margin-top: 26upx; font-size: 40upx; font-weight: 700; color: #fff; text-align: center; }
+.bday-msg { margin-top: 18upx; font-size: 26upx; line-height: 1.75; color: rgba(255,255,255,.94); text-align: center; }
+.bday-sub { margin-top: 14upx; font-size: 24upx; color: rgba(255,255,255,.78); text-align: center; }
+.bday-btn { margin-top: 44upx; height: 84upx; line-height: 84upx; padding: 0 64upx; border-radius: 42upx; background: #fff; color: #2E6BF0; font-size: 28upx; font-weight: 600; }
 </style>

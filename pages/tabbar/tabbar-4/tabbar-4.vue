@@ -36,6 +36,7 @@
 				<view class="empty" v-if="list.length === 0"><text>暂无公告</text></view>
 			</view>
 		</scroll-view>
+		<update-sheet />
 	</view>
 </template>
 

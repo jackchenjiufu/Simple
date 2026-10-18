@@ -22,9 +22,18 @@
 					<text class="info-label">昵称</text>
 					<input class="info-input" v-model="nickname" placeholder="请输入昵称" maxlength="20" />
 				</view>
-				<view class="info-item noborder">
+				<view class="info-item">
 					<text class="info-label">邮箱</text>
 					<input class="info-input" v-model="email" placeholder="用于找回密码" type="email" maxlength="120" />
+				</view>
+				<view class="info-item noborder">
+					<text class="info-label">生日</text>
+					<picker class="info-picker" mode="date" :value="birthday || '2000-01-01'" start="1900-01-01" :end="todayStr" @change="onBirthdayChange">
+						<view class="info-right">
+							<text class="info-value">{{ birthday || '未设置' }}</text>
+							<text class="info-arrow">›</text>
+						</view>
+					</picker>
 				</view>
 			</view>
 
@@ -98,13 +107,15 @@ export default {
 	data() {
 		return {
 			statusBarHeight: 0, isLoggedIn: false, userInfo: null, avatarUrl: apiConfig.getServerUrl(config.defaultAvatar),
-			nickname: '', email: '', registerTime: '', showUploadModal: false, userRole: '', growth: 0, growthLevel: 0, growthPercent: 0, growthTip: '', growthDetail: {},
+			nickname: '', email: '', birthday: '', todayStr: '', registerTime: '', showUploadModal: false, userRole: '', growth: 0, growthLevel: 0, growthPercent: 0, growthTip: '', growthDetail: {},
 		};
 	},
 	onLoad() {
 		const info = uni.getSystemInfoSync();
 		this.statusBarHeight = info.statusBarHeight || 0;
+		this.todayStr = this.formatDate(Date.now());
 		this.loadUserInfo();
+		this.loadBirthday();
 		this.loadGrowth();
 		loadRoles();
 	},
@@ -122,11 +133,29 @@ export default {
 				this.nickname = ui.nickname || ui.username || '';
 				this.email = ui.email || '';
 				this.avatarUrl = this.fixImageUrl(ui.avatar) || apiConfig.getServerUrl(config.defaultAvatar);
+				this.birthday = (ui.birthday || '').slice(0, 10);
 				this.registerTime = this.formatDate(ui.created_at);
 			}
 		},
 		fixImageUrl(url) {
 			return apiConfig.getImageUrl(url);
+		},
+		// 从服务端取本人最新生日（登录返回里可能没有该字段）
+		loadBirthday() {
+			const token = uni.getStorageSync('token') || '';
+			if (!token) return;
+			uni.request({
+				url: apiConfig.baseUrl + 'birthday.php',
+				method: 'GET',
+				header: { 'Authorization': 'Bearer ' + token },
+				success: (res) => {
+					const d = res.data && res.data.data;
+					if (d && d.birthday) this.birthday = String(d.birthday).slice(0, 10);
+				}
+			});
+		},
+		onBirthdayChange(e) {
+			this.birthday = e.detail.value;
 		},
 		// 加载成长值（新等级机制：发帖×20 + 有效评论×2 + 在线每10分钟+1）
 		loadGrowth() {
@@ -200,14 +229,18 @@ export default {
 			}
 			uni.showLoading({ title:'保存中...' });
 			try {
+				const token = uni.getStorageSync('token') || '';
 				const data = { user_id: this.userInfo.id, nickname: this.nickname, avatar: this.avatarUrl };
+				if (token) data.auth_token = token;
 				if (this.email) data.email = this.email;
+				if (this.birthday) data.birthday = this.birthday;
 				const res = await uni.request({ url: apiConfig.baseUrl + 'update_user.php', method:'POST', data,
 					header: {'Content-Type':'application/json'} });
 				uni.hideLoading();
 				if (res.statusCode === 200) {
 					const updated = {...this.userInfo, nickname: this.nickname, avatar: this.avatarUrl};
 					if (this.email) updated.email = this.email;
+					if (this.birthday) updated.birthday = this.birthday;
 					uni.setStorageSync('userInfo', updated);
 					uni.showToast({ title:'保存成功', icon:'success' });
 				} else { uni.showToast({ title: res.data?.message||'保存失败', icon:'none' }); }
@@ -260,6 +293,7 @@ export default {
 .login-text { font-size: 28upx; color: #909398; }
 .login-btn { width: 300upx; height: 80upx; line-height: 80upx; background: #3071f6; color: #fff; font-size: 28upx; border-radius: 16upx; border: none; }
 .info-input { flex:1; height:56upx; font-size:28upx; color:#303132; text-align:right; border:none; background:transparent; }
+.info-picker { flex: 1; display: flex; justify-content: flex-end; }
 .role-badge { font-size: 20upx; padding: 2upx 12upx; border-radius: 20upx; margin-left: 12upx; flex-shrink: 0; }
 .role-badge.super { color: #b8860b; background: #fff8e6; border: 1upx solid #f0d48a; }
 .role-badge.admin { color: #1b44a6; background: #f0f5ff; border: 1upx solid #b8cdf5; }
