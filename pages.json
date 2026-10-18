@@ -353,7 +353,7 @@
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app",
+		"navigationBarTitleText": "Simple",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
 	},
@@ -396,9 +396,9 @@
 		]
 	},
 	"preloadRule": {
-		"pages/tabbar/tabbar-1/tabbar-1": {
+		"pages/tabbar/tabbar-5/tabbar-5": {
 			"network": "all",
-			"preload": true
+			"packages": ["pages/admin"]
 		}
 	}
 }

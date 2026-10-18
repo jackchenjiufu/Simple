@@ -4,11 +4,36 @@
  */
 
 /* 重置样式 */
+/* #ifndef MP-WEIXIN */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
+/* #endif */
+/* #ifdef MP-WEIXIN */
+/* WXSS 不支持 * 通配选择器。
+   这里用元素选择器逐个覆盖，等价于 * 的效果：
+   - 元素选择器权重 (0,0,1) 低于 class (0,1,0)，不会盖掉各页面的自定义样式
+   - 必须恢复 box-sizing:border-box，否则 width:100% + padding 会撑出屏幕
+     （nav-bar、body、button 这类元素会明显变宽） */
+page {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+page, view, text, image, button, input, textarea, label, form,
+scroll-view, swiper, swiper-item, navigator, picker, video,
+checkbox, checkbox-group, radio, radio-group, icon, rich-text {
+  box-sizing: border-box;
+}
+view, text, image, button, input, textarea, label, form,
+scroll-view, swiper, swiper-item, navigator, picker, video,
+checkbox, radio, icon, rich-text {
+  margin: 0;
+  padding: 0;
+}
+/* #endif */
 
 /* 颜色变量 */
 :root {
@@ -436,29 +461,29 @@ h3 {
   animation: slideInRight var(--transition-normal) ease-out;
 }
 
-/* 响应式工具类 */
+/* 响应式工具类（类名用 - 代替 :，WXSS 不支持转义冒号） */
 @media (max-width: 768px) {
-  .sm\:text-xs {
+  .sm-text-xs {
     font-size: var(--font-xs);
   }
   
-  .sm\:text-sm {
+  .sm-text-sm {
     font-size: var(--font-sm);
   }
   
-  .sm\:text-base {
+  .sm-text-base {
     font-size: var(--font-base);
   }
   
-  .sm\:flex-col {
+  .sm-flex-col {
     flex-direction: column;
   }
   
-  .sm\:items-center {
+  .sm-items-center {
     align-items: center;
   }
   
-  .sm\:justify-center {
+  .sm-justify-center {
     justify-content: center;
   }
 }

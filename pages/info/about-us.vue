@@ -1,130 +1,197 @@
 <template>
-	<view class="content">
+	<view class="page">
 		<view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
-		<!-- 深蓝色头部（登录页面风格） -->
-		<view class="header-section">
-			<view class="nav-bar">
-				<view class="nav-back" @click="goBack">
-					<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
-				</view>
-				<text class="nav-title">关于我们</text>
-				<view class="nav-placeholder"></view>
+		<!-- 导航条 -->
+		<view class="nav">
+			<view class="nav-back" @click="goBack">
+				<image class="back-icon" src="/static/img/icons/back.png" mode="aspectFit"></image>
 			</view>
-			<view class="header-content">
-				<view class="header-left">
-					<text class="header-greeting">Simple</text>
-					<text class="header-title">关于我们</text>
-					<text class="header-subtitle">了解应用更多信息</text>
-				</view>
-				<view class="header-right">
-					<view class="character-area">
-						<view class="char-circle char-circle-1"></view>
-						<view class="char-circle char-circle-2"></view>
-						<view class="char-body"></view>
-						<view class="char-head"></view>
+			<text class="nav-title">关于我们</text>
+			<view class="nav-ph"></view>
+		</view>
+
+		<scroll-view class="body" scroll-y :show-scrollbar="false">
+			<!-- 品牌区 -->
+			<view class="brand rise a1">
+				<image class="mark rise-scale a2" src="/static/img/app-icon.png" mode="aspectFit"></image>
+				<text class="brand-name">Simple</text>
+				<view class="chip"><view class="chip-dot"></view><text class="chip-t">v{{ currentVersion }}</text></view>
+				<text class="brand-sub">内容、工时、设备，一个 App</text>
+			</view>
+
+			<!-- 应用 -->
+			<view class="group rise a3">
+				<text class="glabel">应用</text>
+				<view class="card">
+					<view class="row" @click="goCheckUpdate">
+						<text class="t">检查更新</text>
+						<text class="v" :class="{ 'v-new': hasNewer }">{{ hasNewer ? 'v' + latestVersion : '已是最新' }}</text>
+						<view class="arrow"></view>
+					</view>
+					<view class="row">
+						<text class="t">当前版本</text>
+						<text class="v">{{ currentVersion }}</text>
+					</view>
+					<view class="row" @click="openUrl(GH)">
+						<text class="t">GitHub</text>
+						<text class="v">jackchenjiufu/Simple</text>
+						<view class="arrow"></view>
+					</view>
+					<view class="row" @click="openUrl(GITEE)">
+						<text class="t">Gitee</text>
+						<text class="v">simplejiufu/simple</text>
+						<view class="arrow"></view>
+					</view>
+					<view class="row" @click="openUrl(SITE + '#changelog')">
+						<text class="t">更新日志</text>
+						<view class="arrow"></view>
 					</view>
 				</view>
 			</view>
-			<!-- 装饰圆点 -->
-			<view class="deco-dot dot-1"></view>
-			<view class="deco-dot dot-2"></view>
-			<view class="deco-dot dot-3"></view>
-		</view>
 
-		<!-- 表单风格卡片区域 -->
-		<view class="form-section">
-			<view class="form-card fade-down">
-				<view class="app-logo-wrap">
-					<image class="app-logo" src="/static/logo.png" mode="aspectFit"></image>
-				</view>
-				<text class="app-name">Simple</text>
-				<text class="app-desc">一个禅意构造的APP</text>
-			</view>
-
-			<view class="form-card fade-up">
-				<text class="form-subtitle">版本信息</text>
-				<view class="version-row">
-					<text class="row-label">当前版本</text>
-					<text class="row-value">{{ currentVersion }}</text>
-				</view>
-				<view class="version-row">
-					<text class="row-label">最新版本</text>
-					<text class="row-value" :class="{ 'new-version': hasNewer }">{{ latestVersion }}</text>
+			<!-- 联系我 -->
+			<view class="group rise a4">
+				<text class="glabel">联系我</text>
+				<view class="card">
+					<view class="row" @click="copyText('chensauce@qq.com', '邮箱已复制')">
+						<text class="t">邮箱</text>
+						<text class="v">chensauce@qq.com</text>
+						<view class="copy">复制</view>
+					</view>
+					<view class="row" @click="copyText('ChenSauce', '微信号已复制')">
+						<text class="t">微信</text>
+						<text class="v">ChenSauce</text>
+						<view class="copy">复制</view>
+					</view>
+					<view class="row" @click="openUrl('https://simpleboat.cc')">
+						<text class="t">官方网站</text>
+						<text class="v">simpleboat.cc</text>
+						<view class="arrow"></view>
+					</view>
 				</view>
 			</view>
 
-			<view class="form-card fade-up">
-				<text class="form-subtitle">联系我们</text>
-				<view class="contact-row" @click="openWebsite">
-					<text class="contact-text">官方网站：simpleboat.cc</text>
-				</view>
-				<view class="contact-row">
-					<text class="contact-text">邮箱：chensauce@qq.com</text>
-				</view>
-				<view class="contact-row">
-					<text class="contact-text">微信：ChenSauce</text>
+			<!-- 条款 -->
+			<view class="group rise a5">
+				<text class="glabel">条款</text>
+				<view class="card">
+					<view class="row" @click="goPage('/pages/info/privacy-policy')">
+						<text class="t">隐私政策</text>
+						<view class="arrow"></view>
+					</view>
+					<view class="row" @click="goPage('/pages/info/user-agreement')">
+						<text class="t">用户协议</text>
+						<view class="arrow"></view>
+					</view>
 				</view>
 			</view>
 
-			<text class="footer-text">Simple V{{ currentVersion }}</text>
-		</view>
+			<view class="foot rise a5">
+				<text class="foot-1">© 2026 Simple · 一个人维护</text>
+				<text class="foot-2">内容、工时、设备，都在自己手里</text>
+			</view>
+		</scroll-view>
 	</view>
 </template>
 
 <script>
 import apiConfig from '../../utils/api.js';
+
+const GH = 'https://github.com/jackchenjiufu/Simple';
+const GITEE = 'https://gitee.com/simplejiufu/simple';
+const SITE = 'http://139.196.185.197:1010/app/';
+
 export default {
 	data() {
 		return {
 			statusBarHeight: 0,
 			currentVersion: '1.0.0',
-			latestVersion: '1.0.0'
+			latestVersion: '1.0.0',
+			GH,
+			GITEE,
+			SITE
 		};
-	},
-	onLoad() {
-		const systemInfo = uni.getSystemInfoSync();
-		this.statusBarHeight = systemInfo.statusBarHeight || 0;
-		this.loadVersion();
 	},
 	computed: {
 		hasNewer() {
 			return compareVersion(this.latestVersion, this.currentVersion) > 0;
 		}
 	},
+	onLoad() {
+		const info = uni.getSystemInfoSync();
+		this.statusBarHeight = info.statusBarHeight || 0;
+		this.currentVersion = info.appVersion || '1.0.0';
+		// 白色头部 → 状态栏用深色字
+		// #ifdef APP-PLUS
+		try { plus.navigator.setStatusBarStyle('dark'); } catch (e) {}
+		// #endif
+		this.loadVersion();
+	},
 	methods: {
-		goBack() { uni.navigateBack(); },
-		openWebsite() { uni.setClipboardData({ data: 'https://simpleboat.cc' }); },
+		goBack() {
+			uni.navigateBack();
+		},
+		goPage(url) {
+			uni.navigateTo({ url });
+		},
+		goCheckUpdate() {
+			uni.navigateTo({ url: '/pages/info/check-update' });
+		},
+		/** 真打开浏览器；H5/小程序端降级为复制 */
+		openUrl(url) {
+			// #ifdef APP-PLUS
+			plus.runtime.openURL(url, function () {
+				uni.showToast({ title: '打开失败，已复制链接', icon: 'none' });
+				uni.setClipboardData({ data: url });
+			});
+			return;
+			// #endif
+			// #ifndef APP-PLUS
+			this.copyText(url, '链接已复制');
+			// #endif
+		},
+		copyText(text, tip) {
+			uni.setClipboardData({
+				data: text,
+				success() {
+					uni.showToast({ title: tip || '已复制', icon: 'none' });
+				}
+			});
+		},
+		/** 版本号取 APK 与 wgt 里较大的那个，再问后端有没有更新的 */
 		async loadVersion() {
-				try {
-					const info = uni.getSystemInfoSync();
-					var apkVer = info.appVersion || '1.0.0';
-					var wgtVer = uni.getStorageSync('wgtVersion') || '';
-					const ver = wgtVer && compareVersion(wgtVer, apkVer) > 0 ? wgtVer : apkVer;
-					const res = await uni.request({
-						url: apiConfig.baseUrl + 'check_update.php',
-						method: 'POST',
-						data: { currentVersion: ver },
+			try {
+				const apkVer = uni.getSystemInfoSync().appVersion || '1.0.0';
+				const wgtVer = uni.getStorageSync('wgtVersion') || '';
+				const ver = wgtVer && compareVersion(wgtVer, apkVer) > 0 ? wgtVer : apkVer;
+				this.currentVersion = ver;
+				const res = await uni.request({
+					url: apiConfig.baseUrl + 'check_update.php',
+					method: 'POST',
+					data: { currentVersion: ver },
 					header: { 'Content-Type': 'application/json' }
 				});
 				if (res.statusCode === 200) {
-					const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
-					if (result?.code === 200) {
-						this.currentVersion = result.data?.currentVersion || ver;
-						this.latestVersion = result.data?.latestVersion || ver;
+					const r = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+					if (r && r.code === 200 && r.data) {
+						this.latestVersion = r.data.latestVersion || ver;
+						this.currentVersion = ver;
 					}
 				}
-			} catch (e) { console.error(e); }
+			} catch (e) {
+				console.error('loadVersion', e);
+			}
 		}
 	}
 };
 
 function compareVersion(v1, v2) {
-	var a1 = v1.split('.').map(Number);
-	var a2 = v2.split('.').map(Number);
-	for (var i = 0; i < Math.max(a1.length, a2.length); i++) {
-		var n1 = a1[i] || 0;
-		var n2 = a2[i] || 0;
+	const a1 = String(v1).split('.').map(Number);
+	const a2 = String(v2).split('.').map(Number);
+	for (let i = 0; i < Math.max(a1.length, a2.length); i++) {
+		const n1 = a1[i] || 0;
+		const n2 = a2[i] || 0;
 		if (n1 > n2) return 1;
 		if (n1 < n2) return -1;
 	}
@@ -133,95 +200,79 @@ function compareVersion(v1, v2) {
 </script>
 
 <style>
-/* ========== 基础布局 ========== */
-.content { width: 100%; min-height: 100vh; background-color: #ffffff; display: flex; flex-direction: column; }
-.status-bar { width: 100%; background: #1b44a6; }
+/* ========== 页面 ========== */
+.page { width: 100%; height: 100vh; background-color: #F5F8FD; display: flex; flex-direction: column; }
+.status-bar { width: 100%; background-color: #FFFFFF; flex-shrink: 0; }
 
-/* ========== 深蓝色头部 ========== */
-.header-section { position: relative; background: linear-gradient(135deg, #1b44a6, #2563eb); border-radius: 0 0 48upx 48upx; overflow: hidden; }
-.nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 12upx 24upx 0; position: relative; z-index: 2; }
-.nav-back { width: 72upx; height: 72upx; display: flex; align-items: center; justify-content: center; }
-.back-icon { width: 48upx; height: 48upx; }
-.nav-title { font-size: 32upx; font-weight: 600; color: #ffffff; letter-spacing: 2upx; }
-.nav-placeholder { width: 72upx; }
-
-/* ========== 头部内容 ========== */
-.header-content {
-	position: relative;
-	z-index: 2;
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-end;
-	padding: 40upx 48upx 80upx;
-	min-height: 320upx;
+/* ========== 导航条 ========== */
+.nav {
+	height: 88rpx; background-color: #FFFFFF; display: flex; align-items: center;
+	padding: 0 24rpx; position: relative; flex-shrink: 0;
 }
-.header-left { flex: 1; }
-.header-greeting { font-size: 40upx; font-weight: 700; color: #ffffff; display: block; margin-bottom: 6upx; }
-.header-title { font-size: 28upx; color: rgba(255,255,255,0.9); display: block; margin-bottom: 4upx; }
-.header-subtitle { font-size: 22upx; color: rgba(255,255,255,0.6); display: block; }
+.nav-back { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; }
+.back-icon { width: 36rpx; height: 36rpx; }
+.nav-title { position: absolute; left: 0; right: 0; text-align: center; font-size: 32rpx; font-weight: 600; color: #0E1B33; }
+.nav-ph { width: 56rpx; }
 
-/* ========== 角色插画 ========== */
-.header-right { flex-shrink: 0; margin-left: 20upx; }
-.character-area { position: relative; width: 140upx; height: 160upx; }
-.char-circle { position: absolute; border-radius: 50%; }
-.char-circle-1 { width: 40upx; height: 40upx; background: rgba(255,255,255,0.15); top: 0; right: 10upx; }
-.char-circle-2 { width: 24upx; height: 24upx; background: rgba(255,255,255,0.1); top: 36upx; right: 0; }
-.char-body { position: absolute; width: 80upx; height: 90upx; background: rgba(255,255,255,0.2); border-radius: 40upx 40upx 20upx 20upx; bottom: 0; left: 50%; transform: translateX(-50%); }
-.char-head { position: absolute; width: 52upx; height: 52upx; background: rgba(255,255,255,0.25); border-radius: 50%; bottom: 74upx; left: 50%; transform: translateX(-50%); }
+.body { flex: 1; }
 
-/* ========== 装饰圆点 ========== */
-.deco-dot { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.08); z-index: 1; }
-.dot-1 { width: 200upx; height: 200upx; top: -60upx; right: -40upx; }
-.dot-2 { width: 120upx; height: 120upx; bottom: 20upx; left: -30upx; }
-.dot-3 { width: 80upx; height: 80upx; top: 100upx; left: 30%; }
-
-/* ========== 表单卡片区域 ========== */
-.form-section { flex: 1; padding: 0 40upx; margin-top: -40upx; box-sizing: border-box; }
-
-.form-card {
-	background: #ffffff;
-	border-radius: 20upx;
-	padding: 36upx 32upx;
-	margin-bottom: 20upx;
-	box-shadow: 0 4upx 20upx rgba(0,0,0,0.06);
-	position: relative;
-	z-index: 3;
+/* ========== 品牌区 ========== */
+.brand { background-color: #FFFFFF; padding: 44rpx 0 48rpx; display: flex; flex-direction: column; align-items: center; border-bottom: 1rpx solid #EDF0F4; }
+.mark { width: 142rpx; height: 142rpx; border-radius: 33rpx; }
+.brand-name { font-size: 38rpx; font-weight: 700; color: #0E1B33; margin-top: 26rpx; letter-spacing: -0.4rpx; }
+.chip {
+	display: flex; align-items: center; margin-top: 14rpx;
+	padding: 5rpx 18rpx; border-radius: 99rpx; background-color: #F1F5FD;
 }
+.chip-dot { width: 10rpx; height: 10rpx; border-radius: 50%; background-color: #3BC49B; margin-right: 10rpx; }
+.chip-t { font-size: 22rpx; font-weight: 600; color: #1B44A6; }
+.brand-sub { font-size: 24rpx; color: #8A99B5; margin-top: 18rpx; }
 
-.form-subtitle { display: block; font-size: 28upx; font-weight: 600; color: #303132; margin-bottom: 24upx; }
+/* ========== 分组 ========== */
+.group { margin-top: 42rpx; }
+.glabel { display: block; font-size: 23rpx; color: #8A99B5; padding: 0 56rpx 13rpx; }
+.card { background-color: #FFFFFF; margin: 0 32rpx; border-radius: 24rpx; overflow: hidden; }
 
-/* ========== APP 图标卡片 ========== */
-.app-logo-wrap { text-align: center; margin-bottom: 16upx; }
-.app-logo { width: 120upx; height: 120upx; border-radius: 24upx; }
-.app-name { display: block; text-align: center; font-size: 32upx; font-weight: 700; color: #303132; margin-bottom: 6upx; }
-.app-desc { display: block; text-align: center; font-size: 24upx; color: #9ca3af; }
-
-/* ========== 版本信息 ========== */
-.version-row { display: flex; justify-content: space-between; align-items: center; padding: 14upx 0; border-bottom: 1upx solid #f3f4f6; }
-.version-row:last-child { border-bottom: none; }
-.row-label { font-size: 26upx; color: #6b7280; }
-.row-value { font-size: 26upx; color: #303132; font-weight: 500; }
-.new-version { color: #3071f6; font-weight: 600; }
-
-/* ========== 联系我们 ========== */
-.contact-row { display: flex; align-items: center; gap: 12upx; padding: 12upx 0; }
-.contact-row:last-child { margin-bottom: 0; }
-.contact-icon { font-size: 28upx; }
-.contact-text { font-size: 26upx; color: #6b7280; }
-
-/* ========== 入场动画 ========== */
-.fade-down { animation: fadeDown 0.6s ease-out; }
-.fade-up { animation: fadeUp 0.6s ease-out; }
-
-@keyframes fadeDown {
-	from { opacity: 0; transform: translateY(-20upx); }
-	to { opacity: 1; transform: translateY(0); }
+.row {
+	display: flex; align-items: center; min-height: 96rpx; padding: 0 32rpx; position: relative;
 }
-@keyframes fadeUp {
-	from { opacity: 0; transform: translateY(20upx); }
-	to { opacity: 1; transform: translateY(0); }
+.row + .row::before {
+	content: ""; position: absolute; top: 0; left: 32rpx; right: 0; height: 1rpx; background-color: #EDF0F4;
+}
+.row:active { background-color: #F7F9FD; }
+.t { font-size: 28rpx; color: #0E1B33; flex: 1; }
+.v { font-size: 26rpx; color: #8A99B5; }
+.v-new { color: #1B44A6; font-weight: 600; }
+
+.arrow {
+	width: 14rpx; height: 14rpx; margin-left: 14rpx; flex-shrink: 0;
+	border-right: 3rpx solid #C3CBDA; border-bottom: 3rpx solid #C3CBDA;
+	transform: rotate(-45deg);
+}
+.copy {
+	font-size: 23rpx; color: #1B44A6; border: 1rpx solid #D6E2F8; background-color: #FFFFFF;
+	border-radius: 13rpx; padding: 6rpx 18rpx; margin-left: 14rpx;
 }
 
 /* ========== 底部 ========== */
-.footer-text { display: block; text-align: center; font-size: 22upx; color: #c0c4cc; padding: 24upx 0 40upx; }
+.foot { padding: 52rpx 0 60rpx; display: flex; flex-direction: column; align-items: center; }
+.foot-1 { font-size: 22rpx; color: #B8C2D4; }
+.foot-2 { font-size: 21rpx; color: #CBD3E1; margin-top: 10rpx; }
+
+/* ========== 入场动画：分组自上而下依次升起 ========== */
+@keyframes riseIn {
+	from { opacity: 0; transform: translateY(19rpx); }
+	to { opacity: 1; transform: translateY(0); }
+}
+@keyframes markIn {
+	from { opacity: 0; transform: scale(0.9); }
+	to { opacity: 1; transform: scale(1); }
+}
+.rise { animation: riseIn 320ms cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+.rise-scale { animation: markIn 380ms cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+.a1 { animation-delay: 0ms; }
+.a2 { animation-delay: 40ms; }
+.a3 { animation-delay: 80ms; }
+.a4 { animation-delay: 140ms; }
+.a5 { animation-delay: 200ms; }
 </style>

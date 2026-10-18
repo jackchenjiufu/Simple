@@ -51,12 +51,20 @@ fi
 grep -q '"pages/monitor/index"' "$OUT/app-service.js" || echo "!! 警告: 产物里没找到监控页"
 echo "== 资源 OK: compilerVersion=$STAMP，大小 $(du -sh "$OUT" | cut -f1)"
 
-# 5. 换入 Android 壳工程（旧资源自动备份）
+# 5. 换入 Android 壳工程（旧资源备份到 assets 之外，避免被打进 APK）
 WWW="$SHELL_PROJ/$MODULE/src/main/assets/apps/$APPID/www"
-if [ -d "$WWW" ]; then cp -r "$WWW" "$WWW.bak-$(date +%Y%m%d-%H%M%S)"; fi
+BAK_ROOT="$SHELL_PROJ/.www-backups/$APPID"
+mkdir -p "$BAK_ROOT"
+if [ -d "$WWW" ]; then
+  cp -r "$WWW" "$BAK_ROOT/www.bak-$(date +%Y%m%d-%H%M%S)"
+  # 只保留最近 2 份
+  ls -1dt "$BAK_ROOT"/www.bak-* 2>/dev/null | tail -n +3 | while read -r d; do rm -rf "$d"; done
+fi
 rm -rf "$WWW"
 cp -r "$OUT" "$WWW"
-echo "== 资源已换入 $MODULE"
+# 清掉历史遗留在 assets 里的备份（留在里面会被 Gradle 打进 APK）
+rm -rf "$WWW".bak-*
+echo "== 资源已换入 $MODULE（备份在 .www-backups，APK 内不再含备份）"
 
 # 6. 同步 build.gradle 版本号
 GRADLE="$SHELL_PROJ/$MODULE/build.gradle"

@@ -415,7 +415,8 @@ export default {
       if (!this.ready) this.loading = true;
       this.error = '';
       try {
-        const [s, l, ch] = await Promise.all([fetchAlertStats(7), fetchAlerts(50), fetchAlertChannels()]);
+        // A: 拉宽到后端上限 200，避免「待裁决」记录被 50 条时间窗挤出列表
+        const [s, l, ch] = await Promise.all([fetchAlertStats(7), fetchAlerts(200), fetchAlertChannels()]);
         this.stats = s && typeof s === 'object' ? s : { today: {}, daily: [] };
         this.list = Array.isArray(l) ? l : [];
         this.chanList = Array.isArray(ch) ? ch : [];

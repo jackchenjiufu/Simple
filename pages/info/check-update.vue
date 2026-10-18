@@ -150,9 +150,15 @@
 
 		<!-- 底部操作区：只在「有新版本 / 下载中」出现 -->
 		<view class="foot" v-if="status === 'available' || downloading">
+			<!-- #ifdef MP-WEIXIN -->
+			<text class="mp-tip">小程序由微信自动更新，无需手动安装</text>
+			<text class="later" @click="goBack">知道了</text>
+			<!-- #endif -->
+			<!-- #ifndef MP-WEIXIN -->
 			<button class="btn" v-if="!downloading" @click="startDownload(false)">立即更新</button>
 			<button class="btn btn-dis" v-else>下载中，可继续使用 App</button>
 			<text class="later" v-if="!downloading" @click="goBack">稍后再说</text>
+			<!-- #endif -->
 		</view>
 	</view>
 </template>
@@ -353,6 +359,14 @@ export default {
 				uni.showToast({ title: '下载地址无效', icon: 'none' });
 				return;
 			}
+			// #ifndef APP-PLUS
+			uni.showModal({
+				title: '小程序自动更新',
+				content: '微信会在你下次打开小程序时自动加载最新版本，不需要手动下载安装。',
+				showCancel: false
+			});
+			return;
+			// #endif
 			this.downloading = true;
 			this.downloadProgress = 0;
 			this.downloadSpeed = 0;
@@ -417,6 +431,7 @@ export default {
 				self._downloadAndInstallApk(apkUrl, false);
 			}
 		},
+		// #ifdef APP-PLUS
 		/** 进度 / 速度 / 总大小：statechanged 是唯一数据源 */
 		_bindProgress(task) {
 			var self = this;
@@ -504,6 +519,7 @@ export default {
 			self._bindProgress(dtask);
 			dtask.start();
 		},
+		// #endif
 		cancelDownload() {
 			if (this.downloadTask) {
 				this.downloadTask.abort();
@@ -647,5 +663,6 @@ function compareVersion(v1, v2) {
 .btn:active { background: #285ed4; }
 .btn-dis { background: #e6ebf3; color: #9aa1ac; box-shadow: none; }
 .later { display: block; text-align: center; font-size: 21upx; color: #9aa1ac; margin-top: 18upx; }
+.mp-tip { display: block; text-align: center; font-size: 22upx; line-height: 1.7; color: #6b7280; padding: 8upx 0; }
 ::-webkit-scrollbar { width: 0; height: 0; display: none; }
 </style>

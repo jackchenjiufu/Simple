@@ -2,18 +2,31 @@
 	<view class="app-container">
 		<slot />
 
-		<!-- 更新提示弹窗（左右按钮布局） -->
-		<view class="update-overlay" v-if="showUpdateModal" @click="onOverlayClick">
-			<view class="update-modal" @click.stop>
-				<view class="update-icon-wrap">
-					<text class="update-icon-text">↑</text>
+		<!-- 更新提示：纯白底部抽屉 -->
+		<view class="up-mask" v-if="showUpdateModal" @click="onOverlayClick">
+			<view class="up-sheet" @click.stop>
+				<view class="up-grab" v-if="!updateForce"></view>
+				<view class="up-head">
+					<view class="up-title-wrap">
+						<text class="up-title">{{ updateModalTitle }}</text>
+						<text class="up-chip" v-if="updateModalVersion">v{{ updateModalVersion }}</text>
+					</view>
+					<view class="up-close" v-if="!updateForce" @click="cancelUpdate">
+						<text class="up-close-x">✕</text>
+					</view>
 				</view>
-				<text class="update-modal-title">{{ updateModalTitle }}</text>
-				<text class="update-modal-desc">{{ updateModalDesc }}</text>
-				<view class="update-modal-actions">
-					<button class="update-btn cancel" v-if="!updateForce" @click="cancelUpdate">稍后再说</button>
-					<button class="update-btn confirm" @click="confirmUpdate">立即更新</button>
+				<text class="up-sub">{{ updateModalSub }}</text>
+				<view class="up-list" v-if="updateModalItems.length">
+					<view class="up-li" v-for="(it, i) in updateModalItems" :key="i">
+						<view class="up-dot"></view>
+						<text class="up-li-t">{{ it }}</text>
+					</view>
 				</view>
+				<view class="up-actions">
+					<button class="up-btn ghost" v-if="!updateForce" @click="cancelUpdate">稍后再说</button>
+					<button class="up-btn primary" :class="{ solo: updateForce }" @click="confirmUpdate">立即更新</button>
+				</view>
+				<text class="up-note" v-if="updateForce">更新后将自动重启应用</text>
 			</view>
 		</view>
 	</view>
@@ -30,7 +43,9 @@ export default {
 		return {
 			showUpdateModal: false,
 			updateModalTitle: '',
-			updateModalDesc: '',
+			updateModalVersion: '',
+			updateModalSub: '',
+			updateModalItems: [],
 			updateForce: false,
 			_updateInfo: null,
 		};
@@ -126,6 +141,28 @@ export default {
 				},
 				fail: () => { /* 网络异常时保持当前版本（默认 v1） */ }
 			});
+		},
+		// 把后端的一整段更新说明拆成条目（支持 【新增】/换行/分号 三种分隔）
+		splitUpdateDesc(desc) {
+			var raw = String(desc || '').replace(/\r/g, '').trim();
+			if (!raw) return ['新版本已准备就绪'];
+			var parts = raw.split(/[\n；;]+/);
+			var out = [];
+			for (var i = 0; i < parts.length; i++) {
+				var t = parts[i].trim().replace(/^[、,，.。\s]+/, '');
+				if (t) out.push(t);
+			}
+			// 只有一句话且很长时，再按 。 拆
+			if (out.length === 1 && out[0].length > 40) {
+				var seg = out[0].split(/。\s*/);
+				var tmp = [];
+				for (var j = 0; j < seg.length; j++) {
+					var s2 = seg[j].trim();
+					if (s2) tmp.push(s2);
+				}
+				if (tmp.length > 1) out = tmp;
+			}
+			return out.slice(0, 6);
 		},
 		cancelUpdate() {
 			this.showUpdateModal = false;
@@ -354,12 +391,15 @@ export default {
 								var isWgt = targetUrl.indexOf('.wgt') > 0;
 								if (targetUrl) {
 									// #ifdef APP-PLUS
-									// 自定义弹窗（左右按钮布局）
+									// 纯白底部抽屉
 									var self = that;
-									self.updateModalTitle = '发现新版本 v' + newVer;
-									self.updateModalDesc = (result.data.description || '新版本已发布') + (isWgt ? '' : '\n\n更新包约十几 MB，请在网络良好时更新');
 									var isForce = parseInt(result.data.forceUpdate || 0, 10) === 1;
-									if (isForce) self.updateModalDesc += '\n\n此版本为强制更新，更新后将重启应用';
+									self.updateModalTitle = isForce ? '需要更新后才能继续' : '发现新版本';
+									self.updateModalVersion = newVer;
+									self.updateModalSub = isForce
+										? '当前版本已停止服务支持'
+										: (isWgt ? '资源包已就绪，安装后自动重启' : '完整安装包 · 建议在 Wi-Fi 下更新');
+									self.updateModalItems = self.splitUpdateDesc(result.data.description);
 									self._updateInfo = { targetUrl: targetUrl, isWgt: isWgt, newVer: newVer, force: isForce };
 									self.updateForce = isForce;
 									self.showUpdateModal = true;
@@ -439,6 +479,11 @@ export default {
 			// #endif
 		},
 		installPendingWgt() {
+			// #ifndef APP-PLUS
+			// 小程序没有「下载安装包」这回事，微信自己管更新
+			return;
+			// #endif
+			// #ifdef APP-PLUS
 			var wgtPath = uni.getStorageSync("pendingWgtPath");
 			var apkPath = uni.getStorageSync("pendingApkPath");
 			var pendingVer = uni.getStorageSync("pendingWgtVersion");
@@ -493,6 +538,7 @@ export default {
 				});
 				// #endif
 			}
+			// #endif
 		}
 	}
 };
@@ -504,40 +550,64 @@ export default {
 .app-container { width: 100%; height: 100vh; background-color: var(--bg-light); }
 page { width: 100%; height: 100%; }
 
-/* 更新提示弹窗（左右按钮） */
-.update-overlay {
-	position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-	background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center;
-	z-index: 99999; padding: 40upx;
+/* ===== 更新提示：纯白底部抽屉 ===== */
+.up-mask {
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	background: rgba(15, 23, 42, 0.32);
+	z-index: 99999;
+	display: flex; align-items: flex-end;
+	animation: upFade 0.18s ease both;
 }
-.update-modal {
-	background: #fff; border-radius: 28upx; padding: 40upx 36upx 32upx;
-	width: 86%; max-width: 560upx; box-shadow: 0 16upx 48upx rgba(0,0,0,0.15);
-	text-align: center;
+.up-sheet {
+	width: 100%; background: #fff;
+	border-radius: 28rpx 28rpx 0 0;
+	padding: 16rpx 40rpx calc(24rpx + env(safe-area-inset-bottom));
+	box-shadow: 0 -24rpx 80rpx -32rpx rgba(15, 23, 42, 0.3);
+	animation: upSlide 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
-.update-icon-wrap {
-	width: 80upx; height: 80upx; border-radius: 50%;
-	background: linear-gradient(135deg, #eff6ff, #dbeafe);
-	display: flex; align-items: center; justify-content: center;
-	margin: 0 auto 20upx; box-shadow: 0 4upx 16upx rgba(48, 113, 246, 0.25);
+.up-grab {
+	width: 64rpx; height: 8rpx; border-radius: 4rpx;
+	background: #E5EAF2; margin: 0 auto 28rpx;
 }
-.update-icon-text { font-size: 40upx; color: #3071f6; font-weight: 700; }
-.update-modal-title {
-	display: block; font-size: 30upx; font-weight: 700; color: #1f2937; margin-bottom: 16upx;
+.up-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10rpx; }
+.up-title-wrap { display: flex; align-items: center; }
+.up-title { font-size: 32rpx; font-weight: 600; color: #111827; }
+.up-chip {
+	font-size: 22rpx; font-weight: 600; color: #1B44A6;
+	background: #F1F5FD; padding: 4rpx 14rpx; border-radius: 12rpx; margin-left: 14rpx;
 }
-.update-modal-desc {
-	display: block; font-size: 24upx; color: #6b7280; line-height: 1.6; margin-bottom: 28upx;
+.up-close {
+	width: 52rpx; height: 52rpx; border-radius: 50%;
+	background: #F4F6FA; display: flex; align-items: center; justify-content: center;
 }
-.update-modal-actions { display: flex; gap: 16upx; }
-.update-btn {
-	flex: 1; height: 80upx; line-height: 80upx; font-size: 28upx;
-	border-radius: 14upx; border: none; padding: 0; margin: 0;
+.up-close-x { font-size: 24rpx; color: #94A3B8; line-height: 1; }
+.up-sub {
+	display: block; font-size: 24rpx; color: #6B7280;
+	line-height: 1.6; margin-bottom: 24rpx;
 }
-.update-btn.cancel {
-	background: #f3f4f6; color: #374151; font-weight: 500;
+.up-list { border-top: 1rpx solid #EDF0F4; margin-bottom: 28rpx; max-height: 56vh; overflow-y: auto; }
+.up-li { display: flex; align-items: flex-start; padding: 20rpx 0; border-bottom: 1rpx solid #F4F6FA; }
+.up-li:last-child { border-bottom: none; }
+.up-dot {
+	flex: none; width: 10rpx; height: 10rpx; border-radius: 50%;
+	background: #1B44A6; opacity: 0.55; margin: 12rpx 18rpx 0 0;
 }
-.update-btn.confirm {
-	background: linear-gradient(135deg, #3071f6, #1b44a6); color: #fff; font-weight: 600;
-	box-shadow: 0 4upx 12upx rgba(48, 113, 246, 0.3);
+.up-li-t { flex: 1; font-size: 24rpx; color: #4B5563; line-height: 1.55; }
+.up-actions { display: flex; }
+.up-btn {
+	flex: 1; height: 84rpx; line-height: 84rpx; font-size: 28rpx; font-weight: 600;
+	border-radius: 12rpx; border: none; padding: 0; margin: 0;
 }
+.up-btn::after { border: none; }
+.up-btn.ghost {
+	background: #fff; color: #4B5563; border: 1rpx solid #E5EAF2; margin-right: 20rpx;
+}
+.up-btn.primary { background: #1B44A6; color: #fff; }
+.up-btn.primary.solo { flex: none; width: 100%; margin-right: 0; }
+.up-note {
+	display: block; text-align: center; font-size: 22rpx;
+	color: #A3AEC2; margin-top: 20rpx;
+}
+@keyframes upFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes upSlide { from { transform: translateY(100%); } to { transform: translateY(0); } }
 </style>

@@ -387,11 +387,11 @@ async function play() {
     }
     if (direct) push('直接串流（换封装不重编码）', abs(base, direct));
 
-    // #ifdef H5
+    // #ifndef APP-PLUS
     push('转码播放（MP4）', abs(base, srcB && srcB.TranscodingUrl));
     push('转码播放（HLS）', abs(base, srcA && srcA.TranscodingUrl));
     // #endif
-    // #ifndef H5
+    // #ifdef APP-PLUS
     push('转码播放（HLS）', abs(base, srcA && srcA.TranscodingUrl));
     push('转码播放（MP4）', abs(base, srcB && srcB.TranscodingUrl));
     // #endif
@@ -408,7 +408,7 @@ async function play() {
 
     // App 端优先交给原生 ExoPlayer（4K HEVC HDR 硬解比 ijkplayer 靠谱）；
     // 老 APK 没有这个 Activity，会抛异常，自动退回页面内 <video>
-    // #ifndef H5
+    // #ifdef APP-PLUS
     if (launchNative()) {
       nativeOn.value = true;
       return;
@@ -507,7 +507,7 @@ function openExternal() {
   // #ifdef H5
   window.open(u, '_blank');
   // #endif
-  // #ifndef H5
+  // #ifdef APP-PLUS
   try {
     plus.runtime.openURL(u);
   } catch (e) {
@@ -515,14 +515,20 @@ function openExternal() {
     uni.showToast({ title: '链接已复制', icon: 'none' });
   }
   // #endif
+  // #ifdef MP-WEIXIN
+  uni.setClipboardData({
+    data: u,
+    success: () => uni.showToast({ title: '链接已复制，可在浏览器打开', icon: 'none' }),
+  });
+  // #endif
 }
 
 // 原生播放页（ExoPlayer）。传入候选地址列表，Activity 内部逐个试
 function launchNative() {
-  // #ifdef H5
+  // #ifndef APP-PLUS
   return false;
   // #endif
-  // #ifndef H5
+  // #ifdef APP-PLUS
   if (!cands || !cands.length) return false;
   try {
     if (typeof plus === 'undefined' || !plus.android) return false;
@@ -565,7 +571,14 @@ function pickExternal() {
   window.open(externalUrl, '_blank');
   return;
   // #endif
-  // #ifndef H5
+  // #ifdef MP-WEIXIN
+  uni.setClipboardData({
+    data: externalUrl,
+    success: () => uni.showToast({ title: '链接已复制，可在浏览器打开', icon: 'none' }),
+  });
+  return;
+  // #endif
+  // #ifdef APP-PLUS
   uni.showActionSheet({
     itemList: ['VLC', 'MX Player', '系统浏览器'],
     success: (r) => {
@@ -577,6 +590,7 @@ function pickExternal() {
   // #endif
 }
 
+// #ifdef APP-PLUS
 function openWith(pkg) {
   const u = externalUrl || fallbackUrl.value || url.value;
   if (!u) return;
@@ -597,6 +611,7 @@ function openWith(pkg) {
     });
   }
 }
+// #endif
 </script>
 
 <style scoped>

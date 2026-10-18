@@ -500,7 +500,7 @@ export default {
 .role-super_admin { background: #faf0d7; color: #1b44a6; }
 .role-admin { background: #fee2e2; color: #dc2626; }
 .role-editor { background: #e8f7ef; color: #16a34a; }
-.role-运营 { background: #fdeee6; color: #e8590c; }
+/* 中文角色名不写死类名，颜色由 roleBadgeStyle() 内联输出 */
 .user-level {
 	font-size: 11px; padding: 3px 10px; border-radius: 10px; flex-shrink: 0;
 	background: #f3f0ff; color: #7c5cfc; margin-left: 6px;
