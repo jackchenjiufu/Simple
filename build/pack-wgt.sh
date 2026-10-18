@@ -74,11 +74,11 @@ else
   echo "!! 产物里没有影片详情页，终止"; exit 1
 fi
 
-# 断点续传下载器必须真的编进来（46MB 更新包中断后能接着下）
-if grep -q 'com.simple.app.Dl' "$OUT/app-service.js"; then
-  echo "== 校验通过: 产物含断点续传下载器"
+# 更新提示抽屉必须真的编进来，且「立即更新」指向版本更新页（2.9.3 起下载统一走那个页面）
+if grep -q 'update-sheet' "$OUT/app-service.js" && grep -q 'pages/info/check-update' "$OUT/app-service.js"; then
+  echo "== 校验通过: 产物含更新提示抽屉 + 跳转版本更新页"
 else
-  echo "!! 产物里没有断点续传下载器，终止"; exit 1
+  echo "!! 产物里没有更新提示抽屉或跳转目标，终止"; exit 1
 fi
 
 # 告警页签必须直接铺开全量内容（组件已编入、且不再有「查看全部」跳页）

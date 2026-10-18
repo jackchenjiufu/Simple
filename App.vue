@@ -29,6 +29,17 @@ export default {
 			}
 			return false;
 		}
+		// 未登录也允许打开的页面：版本更新（更新包下载不需要登录，
+		// 否则登录页弹出更新提示后点「立即更新」会被拦截回登录页）
+		var publicPages = [
+			"pages/info/check-update"
+		];
+		function isPublicPage(url) {
+			for (var j = 0; j < publicPages.length; j++) {
+				if (url.indexOf(publicPages[j]) >= 0) return true;
+			}
+			return false;
+		}
 		function redirectToLogin() {
 			var pages = getCurrentPages();
 			var currentPath = pages.length > 0 ? pages[pages.length - 1].route : '';
@@ -40,7 +51,7 @@ export default {
 		uni.addInterceptor("navigateTo", {
 			invoke: function(args) {
 				var url = args.url.split("?")[0];
-				if (isLoginPage(url)) return true;
+				if (isLoginPage(url) || isPublicPage(url)) return true;
 				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login", animationDuration: 0 }); return false; }
 				return true;
 			}
@@ -67,7 +78,7 @@ export default {
 		uni.addInterceptor("reLaunch", {
 			invoke: function(args) {
 				var url = args.url.split("?")[0];
-				if (isLoginPage(url)) return true;
+				if (isLoginPage(url) || isPublicPage(url)) return true;
 				if (!uni.getStorageSync("isLoggedIn")) { uni.reLaunch({ url: "/pages/auth/login", animationDuration: 0 }); return false; }
 				return true;
 			}
